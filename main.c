@@ -3,6 +3,16 @@
 #include "tusb.h"
 #include "usb_descriptors.h"
 #include "bsp/board.h"
+#include "hardware/timer.h"
+#include "hardware/clocks.h"
+#include "hardware/irq.h"
+#include "hardware/structs/scb.h"
+#include "hardware/sync.h"
+#include <mrubyc.h>
+
+#include "mrb_lib/led.c"
+#include "mrb_lib/tud.c"
+#include "mrb_lib/hid.c"
 
 const uint8_t device_desc[] = {
 	18, // bLength
@@ -49,9 +59,8 @@ const uint8_t device_desc[] = {
 //};
 
 const uint8_t hid_report_desc[] = {
- //   TUD_HID_REPORT_DESC_GENERIC_INOUT(1)
-                TUD_HID_REPORT_DESC_KEYBOARD(HID_REPORT_ID(REPORT_ID_KEYBOARD)),
-                TUD_HID_REPORT_DESC_MOUSE(HID_REPORT_ID(REPORT_ID_MOUSE))
+  TUD_HID_REPORT_DESC_KEYBOARD(HID_REPORT_ID(REPORT_ID_KEYBOARD)),
+  TUD_HID_REPORT_DESC_MOUSE(HID_REPORT_ID(REPORT_ID_MOUSE))
 };
 
 const uint8_t conf_desc[] = {
@@ -100,7 +109,20 @@ void tud_hid_set_report_cb(uint8_t report_id, hid_report_type_t report_type, uin
     return;
 }
 
-void hid_task(void) {
+#define MEMORY_SIZE (1024*40)
+
+static uint8_t memory_pool[MEMORY_SIZE];
+
+static void c_led1_write(mrb_vm *vm, mrb_value *v, int argc) {
+    int set_value = GET_INT_ARG(1);
+    gpio_put(25,set_value);
+}
+
+static void c_tud_task(mrb_vm *vm, mrb_value *v, int argc) {
+  tud_task();
+}
+
+static void c_hid_task(mrb_vm *vm, mrb_value *v, int argc) {
     // Poll every 10ms
     const uint32_t interval_ms = 10;
     static uint32_t start_ms = 0;
@@ -131,36 +153,35 @@ void hid_task(void) {
         }
     }
 
+    uint8_t *keycode = GET_STRING_ARG(1);
+
     /*------------- Keyboard -------------*/
     if (tud_hid_ready()) {
         // use to avoid send multiple consecutive zero report for keyboard
         static bool has_key = false;
+        tud_hid_keyboard_report(REPORT_ID_KEYBOARD, 0, keycode);
 
-        static bool toggle = false;
-        if (toggle = !toggle) {
-            uint8_t keycode[6] = {0};
-            keycode[0] = HID_KEY_A;
-            keycode[1] = HID_KEY_B;
-            keycode[2] = HID_KEY_C;
-
-            tud_hid_keyboard_report(REPORT_ID_KEYBOARD, 0, keycode);
-
-            has_key = true;
-        } else {
-            // send empty key report if previously has key pressed
-            if (has_key) tud_hid_keyboard_report(REPORT_ID_KEYBOARD, 0, NULL);
+        has_key = true;
+        if (has_key && keycode[0] == 0) {
+            tud_hid_keyboard_report(REPORT_ID_KEYBOARD, 0, NULL);
             has_key = false;
         }
     }
 }
 
 int main() {
+  stdio_init_all();
+  gpio_init(25);
+  gpio_set_dir(25, GPIO_OUT);
   board_init();
   tusb_init();
-
-  while(1) {
-    tud_task();
-    hid_task();
-  }
+  mrbc_init(memory_pool, MEMORY_SIZE);
+  mrbc_define_method(0, mrbc_class_object, "led1_write",  c_led1_write);
+  mrbc_define_method(0, mrbc_class_object, "tud_task",    c_tud_task);
+  mrbc_define_method(0, mrbc_class_object, "hid_task",    c_hid_task);
+  mrbc_create_task(led, 0);
+  mrbc_create_task(tud, 0);
+  mrbc_create_task(hid, 0);
+  mrbc_run();
   return 0;
 }
