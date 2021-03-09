@@ -1,0 +1,3 @@
+[submodule "lib/mmruby"]
+	path = lib/mmruby
+	url = git@github.com:hasumikin/mmruby.git
