@@ -1,1 +1,0 @@
-/usr/bin/c++     CMakeFiles/elf2uf2.dir/main.cpp.o  -o elf2uf2 
