@@ -15,6 +15,15 @@ add_subdirectory(./lib)
 
 add_executable(mrubyc_keyboard main.c)
 
+add_custom_target(mrb_lib
+  COMMAND mrbc -E -Bled led.rb
+  COMMAND mrbc -E -Btud tud.rb
+  COMMAND mrbc -E -Bhid hid.rb
+  WORKING_DIRECTORY ../mrb_lib
+)
+
+add_dependencies(mrubyc_keyboard mrb_lib)
+
 #target_link_libraries(hid pico_stdlib tinyusb_device tinyusb_board mrubyc)
 target_link_libraries(mrubyc_keyboard pico_stdlib tinyusb_device tinyusb_board mrubyc)
 

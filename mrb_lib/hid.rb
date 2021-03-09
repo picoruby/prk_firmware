@@ -8,7 +8,7 @@ while true
   sleep 0.01
   hid_task("")
   sleep 1
-  hid_task("\x06\000\000\000\000\000")
+  hid_task("\x07\000\000\000\000\000")
   sleep 0.01
   hid_task("")
   sleep 1

@@ -29,9 +29,6 @@ add_library(mrubyc STATIC
   ./mmruby/src/mrubyc/src/hal_raspi_pico/hal.c
 )
 target_link_libraries(mrubyc pico_stdlib)
-# enable usb output, disable uart output
-pico_enable_stdio_usb(mrubyc 1)
-pico_enable_stdio_uart(mrubyc 0)
 target_compile_features(mrubyc PRIVATE)
 target_include_directories(mrubyc INTERFACE ./mmruby/src/mrubyc/src ./mmruby/src/mrubyc/src/hal_raspi_pico)
 set_target_properties(mrubyc
