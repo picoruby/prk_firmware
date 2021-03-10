@@ -8,8 +8,19 @@
 #include "hardware/irq.h"
 #include "hardware/structs/scb.h"
 #include "hardware/sync.h"
+
+/* mruby/c VM */
 #include <mrubyc.h>
 
+/* mini mruby compiler */
+#include <mmrbc.h>
+#include <common.h>
+#include <compiler.h>
+#include <debug.h>
+#include <scope.h>
+#include <stream.h>
+
+/* application */
 #include "mrb_lib/led.c"
 #include "mrb_lib/tud.c"
 #include "mrb_lib/hid.c"
