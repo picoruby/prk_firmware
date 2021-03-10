@@ -38,7 +38,6 @@ add_library(mmruby STATIC
   ./mmruby/src/token.c
   ./mmruby/src/tokenizer.c
 
-  ./mmruby/src/ruby-lemon-parse/parse.c
   ./mmruby/src/ruby-lemon-parse/crc.c
 )
 
