@@ -14,11 +14,6 @@
 
 /* mini mruby compiler */
 #include <mmrbc.h>
-#include <common.h>
-#include <compiler.h>
-#include <debug.h>
-#include <scope.h>
-#include <stream.h>
 
 /* application */
 #include "mrb_lib/led.c"
