@@ -12,8 +12,8 @@
 /* mruby/c VM */
 #include <mrubyc.h>
 
-/* mini mruby compiler */
-#include <mmrbc.h>
+/* pico mruby compiler */
+#include <picorbc.h>
 
 /* application */
 #include "mrb_lib/led.c"
