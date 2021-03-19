@@ -13,16 +13,16 @@ pico_sdk_init()
 
 add_subdirectory(./lib)
 
-add_executable(prk_firmware main.c)
+add_executable(prk_firmware src/main.c src/usb.c)
 
-add_custom_target(mrb_lib
+add_custom_target(ruby
   COMMAND mrbc -E -Bled led.rb
   COMMAND mrbc -E -Btud tud.rb
   COMMAND mrbc -E -Bhid hid.rb
-  WORKING_DIRECTORY ../mrb_lib
+  WORKING_DIRECTORY ../src/ruby
 )
 
-add_dependencies(prk_firmware picoruby mrb_lib)
+add_dependencies(prk_firmware picoruby ruby)
 
 target_link_libraries(prk_firmware pico_stdlib tinyusb_device tinyusb_board picoruby)
 
