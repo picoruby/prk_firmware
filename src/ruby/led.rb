@@ -1,8 +1,11 @@
-LED = 25
+LED_PIN = 25
 
-while true
-  gpio_put(LED, 1)
-  sleep(1)
-  gpio_put(LED, 0)
-  sleep(1)
+class LED
+  def on
+    gpio_put(LED_PIN, 1)
+  end
+
+  def off
+    gpio_put(LED_PIN, 0)
+  end
 end

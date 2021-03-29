@@ -13,8 +13,9 @@
 
 /* ruby */
 #include "ruby/led.c"
-#include "ruby/tud.c"
 #include "ruby/hid.c"
+#include "ruby/keymap.c"
+#include "ruby/tud.c"
 
 #define COL0 6
 #define COL1 7
@@ -86,8 +87,9 @@ int main() {
   mrbc_define_method(0, mrbc_class_object, "tud_task",     c_tud_task);
   mrbc_define_method(0, mrbc_class_object, "report_hid",   c_report_hid);
   mrbc_create_task(led, 0);
-  mrbc_create_task(tud, 0);
   mrbc_create_task(hid, 0);
+  mrbc_create_task(tud, 0);
+  mrbc_create_task(keymap, 0);
   mrbc_run();
   return 0;
 }
