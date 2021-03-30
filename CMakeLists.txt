@@ -16,10 +16,10 @@ add_subdirectory(./lib)
 add_executable(prk_firmware src/main.c src/usb.c)
 
 add_custom_target(ruby
-  COMMAND mrbc -E -Bled led.rb
-  COMMAND mrbc -E -Bhid hid.rb
-  COMMAND mrbc -E -Btud tud.rb
-  COMMAND mrbc -E -Bkeymap keymap.rb
+  COMMAND mrbc --remove-lv -E -Bled led.rb
+  COMMAND mrbc --remove-lv -E -Bkeyboard keyboard.rb
+  COMMAND mrbc --remove-lv -E -Btud tud.rb
+  COMMAND mrbc --remove-lv -E -Bkeymap keymap.rb
   WORKING_DIRECTORY ../src/ruby
 )
 

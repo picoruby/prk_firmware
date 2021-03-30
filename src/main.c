@@ -13,37 +13,26 @@
 
 /* ruby */
 #include "ruby/led.c"
-#include "ruby/hid.c"
+#include "ruby/keyboard.c"
 #include "ruby/keymap.c"
 #include "ruby/tud.c"
 
-#define COL0 6
-#define COL1 7
-#define ROW0 2
-#define ROW1 3
-#define LED  25
+void
+c_gpio_init(mrb_vm *vm, mrb_value *v, int argc)
+{
+  gpio_init(GET_INT_ARG(1));
+}
 
 void
-init_pins()
+c_gpio_set_dir(mrb_vm *vm, mrb_value *v, int argc)
 {
-  /* LED on board*/
-  gpio_init(LED);
-  gpio_set_dir(LED, GPIO_OUT);
+  gpio_set_dir(GET_INT_ARG(1), GET_INT_ARG(2));
+}
 
-  gpio_init(ROW0);
-  gpio_set_dir(ROW0, GPIO_IN);
-  gpio_pull_up(ROW0);
-  gpio_init(ROW1);
-  gpio_set_dir(ROW1, GPIO_IN);
-  gpio_pull_up(ROW1);
-
-  gpio_init(COL0);
-  gpio_set_dir(COL0, GPIO_OUT);
-  gpio_put(COL0, 1);
-  gpio_init(COL1);
-  gpio_set_dir(COL1, GPIO_OUT);
-  gpio_put(COL1, 1);
-
+void
+c_gpio_pull_up(mrb_vm *vm, mrb_value *v, int argc)
+{
+  gpio_pull_up(GET_INT_ARG(1));
 }
 
 void
@@ -71,7 +60,7 @@ c_board_millis(mrb_vm *vm, mrb_value *v, int argc)
   SET_INT_RETURN(board_millis());
 }
 
-#define MEMORY_SIZE (1024*100)
+#define MEMORY_SIZE (1024*130)
 
 static uint8_t memory_pool[MEMORY_SIZE];
 
@@ -79,15 +68,17 @@ int main() {
   stdio_init_all();
   board_init();
   tusb_init();
-  init_pins();
   mrbc_init(memory_pool, MEMORY_SIZE);
   mrbc_define_method(0, mrbc_class_object, "board_millis", c_board_millis);
+  mrbc_define_method(0, mrbc_class_object, "gpio_init",    c_gpio_init);
+  mrbc_define_method(0, mrbc_class_object, "gpio_set_dir", c_gpio_set_dir);
+  mrbc_define_method(0, mrbc_class_object, "gpio_pull_up", c_gpio_pull_up);
   mrbc_define_method(0, mrbc_class_object, "gpio_put",     c_gpio_put);
   mrbc_define_method(0, mrbc_class_object, "gpio_get",     c_gpio_get);
   mrbc_define_method(0, mrbc_class_object, "tud_task",     c_tud_task);
   mrbc_define_method(0, mrbc_class_object, "report_hid",   c_report_hid);
+  mrbc_create_task(keyboard, 0);
   mrbc_create_task(led, 0);
-  mrbc_create_task(hid, 0);
   mrbc_create_task(tud, 0);
   mrbc_create_task(keymap, 0);
   mrbc_run();
