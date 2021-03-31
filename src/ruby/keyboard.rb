@@ -183,7 +183,7 @@ KEYCODE.merge!(k)
 class Keyboard
   def initialize(rows, cols)
     @before_filters = Array.new
-    @layer = Hash.new
+    @layers = Hash.new
     @mode_keys = Array.new
     @switches = Array.new
     @led = LED.new
@@ -216,23 +216,23 @@ class Keyboard
         end
       end
     end
-    @layer[name] = map
+    @layers[name] = map
     @first_layer_name ||= name
   end
 
   # param[0] :release_key
-  # param[1] :hold_layer
+  # param[1] :hold_layer_name
   # param[2] :release_threshold
   # param[3] :repush_threshold
   def define_mode_key(key_name, param)
-    @layer.each do |layer, map|
+    @layers.each do |layer_name, map|
       map.each_with_index do |row, row_index|
         row.each_with_index do |key_symbol, col_index|
           if key_name == key_symbol
             @mode_keys << {
-              layer:             layer,
+              layer_name:        layer_name,
               release_key:       ( (KEYCODE[param[0]] || 0) * -1),
-              hold_layer:        param[1],
+              hold_layer_name:   param[1],
               release_threshold: (param[2] || 0),
               repush_threshold:  (param[3] || 0),
               switch:            [row_index, col_index],
@@ -278,7 +278,7 @@ class Keyboard
       now = board_millis
       keycode_pos = 0
       @keycodes = "\000\000\000\000\000\000"
-      layer = @first_layer_name
+      layer_name = @first_layer_name
 
       @switches.clear
       @modifier = 0
@@ -293,16 +293,16 @@ class Keyboard
       end
 
       @mode_keys.each do |mode_key|
-        next if mode_key[:layer] != layer
+        next if mode_key[:layer_name] != layer_name
         if @switches.include?(mode_key[:switch])
           @led.on
           case mode_key[:prev_state]
           when :released
             mode_key[:pushed_at] = now
             mode_key[:prev_state] = :pushed
-            layer = mode_key[:hold_layer]
+            layer_name = mode_key[:hold_layer_name]
           when :pushed
-            layer = mode_key[:hold_layer]
+            layer_name = mode_key[:hold_layer_name]
           when :pushed_then_released
             if now - mode_key[:released_at] <= mode_key[:repush_threshold]
               mode_key[:prev_state] = :pushed_then_released_then_pushed
@@ -335,7 +335,7 @@ class Keyboard
         end
       end
 
-      layer = @layer[layer]
+      layer = @layers[layer_name]
       @switches.each do |switch|
         key = layer[switch[0]][switch[1]]
         next unless key.is_a?(Fixnum)
