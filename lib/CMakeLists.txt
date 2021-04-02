@@ -41,6 +41,11 @@ add_library(picoruby STATIC
   ./picoruby/src/ruby-lemon-parse/crc.c
 )
 
+add_custom_target(picorbc
+  COMMAND make host_production
+  WORKING_DIRECTORY ../../lib/picoruby
+)
+
 add_custom_target(ptr_size
   COMMAND make
   WORKING_DIRECTORY ../../lib/picoruby/src/include
@@ -49,11 +54,11 @@ add_custom_target(tokenizer_helper
   COMMAND make tokenizer_helper.h
   WORKING_DIRECTORY ../../lib/picoruby/src
 )
-add_custom_target(parse
-  COMMAND make
-  WORKING_DIRECTORY ../../lib/picoruby/src/ruby-lemon-parse
-)
-add_dependencies(picoruby parse ptr_size tokenizer_helper)
+#add_custom_target(parse
+#  COMMAND make
+#  WORKING_DIRECTORY ../../lib/picoruby/src/ruby-lemon-parse
+#)
+add_dependencies(picoruby picorbc ptr_size tokenizer_helper)
 
 target_link_libraries(picoruby pico_stdlib)
 target_compile_features(picoruby PRIVATE)

@@ -16,10 +16,10 @@ add_subdirectory(./lib)
 add_executable(prk_firmware src/main.c src/usb.c)
 
 add_custom_target(ruby
-  COMMAND mrbc --remove-lv -E -Bled led.rb
-  COMMAND mrbc --remove-lv -E -Bkeyboard keyboard.rb
-  COMMAND mrbc --remove-lv -E -Btud tud.rb
-  COMMAND mrbc --remove-lv -E -Bkeymap keymap.rb
+  COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/lib/picoruby/build/host-production/bin/picorbc -Bled led.rb
+  COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/lib/picoruby/build/host-production/bin/picorbc -Bkeyboard keyboard.rb
+  COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/lib/picoruby/build/host-production/bin/picorbc -Btud tud.rb
+  COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/lib/picoruby/build/host-production/bin/picorbc -Bkeymap keymap.rb
   WORKING_DIRECTORY ../src/ruby
 )
 
