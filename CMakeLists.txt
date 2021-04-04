@@ -20,6 +20,10 @@ add_custom_target(ruby
   COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/lib/picoruby/build/host-production/bin/picorbc -Bkeyboard keyboard.rb
   COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/lib/picoruby/build/host-production/bin/picorbc -Btud tud.rb
   COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/lib/picoruby/build/host-production/bin/picorbc -Bkeymap keymap.rb
+  #COMMAND RBENV_VERSION=mruby-2.1.1 mrbc -E -Bled led.rb
+  #COMMAND RBENV_VERSION=mruby-2.1.1 mrbc -E -Bkeyboard keyboard.rb
+  #COMMAND RBENV_VERSION=mruby-2.1.1 mrbc -E -Btud tud.rb
+  #COMMAND RBENV_VERSION=mruby-2.1.1 mrbc -E -Bkeymap keymap.rb
   WORKING_DIRECTORY ../src/ruby
 )
 

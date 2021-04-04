@@ -33,7 +33,8 @@ kbd.add_layer :default, [
 ]
 kbd.add_layer :raise, [
   %i(KC_C RAISE_ENTER),
-  %i(KC_D ADJUST),
+  #%i(KC_D ADJUST),
+  %i(KC_D LOWER_SPACE),
 ]
 kbd.add_layer :lower, [
   %i(KC_E RAISE_ENTER),
@@ -41,14 +42,27 @@ kbd.add_layer :lower, [
 ]
 kbd.add_layer :adjust, [
   %i(KC_SCOLON RAISE_ENTER),
-  %i(KC_LSFT   ADJUST),
+  #%i(KC_LSFT   ADJUST),
+  %i(KC_LSFT LOWER_SPACE),
 ]
 
-#                   Your custom     Keycode when   Layer when       Release time threshold(ms)       Re-push time threshold(ms)
-#                   key name        you click      you keep press   to consider as `click the key`   to consider as `hold the key`
-kbd.define_mode_key :RAISE_ENTER, [ :KC_ENTER,     :raise,          200,                             150 ]
-kbd.define_mode_key :LOWER_SPACE, [ :KC_SPACE,     :lower,          300,                             400 ]
-kbd.define_mode_key :ADJUST,      [ nil,           :adjust,         nil,                             nil ]
+#                   Your custom     Keycode when   Layer when   Release time      Re-push time
+#                   key name        you click      you keep     threshold(ms)     threshold(ms)
+#                                                  press        to consider as    to consider as
+#                                                               `click the key`   `hold the key`
+#kbd.define_mode_key :RAISE_ENTER, [ :KC_ENTER,     :raise,      200,              150 ]
+#kbd.define_mode_key :LOWER_SPACE, [ :KC_SPACE,     :lower,      300,              400 ]
+#kbd.define_mode_key :ADJUST,      [ nil,           :adjust,     nil,              nil ]
+
+
+raise_proc = Proc.new do
+  kbd.raise_layer
+end
+lower_proc = Proc.new do
+  kbd.lower_layer
+end
+kbd.define_mode_key :RAISE_ENTER, [ raise_proc,    :KC_LSFT,     200,              200 ]
+kbd.define_mode_key :LOWER_SPACE, [ lower_proc,    :KC_LCTL,     200,              200 ]
 
 # ex) Use Keyboard#before_report filter if you want to input `":" w/o shift` and `";" w/ shift`
 # 

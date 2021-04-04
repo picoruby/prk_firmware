@@ -199,6 +199,7 @@ class Keyboard
       gpio_set_dir(pin, GPIO_OUT);
       gpio_put(pin, HI);
     end
+    @layer_names = Array.new
   end
 
   # Input
@@ -217,11 +218,30 @@ class Keyboard
       end
     end
     @layers[name] = map
-    @first_layer_name ||= name
+    @locked_layer_name ||= name
+    @layer_names << name
   end
 
-  # param[0] :release_key
-  # param[1] :hold_layer_name
+  def raise_layer
+    current_index = @layer_names.index(@locked_layer_name)
+    if current_index < @layer_names.size - 1
+      @locked_layer_name = @layer_names[current_index + 1]
+    else
+      @locked_layer_name = @layer_names.first
+    end
+  end
+
+  def lower_layer
+    current_index = @layer_names.index(@locked_layer_name)
+    if current_index == 0
+      @locked_layer_name = @layer_names.last
+    else
+      @locked_layer_name = @layer_names[current_index - 1]
+    end
+  end
+
+  # param[0] :on_release
+  # param[1] :on_hold
   # param[2] :release_threshold
   # param[3] :repush_threshold
   def define_mode_key(key_name, param)
@@ -229,10 +249,16 @@ class Keyboard
       map.each_with_index do |row, row_index|
         row.each_with_index do |key_symbol, col_index|
           if key_name == key_symbol
+            on_release = nil
+            if KEYCODE[param[0]]
+              on_release = KEYCODE[param[0]] * -1
+            else
+              on_release = param[0]
+            end
             @mode_keys << {
               layer_name:        layer_name,
-              release_key:       ( (KEYCODE[param[0]] || 0) * -1),
-              hold_layer_name:   param[1],
+              on_release:        on_release,
+              on_hold:           param[1],
               release_threshold: (param[2] || 0),
               repush_threshold:  (param[3] || 0),
               switch:            [row_index, col_index],
@@ -273,12 +299,29 @@ class Keyboard
     @before_filters << block
   end
 
+  def action_on_release(mode_key)
+    case mode_key.class
+    when Fixnum
+      @keycodes << (mode_key * -1).chr
+    when Proc
+      mode_key.call
+    end
+  end
+
+  def action_on_hold(mode_key)
+    if MOD_KEYCODE[mode_key]
+      @modifier |= MOD_KEYCODE[mode_key]
+    else # assumes layer key
+      @layer_name = mode_key
+    end
+  end
+
   def start!
+    @keycodes = Array.new
     while true
       now = board_millis
-      keycode_pos = 0
-      @keycodes = "\000\000\000\000\000\000"
-      layer_name = @first_layer_name
+      @keycodes.clear
+      @layer_name = @locked_layer_name
 
       @switches.clear
       @modifier = 0
@@ -293,23 +336,22 @@ class Keyboard
       end
 
       @mode_keys.each do |mode_key|
-        next if mode_key[:layer_name] != layer_name
+        next if mode_key[:layer_name] != @layer_name
         if @switches.include?(mode_key[:switch])
           @led.on
           case mode_key[:prev_state]
           when :released
             mode_key[:pushed_at] = now
             mode_key[:prev_state] = :pushed
-            layer_name = mode_key[:hold_layer_name]
+            action_on_hold(mode_key[:on_hold])
           when :pushed
-            layer_name = mode_key[:hold_layer_name]
+            action_on_hold(mode_key[:on_hold])
           when :pushed_then_released
             if now - mode_key[:released_at] <= mode_key[:repush_threshold]
               mode_key[:prev_state] = :pushed_then_released_then_pushed
             end
           when :pushed_then_released_then_pushed
-            @keycodes[keycode_pos] = (mode_key[:release_key] * -1).chr
-            keycode_pos += 1
+            action_on_release(mode_key[:on_release])
             break
           end
         else
@@ -317,8 +359,7 @@ class Keyboard
           case mode_key[:prev_state]
           when :pushed
             if now - mode_key[:pushed_at] <= mode_key[:release_threshold]
-              @keycodes[keycode_pos] = (mode_key[:release_key] * -1).chr
-              keycode_pos += 1
+              action_on_release(mode_key[:on_release])
               mode_key[:prev_state] = :pushed_then_released
               mode_key[:released_at] = now
               break
@@ -335,24 +376,27 @@ class Keyboard
         end
       end
 
-      layer = @layers[layer_name]
+      layer = @layers[@layer_name]
       @switches.each do |switch|
         key = layer[switch[0]][switch[1]]
         next unless key.is_a?(Fixnum)
         if key < 0 # Normal keys
-          @keycodes[keycode_pos] = (key * -1).chr
-          keycode_pos += 1
+          @keycodes << (key * -1).chr
         else # Modifier keys
           @modifier |= key
         end
-        break if keycode_pos > 5
+        break if @keycodes.size > 5
+      end
+
+      (6 - @keycodes.size).times do
+        @keycodes << "\000"
       end
 
       @before_filters.each do |block|
         block.call
       end
 
-      report_hid(@modifier, @keycodes)
+      report_hid(@modifier, @keycodes.join)
       time = board_millis - now
       sleep_ms(time) if time > 0
     end
