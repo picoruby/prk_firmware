@@ -116,13 +116,6 @@ c_tud_task(mrb_vm *vm, mrb_value *v, int argc)
 void
 c_report_hid(mrb_vm *vm, mrb_value *v, int argc)
 {
-//  // Poll every 10ms
-//  const uint32_t interval_ms = 10;
-//  static uint32_t start_ms = 0;
-//
-//  if (board_millis() - start_ms < interval_ms) return; // not enough time
-//  start_ms += interval_ms;
-
   uint32_t const btn = 1;
 
   // Remote wakeup

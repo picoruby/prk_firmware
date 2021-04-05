@@ -43,21 +43,17 @@ add_library(picoruby STATIC
 
 add_custom_target(picorbc
   COMMAND make host_production
-  WORKING_DIRECTORY ../../lib/picoruby
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/picoruby
 )
 
 add_custom_target(ptr_size
   COMMAND make
-  WORKING_DIRECTORY ../../lib/picoruby/src/include
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/picoruby/src/include
 )
 add_custom_target(tokenizer_helper
   COMMAND make tokenizer_helper.h
-  WORKING_DIRECTORY ../../lib/picoruby/src
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/picoruby/src
 )
-#add_custom_target(parse
-#  COMMAND make
-#  WORKING_DIRECTORY ../../lib/picoruby/src/ruby-lemon-parse
-#)
 add_dependencies(picoruby picorbc ptr_size tokenizer_helper)
 
 target_link_libraries(picoruby pico_stdlib)

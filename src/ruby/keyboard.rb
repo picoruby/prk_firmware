@@ -222,24 +222,6 @@ class Keyboard
     @layer_names << name
   end
 
-  def raise_layer
-    current_index = @layer_names.index(@locked_layer_name)
-    if current_index < @layer_names.size - 1
-      @locked_layer_name = @layer_names[current_index + 1]
-    else
-      @locked_layer_name = @layer_names.first
-    end
-  end
-
-  def lower_layer
-    current_index = @layer_names.index(@locked_layer_name)
-    if current_index == 0
-      @locked_layer_name = @layer_names.last
-    else
-      @locked_layer_name = @layer_names[current_index - 1]
-    end
-  end
-
   # param[0] :on_release
   # param[1] :on_hold
   # param[2] :release_threshold
@@ -249,16 +231,12 @@ class Keyboard
       map.each_with_index do |row, row_index|
         row.each_with_index do |key_symbol, col_index|
           if key_name == key_symbol
-            on_release = nil
-            if KEYCODE[param[0]]
-              on_release = KEYCODE[param[0]] * -1
-            else
-              on_release = param[0]
-            end
+            on_release = KEYCODE[param[0]]     ? (KEYCODE[param[0]] * -1) : param[0]
+            on_hold    = MOD_KEYCODE[param[1]] ? MOD_KEYCODE[param[1]]    : param[1]
             @mode_keys << {
               layer_name:        layer_name,
               on_release:        on_release,
-              on_hold:           param[1],
+              on_hold:           on_hold,
               release_threshold: (param[2] || 0),
               repush_threshold:  (param[3] || 0),
               switch:            [row_index, col_index],
@@ -301,7 +279,7 @@ class Keyboard
 
   def action_on_release(mode_key)
     case mode_key.class
-    when Fixnum
+    when Fixnum # should be a normal key
       @keycodes << (mode_key * -1).chr
     when Proc
       mode_key.call
@@ -309,10 +287,11 @@ class Keyboard
   end
 
   def action_on_hold(mode_key)
-    if MOD_KEYCODE[mode_key]
-      @modifier |= MOD_KEYCODE[mode_key]
-    else # assumes layer key
-      @layer_name = mode_key
+    case mode_key.class
+    when Fixnum # should be a modifier key
+      @modifier |= mode_key
+    when Proc
+      mode_key.call
     end
   end
 
@@ -401,6 +380,41 @@ class Keyboard
       sleep_ms(time) if time > 0
     end
   end
+
+  #
+  # Actions can be used in keymap.rb
+  #
+
+  # Raises layer and keeps it
+  def raise_layer
+    current_index = @layer_names.index(@locked_layer_name)
+    if current_index < @layer_names.size - 1
+      @locked_layer_name = @layer_names[current_index + 1]
+    else
+      @locked_layer_name = @layer_names.first
+    end
+  end
+
+  # Lowers layer and keeps it
+  def lower_layer
+    current_index = @layer_names.index(@locked_layer_name)
+    if current_index == 0
+      @locked_layer_name = @layer_names.last
+    else
+      @locked_layer_name = @layer_names[current_index - 1]
+    end
+  end
+
+  # Holds specified layer while pressed
+  def hold_layer(layer_name)
+    @layer_name = layer_name
+  end
+
+  # Switch to specified layer
+  def switch_layer(layer_name)
+    @locked_layer_name = layer_name
+  end
+
 
 end
 
