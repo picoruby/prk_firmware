@@ -5,8 +5,17 @@ PRK is a keyboard firmware written and configured in [PicoRuby](https://github.c
 ### Features
 
 - A "keymap" can be configured in Ruby which is a concise, readable and happy language
-- Raspberry Pi Pico is the platform microcontroller
+- Raspberry Pi Pico (RP2040 series) is the platform microcontroller
 - You can write your own "action" which will be invoked when you tap or hold a key ([example]()(TBD))
+
+### Roadmap
+
+- [x] Unsplit keyboard
+- [ ] Split keyboard
+  - [ ] Serial communication between left and right
+  - [ ] I2C communication between left and right
+- [ ] LED
+- [ ] OLED display
 
 ### Getting started
 
@@ -35,10 +44,19 @@ PRK is a keyboard firmware written and configured in [PicoRuby](https://github.c
     ```
     cd prk_meishi2
     cmake ../..
-    build
+    make
     ```
 
-    Now you should have `prk_firmware.uf2` file in `prk_firmware/keyboards/prk_meishi2` directory.
+    Now you should have `prk_firmware.uf2` file in `prk_firmware/keyboards/prk_meishi2/` directory.
+
+### Contributing
+
+Fork, clone, patch and send a pull request.
+
+- It's possible that your Ruby code can't be compiled as you wish
+  - Remember that "Ruby" in PRK is neither CRuby nor even mruby
+  - [PicoRuby](https://github.com/hasumikin/picoruby) doesn't support some Ruby syntax and may have bugs. It would be great if you send a patch, too!
+- Unlike QMK Firmware, prk_firmware repository doesn't include individual keymaps
 
 ### License
 
