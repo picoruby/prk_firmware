@@ -191,13 +191,13 @@ class Keyboard
     @cols = cols
     @rows.each do |pin|
       gpio_init(pin)
-      gpio_set_dir(pin, GPIO_IN);
-      gpio_pull_up(pin);
+      gpio_set_dir(pin, GPIO_OUT);
+      gpio_put(pin, HI);
     end
     @cols.each do |pin|
       gpio_init(pin)
-      gpio_set_dir(pin, GPIO_OUT);
-      gpio_put(pin, HI);
+      gpio_set_dir(pin, GPIO_IN);
+      gpio_pull_up(pin);
     end
     @layer_names = Array.new
   end
@@ -306,12 +306,12 @@ class Keyboard
       @modifier = 0
 
       # detect physical switches that are pushed
-      @cols.each_with_index do |col_pin, col|
-        gpio_put(col_pin, LO)
-        @rows.each_with_index do |row_pin, row|
-          @switches << [row, col] if gpio_get(row_pin) == LO
+      @rows.each_with_index do |row_pin, row|
+        gpio_put(row_pin, LO)
+        @cols.each_with_index do |col_pin, col|
+          @switches << [row, col] if gpio_get(col_pin) == LO
         end
-        gpio_put(col_pin, HI)
+        gpio_put(row_pin, HI)
       end
 
       @mode_keys.each do |mode_key|
