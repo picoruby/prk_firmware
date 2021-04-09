@@ -181,12 +181,35 @@ k = {
 KEYCODE.merge!(k)
 
 class Keyboard
-  def initialize(rows, cols)
+  def initialize
     @before_filters = Array.new
     @layers = Hash.new
     @mode_keys = Array.new
     @switches = Array.new
-    @led = LED.new
+    @layer_names = Array.new
+    @split = false
+    @anchor = true # so-called "master left"
+    @uart_pin = 1
+  end
+
+  attr_accessor :split, :uart_pin
+
+  def init_pins(rows, cols)
+    if @split
+      led = LED.new
+      # FIXME: any other smarter way?
+      10000.times do
+        @anchor = tud_mounted?
+        report_hid(0, "\000\000\000\000\000\000")
+      end
+      if @anchor
+        led.off
+        uart_rx_init(@uart_pin)
+      else
+        led.on
+        uart_tx_init(@uart_pin)
+      end
+    end
     @rows = rows
     @cols = cols
     @rows.each do |pin|
@@ -199,7 +222,6 @@ class Keyboard
       gpio_set_dir(pin, GPIO_IN);
       gpio_pull_up(pin);
     end
-    @layer_names = Array.new
   end
 
   # Input
@@ -314,68 +336,78 @@ class Keyboard
         gpio_put(row_pin, HI)
       end
 
-      @mode_keys.each do |mode_key|
-        next if mode_key[:layer_name] != @layer_name
-        if @switches.include?(mode_key[:switch])
-          @led.on
-          case mode_key[:prev_state]
-          when :released
-            mode_key[:pushed_at] = now
-            mode_key[:prev_state] = :pushed
-            action_on_hold(mode_key[:on_hold])
-          when :pushed
-            action_on_hold(mode_key[:on_hold])
-          when :pushed_then_released
-            if now - mode_key[:released_at] <= mode_key[:repush_threshold]
-              mode_key[:prev_state] = :pushed_then_released_then_pushed
-            end
-          when :pushed_then_released_then_pushed
-            action_on_release(mode_key[:on_release])
-            break
-          end
-        else
-          @led.off
-          case mode_key[:prev_state]
-          when :pushed
-            if now - mode_key[:pushed_at] <= mode_key[:release_threshold]
+      if @anchor
+        c = uart_getc
+        @keycodes << c.chr if c > 0
+
+        @mode_keys.each do |mode_key|
+          next if mode_key[:layer_name] != @layer_name
+          if @switches.include?(mode_key[:switch])
+            case mode_key[:prev_state]
+            when :released
+              mode_key[:pushed_at] = now
+              mode_key[:prev_state] = :pushed
+              action_on_hold(mode_key[:on_hold])
+            when :pushed
+              action_on_hold(mode_key[:on_hold])
+            when :pushed_then_released
+              if now - mode_key[:released_at] <= mode_key[:repush_threshold]
+                mode_key[:prev_state] = :pushed_then_released_then_pushed
+              end
+            when :pushed_then_released_then_pushed
               action_on_release(mode_key[:on_release])
-              mode_key[:prev_state] = :pushed_then_released
-              mode_key[:released_at] = now
               break
-            else
+            end
+          else
+            case mode_key[:prev_state]
+            when :pushed
+              if now - mode_key[:pushed_at] <= mode_key[:release_threshold]
+                action_on_release(mode_key[:on_release])
+                mode_key[:prev_state] = :pushed_then_released
+                mode_key[:released_at] = now
+                break
+              else
+                mode_key[:prev_state] = :released
+              end
+            when :pushed_then_released
+              if now - mode_key[:released_at] > mode_key[:release_threshold]
+                mode_key[:prev_state] = :released
+              end
+            when :pushed_then_released_then_pushed
               mode_key[:prev_state] = :released
             end
-          when :pushed_then_released
-            if now - mode_key[:released_at] > mode_key[:release_threshold]
-              mode_key[:prev_state] = :released
-            end
-          when :pushed_then_released_then_pushed
-            mode_key[:prev_state] = :released
           end
         end
-      end
 
-      layer = @layers[@layer_name]
-      @switches.each do |switch|
-        key = layer[switch[0]][switch[1]]
-        next unless key.is_a?(Fixnum)
-        if key < 0 # Normal keys
-          @keycodes << (key * -1).chr
-        else # Modifier keys
-          @modifier |= key
+        layer = @layers[@layer_name]
+        @switches.each do |switch|
+          key = layer[switch[0]][switch[1]]
+          next unless key.is_a?(Fixnum)
+          if key < 0 # Normal keys
+            @keycodes << (key * -1).chr
+          else # Modifier keys
+            @modifier |= key
+          end
+          break if @keycodes.size > 5
         end
-        break if @keycodes.size > 5
+
+        (6 - @keycodes.size).times do
+          @keycodes << "\000"
+        end
+
+        @before_filters.each do |block|
+          block.call
+        end
+
+        report_hid(@modifier, @keycodes.join)
+      else
+        if @switches.empty?
+          uart_putc_raw(0)
+        else
+          uart_putc_raw(6)
+        end
       end
 
-      (6 - @keycodes.size).times do
-        @keycodes << "\000"
-      end
-
-      @before_filters.each do |block|
-        block.call
-      end
-
-      report_hid(@modifier, @keycodes.join)
       time = board_millis - now
       sleep_ms(time) if time > 0
     end

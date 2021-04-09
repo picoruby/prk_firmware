@@ -10,6 +10,7 @@
 
 /* C */
 #include "usb.h"
+#include "uart.h"
 
 /* ruby */
 #include "ruby/led.c"
@@ -69,14 +70,19 @@ int main() {
   board_init();
   tusb_init();
   mrbc_init(memory_pool, MEMORY_SIZE);
-  mrbc_define_method(0, mrbc_class_object, "board_millis", c_board_millis);
-  mrbc_define_method(0, mrbc_class_object, "gpio_init",    c_gpio_init);
-  mrbc_define_method(0, mrbc_class_object, "gpio_set_dir", c_gpio_set_dir);
-  mrbc_define_method(0, mrbc_class_object, "gpio_pull_up", c_gpio_pull_up);
-  mrbc_define_method(0, mrbc_class_object, "gpio_put",     c_gpio_put);
-  mrbc_define_method(0, mrbc_class_object, "gpio_get",     c_gpio_get);
-  mrbc_define_method(0, mrbc_class_object, "tud_task",     c_tud_task);
-  mrbc_define_method(0, mrbc_class_object, "report_hid",   c_report_hid);
+  mrbc_define_method(0, mrbc_class_object, "board_millis",  c_board_millis);
+  mrbc_define_method(0, mrbc_class_object, "gpio_init",     c_gpio_init);
+  mrbc_define_method(0, mrbc_class_object, "gpio_set_dir",  c_gpio_set_dir);
+  mrbc_define_method(0, mrbc_class_object, "gpio_pull_up",  c_gpio_pull_up);
+  mrbc_define_method(0, mrbc_class_object, "gpio_put",      c_gpio_put);
+  mrbc_define_method(0, mrbc_class_object, "gpio_get",      c_gpio_get);
+  mrbc_define_method(0, mrbc_class_object, "tud_task",      c_tud_task);
+  mrbc_define_method(0, mrbc_class_object, "report_hid",    c_report_hid);
+  mrbc_define_method(0, mrbc_class_object, "tud_mounted?",  c_tud_mounted_q);
+  mrbc_define_method(0, mrbc_class_object, "uart_rx_init",  c_uart_rx_init);
+  mrbc_define_method(0, mrbc_class_object, "uart_tx_init",  c_uart_tx_init);
+  mrbc_define_method(0, mrbc_class_object, "uart_putc_raw", c_uart_putc_raw);
+  mrbc_define_method(0, mrbc_class_object, "uart_getc",     c_uart_getc);
   mrbc_create_task(keyboard, 0);
   mrbc_create_task(led, 0);
   mrbc_create_task(tud, 0);

@@ -13,7 +13,9 @@ pico_sdk_init()
 
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/lib)
 
-add_executable(prk_firmware src/main.c src/usb.c)
+add_executable(prk_firmware src/main.c src/usb.c src/uart.c)
+
+pico_generate_pio_header(prk_firmware ${CMAKE_CURRENT_LIST_DIR}/src/uart_tx.pio)
 
 set(RBC ${CMAKE_CURRENT_SOURCE_DIR}/lib/picoruby/build/host-production/bin/picorbc)
 #set(RBC RBENV_VERSION=mruby-2.1.1 mrbc -E)
@@ -29,7 +31,7 @@ add_custom_target(ruby
 
 add_dependencies(prk_firmware picoruby ruby)
 
-target_link_libraries(prk_firmware pico_stdlib tinyusb_device tinyusb_board picoruby)
+target_link_libraries(prk_firmware pico_stdlib tinyusb_device tinyusb_board picoruby hardware_pio)
 
 include_directories(prk_firmware PRIVATE ${CMAKE_CURRENT_LIST_DIR} ${CMAKE_CURRENT_LIST_DIR}/include ${CMAKE_CURRENT_LIST_DIR}/lib/picoruby/src/mrubyc/src)
 

@@ -133,3 +133,13 @@ c_report_hid(mrb_vm *vm, mrb_value *v, int argc)
     tud_hid_keyboard_report(REPORT_ID_KEYBOARD, modifier, keycodes);
   }
 }
+
+void
+c_tud_mounted_q(mrb_vm *vm, mrb_value *v, int argc)
+{
+  if (tud_mounted()) {
+    SET_TRUE_RETURN();
+  } else {
+    SET_FALSE_RETURN();
+  }
+}
