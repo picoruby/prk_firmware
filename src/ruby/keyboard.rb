@@ -188,11 +188,12 @@ class Keyboard
     @switches = Array.new
     @layer_names = Array.new
     @split = false
-    @anchor = true # so-called "master left"
+    @anchor = true
+    @anchor_left = true # so-called "master left"
     @uart_pin = 1
   end
 
-  attr_accessor :split, :uart_pin
+  attr_accessor :split, :uart_pin, :anchor_left
 
   def init_pins(rows, cols)
     if @split
@@ -327,19 +328,26 @@ class Keyboard
       @switches.clear
       @modifier = 0
 
+      if @split && @anchor
+        # receive data from split partner
+        while true
+          data = uart_getc
+          break if data.nil?
+          @switches << [data >> 4, data & 0b00001111]
+        end
+      end
+
       # detect physical switches that are pushed
       @rows.each_with_index do |row_pin, row|
         gpio_put(row_pin, LO)
         @cols.each_with_index do |col_pin, col|
           @switches << [row, col] if gpio_get(col_pin) == LO
+          break if @switches.size > 5
         end
         gpio_put(row_pin, HI)
       end
 
       if @anchor
-        c = uart_getc
-        @keycodes << c.chr if c > 0
-
         @mode_keys.each do |mode_key|
           next if mode_key[:layer_name] != @layer_name
           if @switches.include?(mode_key[:switch])
@@ -388,7 +396,6 @@ class Keyboard
           else # Modifier keys
             @modifier |= key
           end
-          break if @keycodes.size > 5
         end
 
         (6 - @keycodes.size).times do
@@ -401,15 +408,22 @@ class Keyboard
 
         report_hid(@modifier, @keycodes.join)
       else
-        if @switches.empty?
-          uart_putc_raw(0)
-        else
-          uart_putc_raw(6)
+        @switches.each do |switch|
+          # data = 0b11111111
+          #          ^^^^     row number (0 to 15)
+          #              ^^^^ col number (0 to 15)
+          data = if @anchor_left
+                   (switch[0] << 4) + switch[1]
+                 else
+                   (switch[0] << 4) + switch[1]
+                 end
+          uart_putc_raw(data)
         end
       end
 
-      time = board_millis - now
+      time = 10 - (board_millis - now)
       sleep_ms(time) if time > 0
+      #delay(time) if time > 0
     end
   end
 
@@ -446,7 +460,6 @@ class Keyboard
   def switch_layer(layer_name)
     @locked_layer_name = layer_name
   end
-
 
 end
 

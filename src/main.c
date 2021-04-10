@@ -61,7 +61,16 @@ c_board_millis(mrb_vm *vm, mrb_value *v, int argc)
   SET_INT_RETURN(board_millis());
 }
 
-#define MEMORY_SIZE (1024*130)
+void
+c_delay(mrb_vm *vm, mrb_value *v, int argc)
+{
+  uint32_t time = GET_INT_ARG(1);
+  if (time < 1) return;
+  uint32_t now = board_millis();
+  while (board_millis() - now >= time ) {}
+}
+
+#define MEMORY_SIZE (1024*180)
 
 static uint8_t memory_pool[MEMORY_SIZE];
 
@@ -83,6 +92,7 @@ int main() {
   mrbc_define_method(0, mrbc_class_object, "uart_tx_init",  c_uart_tx_init);
   mrbc_define_method(0, mrbc_class_object, "uart_putc_raw", c_uart_putc_raw);
   mrbc_define_method(0, mrbc_class_object, "uart_getc",     c_uart_getc);
+  mrbc_define_method(0, mrbc_class_object, "delay",         c_delay);
   mrbc_create_task(keyboard, 0);
   mrbc_create_task(led, 0);
   mrbc_create_task(tud, 0);
