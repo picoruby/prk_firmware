@@ -333,7 +333,9 @@ class Keyboard
         while true
           data = uart_getc
           break if data.nil?
-          @switches << [data >> 4, data & 0b00001111]
+          switch = [data >> 4, data & 0b00001111]
+          # To avoid chattering. FIXME: partner may have the reason
+          @switches << switch unless @switches.include?(switch)
         end
       end
 
