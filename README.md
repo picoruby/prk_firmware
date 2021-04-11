@@ -12,10 +12,13 @@ PRK is a keyboard firmware written and configured in [PicoRuby](https://github.c
 
 - [x] Unsplit keyboard
 - [ ] Split keyboard
-  - [ ] Serial communication between left and right
+  - [x] Symmetrical type
+  - [ ] Asymmetrical type (but for example?)
+  - [x] UART communication between left and right
   - [ ] I2C communication between left and right
 - [ ] LED
 - [ ] OLED display
+- [ ] Media keys
 
 ### Getting started
 

@@ -193,7 +193,12 @@ class Keyboard
     @uart_pin = 1
   end
 
-  attr_accessor :split, :uart_pin, :anchor_left
+  attr_accessor :split, :uart_pin
+
+  # val should be treated as `:left` if it's anything other than `:right`
+  def set_anchor(val)
+    @anchor_left = false if val == :right
+  end
 
   def init_pins(rows, cols)
     if @split
@@ -341,7 +346,26 @@ class Keyboard
       @rows.each_with_index do |row_pin, row|
         gpio_put(row_pin, LO)
         @cols.each_with_index do |col_pin, col|
-          @switches << [row, col] if gpio_get(col_pin) == LO
+          if gpio_get(col_pin) == LO
+            col_data = if @anchor_left
+                         if @anchor
+                           # left
+                           col
+                         else
+                           # right
+                           (col - 3) * -1 + 8
+                         end
+                       else # right side is the anchor
+                         unless @anchor
+                           # left
+                           col
+                         else
+                           # right
+                           (col - 3) * -1 + 8
+                         end
+                       end
+            @switches << [row, col_data]
+          end
           break if @switches.size > 5
         end
         gpio_put(row_pin, HI)
@@ -409,15 +433,10 @@ class Keyboard
         report_hid(@modifier, @keycodes.join)
       else
         @switches.each do |switch|
-          # data = 0b11111111
-          #          ^^^^     row number (0 to 15)
-          #              ^^^^ col number (0 to 15)
-          data = if @anchor_left
-                   (switch[0] << 4) + switch[1]
-                 else
-                   (switch[0] << 4) + switch[1]
-                 end
-          uart_putc_raw(data)
+          # 0b11111111
+          #   ^^^^     row number (0 to 15)
+          #       ^^^^ col number (0 to 15)
+          uart_putc_raw((switch[0] << 4) + switch[1])
         end
       end
 
