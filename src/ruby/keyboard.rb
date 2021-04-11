@@ -198,11 +198,9 @@ class Keyboard
   def init_pins(rows, cols)
     if @split
       led = LED.new
-      # FIXME: any other smarter way?
-      10000.times do
-        @anchor = tud_mounted?
-        report_hid(0, "\000\000\000\000\000\000")
-      end
+      sleep 3
+      @anchor = tud_mounted?
+      report_hid(0, "\000\000\000\000\000\000")
       if @anchor
         led.off
         uart_rx_init(@uart_pin)
