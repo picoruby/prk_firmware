@@ -1,12 +1,4 @@
-#include "pico/stdlib.h"
-#include "hardware/uart.h"
-#include "hardware/irq.h"
-
-#include "hardware/pio.h"
-#include "uart_tx.pio.h"
-
-/* mruby/c VM */
-#include <mrubyc.h>
+#include "uart.h"
 
 #define UART_ID uart0
 #define BAUD_RATE 115200

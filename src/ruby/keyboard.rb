@@ -202,15 +202,15 @@ class Keyboard
 
   def init_pins(rows, cols)
     if @split
-      led = LED.new
-      sleep 3
+      sleep 3 # Wait until USB ready
       @anchor = tud_mounted?
       report_hid(0, "\000\000\000\000\000\000")
       if @anchor
-        led.off
         uart_rx_init(@uart_pin)
       else
-        led.on
+        gpio_init(25); # LED on board
+        gpio_set_dir(25, GPIO_OUT);
+        gpio_put(25, HI)
         uart_tx_init(@uart_pin)
       end
     end

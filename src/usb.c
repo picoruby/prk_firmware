@@ -1,15 +1,4 @@
-#include "tusb.h"
-#include "usb_descriptors.h"
-#include "bsp/board.h"
-#include "hardware/timer.h"
-#include "hardware/clocks.h"
-#include "hardware/irq.h"
-#include "hardware/structs/scb.h"
-#include "hardware/sync.h"
-#include "hardware/gpio.h"
-
-/* mruby/c VM */
-#include <mrubyc.h>
+#include "usb.h"
 
 const uint8_t device_desc[] = {
   18, // bLength
@@ -71,7 +60,7 @@ const uint16_t string_desc_lang[] = { // Index: 0
 };
 const uint16_t string_desc_product[] = { // Index: 1
   16 | (3 << 8),
-  'P', 'U', 'I', 'R', 'U', 'B', 'Y'
+  'P', 'R', 'K', '_', 'F', 'i', 'r', 'm'
 };
 
 uint8_t const *tud_descriptor_device_cb(void) {
