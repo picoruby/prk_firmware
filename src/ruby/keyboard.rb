@@ -19,6 +19,8 @@ MOD_KEYCODE = {
   KC_RGUI: 0b10000000
 }
 
+# Due to PicoRuby's limitation,
+# a big array can't be created at once
 KEYCODE = [
   :KC_NO,               # 0x00
   :KC_ROLL_OVER,
@@ -36,7 +38,7 @@ KEYCODE = [
   :KC_J,
   :KC_K,
   :KC_L,
-  :KC_M,
+  :KC_M,                # 0x10
   :KC_N,
   :KC_O,
   :KC_P,
@@ -150,7 +152,6 @@ KEYCODE = [
   :KC_PASTE,
   :KC_FIND,
   :KC__MUTE,
-] + [
   :KC_,                 # 0x80
   :KC_,
   :KC_,
@@ -167,6 +168,7 @@ KEYCODE = [
   :KC_,
   :KC_,
   :KC_,
+] + [
   :KC_LANG1,            # 0x90
   :KC_LANG2,
   :KC_LANG3,
@@ -375,12 +377,13 @@ class Keyboard
       @modifier = 0
 
       if @split && @anchor
+        sleep_ms(5)
         # receive data from split partner
         while true
           data = uart_getc
           break if data.nil?
           switch = [data >> 4, data & 0b00001111]
-          # To avoid chattering. FIXME: partner may have the reason
+          # To avoid chattering
           @switches << switch unless @switches.include?(switch)
         end
       end
@@ -488,7 +491,6 @@ class Keyboard
 
       time = 10 - (board_millis - now)
       sleep_ms(time) if time > 0
-      #delay(time) if time > 0
     end
   end
 
