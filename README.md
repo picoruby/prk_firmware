@@ -18,6 +18,7 @@ PRK is a keyboard firmware written and configured in [PicoRuby](https://github.c
   - [ ] I2C communication between left and right
 - [ ] LED
 - [ ] OLED display
+- [ ] Macros
 - [ ] Media keys
 
 ### Getting started

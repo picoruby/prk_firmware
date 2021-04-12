@@ -60,7 +60,7 @@ const uint16_t string_desc_lang[] = { // Index: 0
 };
 const uint16_t string_desc_product[] = { // Index: 1
   16 | (3 << 8),
-  'P', 'R', 'K', '_', 'F', 'i', 'r', 'm'
+  'P', 'R', 'K', 'f', 'i', 'r', 'm'
 };
 
 uint8_t const *tud_descriptor_device_cb(void) {

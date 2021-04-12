@@ -180,6 +180,12 @@ k = {
 }
 KEYCODE.merge!(k)
 
+# Keycodes with SHIFT modifier
+KEYCODE_SFT = {
+  KC_PERC:           0x22,
+  KC_ASTER:          0x25
+}
+
 class Keyboard
   def initialize
     @before_filters = Array.new
@@ -238,6 +244,8 @@ class Keyboard
       row.each_with_index do |key, col_index|
         if KEYCODE[key]
           map[row_index][col_index] = KEYCODE[key] * -1
+        elsif KEYCODE_SFT[key]
+          map[row_index][col_index] = (KEYCODE_SFT[key] + 0x100) * -1
         elsif MOD_KEYCODE[key]
           map[row_index][col_index] = MOD_KEYCODE[key]
         end
@@ -257,7 +265,13 @@ class Keyboard
       map.each_with_index do |row, row_index|
         row.each_with_index do |key_symbol, col_index|
           if key_name == key_symbol
-            on_release = KEYCODE[param[0]]     ? (KEYCODE[param[0]] * -1) : param[0]
+            on_release = if KEYCODE[param[0]]
+                           KEYCODE[param[0]] * -1
+                         elsif KEYCODE_SFT[param[0]]
+                           (KEYCODE_SFT[param[0]] + 0x100) * -1
+                         else
+                           param[0]
+                         end
             on_hold    = MOD_KEYCODE[param[1]] ? MOD_KEYCODE[param[1]]    : param[1]
             @mode_keys << {
               layer_name:        layer_name,
@@ -306,7 +320,12 @@ class Keyboard
   def action_on_release(mode_key)
     case mode_key.class
     when Fixnum # should be a normal key
-      @keycodes << (mode_key * -1).chr
+      if mode_key < -255
+        @keycodes << ((mode_key + 0x100 ) * -1).chr
+        @modifier |= 0b00000010
+      else
+        @keycodes << (mode_key * -1).chr
+      end
     when Proc
       mode_key.call
     end
@@ -413,12 +432,15 @@ class Keyboard
 
         layer = @layers[@layer_name]
         @switches.each do |switch|
-          key = layer[switch[0]][switch[1]]
-          next unless key.is_a?(Fixnum)
-          if key < 0 # Normal keys
-            @keycodes << (key * -1).chr
+          keycode = layer[switch[0]][switch[1]]
+          next unless keycode.is_a?(Fixnum)
+          if keycode < -255 # Key with SHIFT
+            @keycodes << ((keycode + 0x100) * -1).chr
+            @modifier |= 0b00100000
+          elsif keycode < 0 # Normal keys
+            @keycodes << (keycode * -1).chr
           else # Modifier keys
-            @modifier |= key
+            @modifier |= keycode
           end
         end
 
