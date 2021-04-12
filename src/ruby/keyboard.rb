@@ -192,22 +192,22 @@ KEYCODE = [
 
 # Keycodes with SHIFT modifier
 KEYCODE_SFT = {
-#  KC_EXLM:           0x1e,
-#  KC_AT:             0x1f,
-#  KC_HASH:           0x20,
-#  KC_DLR:            0x21,
+  KC_EXLM:           0x1e,
+  KC_AT:             0x1f,
+  KC_HASH:           0x20,
+  KC_DLR:            0x21,
   KC_PERC:           0x22,
-#  KC_CIRC:           0x23,
-#  KC_AMPR:           0x24,
+  KC_CIRC:           0x23,
+  KC_AMPR:           0x24,
   KC_ASTER:          0x25,
-#  KC_LPRN:           0x26,
-#  KC_RPRN:           0x27,
-#  KC_PLUS:           0x2e,
-#  KC_LCBR:           0x2f,
-#  KC_RCBR:           0x30,
-#  KC_DQUO:           0x34,
-#  KC_LABK:           0x36,
-#  KC_RABK:           0x37,
+  KC_LPRN:           0x26,
+  KC_RPRN:           0x27,
+  KC_PLUS:           0x2e,
+  KC_LCBR:           0x2f,
+  KC_RCBR:           0x30,
+  KC_DQUO:           0x34,
+  KC_LABK:           0x36,
+  KC_RABK:           0x37,
 }
 
 class Keyboard
