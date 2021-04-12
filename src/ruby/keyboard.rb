@@ -19,8 +19,6 @@ MOD_KEYCODE = {
   KC_RGUI: 0b10000000
 }
 
-# Due to PicoRuby's limitation,
-# you can't make a big hash at once
 KEYCODE = {
   KC_NO:             0x00,
   KC_ROLL_OVER:      0x01,
@@ -54,9 +52,6 @@ KEYCODE = {
   KC_Z:              0x1d,
   KC_1:              0x1e,
   KC_2:              0x1f,
-}
-KEYCODE.merge!(k)
-k = {
   KC_3:              0x20,  # 0x20
   KC_4:              0x21,
   KC_5:              0x22,
@@ -72,8 +67,10 @@ k = {
   KC_SPACE:          0x2c,
   KC_MINUS:          0x2d,
   KC_EQUAL:          0x2e,
-  KC_LBRACKET:       0x2f, KC_LBRC: 0x2f,
-  KC_RBRACKET:       0x30, KC_RBRC: 0x30,  # 0x30
+  KC_LBRACKET:       0x2f,
+}
+k = {
+  KC_RBRACKET:       0x30,  # 0x30
   KC_BSLASH:         0x31,
   KC_NONUS_HASH:     0x32,
   KC_SCOLON:         0x33,
@@ -89,9 +86,6 @@ k = {
   KC_F4:             0x3d,
   KC_F5:             0x3e,
   KC_F6:             0x3f,
-}
-KEYCODE.merge!(k)
-k = {
   KC_F7:             0x40,  # 0x40
   KC_F8:             0x41,
   KC_F9:             0x42,
@@ -188,22 +182,22 @@ KEYCODE.merge!(k)
 
 # Keycodes with SHIFT modifier
 KEYCODE_SFT = {
-  KC_EXLM:           0x1e,
-  KC_AT:             0x1f,
-  KC_HASH:           0x20,
-  KC_DLR:            0x21,
+#  KC_EXLM:           0x1e,
+#  KC_AT:             0x1f,
+#  KC_HASH:           0x20,
+#  KC_DLR:            0x21,
   KC_PERC:           0x22,
-  KC_CIRC:           0x23,
-  KC_AMPR:           0x24,
+#  KC_CIRC:           0x23,
+#  KC_AMPR:           0x24,
   KC_ASTER:          0x25,
-  KC_LPRN:           0x26,
-  KC_RPRN:           0x27,
-  KC_PLUS:           0x2e,
-  KC_LCBR:           0x2f,
-  KC_RCBR:           0x30,
-  KC_DQUO:           0x34,
-  KC_LABK:           0x36,
-  KC_RABK:           0x37,
+#  KC_LPRN:           0x26,
+#  KC_RPRN:           0x27,
+#  KC_PLUS:           0x2e,
+#  KC_LCBR:           0x2f,
+#  KC_RCBR:           0x30,
+#  KC_DQUO:           0x34,
+#  KC_LABK:           0x36,
+#  KC_RABK:           0x37,
 }
 
 class Keyboard
