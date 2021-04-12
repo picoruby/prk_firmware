@@ -5,7 +5,7 @@ project(picoruby
   DESCRIPTION "mruby/c VM implementation"
   LANGUAGES C
 )
-add_definitions(-DMRBC_USE_HAL_RASPI_PICO -DMRBC_REQUIRE_32BIT_ALIGNMENT -DMAX_REGS_SIZE=256)
+add_definitions(-DMRBC_USE_HAL_RP2040 -DMRBC_REQUIRE_32BIT_ALIGNMENT -DMAX_REGS_SIZE=256)
 add_library(picoruby STATIC
   ./picoruby/src/mrubyc/src/alloc.c
   ./picoruby/src/mrubyc/src/c_array.c
@@ -26,7 +26,7 @@ add_library(picoruby STATIC
   ./picoruby/src/mrubyc/src/symbol.c
   ./picoruby/src/mrubyc/src/value.c
   ./picoruby/src/mrubyc/src/vm.c
-  ./picoruby/src/mrubyc/src/hal_raspi_pico/hal.c
+  ./picoruby/src/mrubyc/src/hal_rp2040/hal.c
 
   ./picoruby/src/common.c
   ./picoruby/src/compiler.c
