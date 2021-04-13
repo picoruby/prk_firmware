@@ -222,7 +222,7 @@ class Keyboard
     @split = false
     @anchor = true
     @anchor_left = true # so-called "master left"
-    @uart_pin = 0
+    @uart_pin = 1
     @rgb_pin = 25
   end
 

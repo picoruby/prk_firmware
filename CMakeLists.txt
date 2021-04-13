@@ -22,7 +22,7 @@ add_executable(prk_firmware
 )
 
 pico_generate_pio_header(prk_firmware
-  ${CMAKE_CURRENT_LIST_DIR}/src/uart_rx.pio
+  ${CMAKE_CURRENT_LIST_DIR}/src/uart_tx.pio
 )
 
 set(RBC ${CMAKE_CURRENT_SOURCE_DIR}/lib/picoruby/build/host-production/bin/picorbc)
