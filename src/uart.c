@@ -43,10 +43,9 @@ c_uart_getc(mrb_vm *vm, mrb_value *v, int argc)
     SET_NIL_RETURN();
     return;
   }
-//  // 8-bit read from the uppermost byte of the FIFO, as data is left-justified
-//  io_rw_8 *rxfifo_shift = (io_rw_8*)&pio->rxf[sm] + 3;
-//  while (pio_sm_is_rx_fifo_empty(pio, sm))
-//    tight_loop_contents();
-//  SET_INT_RETURN((int)*rxfifo_shift);
-  SET_INT_RETURN(pio_sm_get(pio, sm));
+  // 8-bit read from the uppermost byte of the FIFO, as data is left-justified
+  io_rw_8 *rxfifo_shift = (io_rw_8*)&pio->rxf[sm] + 3;
+  while (pio_sm_is_rx_fifo_empty(pio, sm))
+    tight_loop_contents();
+  SET_INT_RETURN((int)*rxfifo_shift);
 }
