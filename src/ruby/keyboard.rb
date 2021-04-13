@@ -204,12 +204,18 @@ KEYCODE_SFT = {
   KC_ASTER:          0x25,
   KC_LPRN:           0x26,
   KC_RPRN:           0x27,
+  KC_UNDS:           0x2d,
   KC_PLUS:           0x2e,
   KC_LCBR:           0x2f,
   KC_RCBR:           0x30,
+  KC_PIPE:           0x31,
+#  KC_TILD:           0x32,
+  KC_COLON:          0x33,
   KC_DQUO:           0x34,
+  KC_TILD:           0x35,
   KC_LABK:           0x36,
   KC_RABK:           0x37,
+  KC_QUES:           0x38,
 }
 
 class Keyboard
@@ -223,7 +229,7 @@ class Keyboard
     @anchor = true
     @anchor_left = true # so-called "master left"
     @uart_pin = 1
-    @rgb_pin = 25
+    @rgb_pin = 0
   end
 
   attr_accessor :split, :uart_pin
@@ -239,13 +245,8 @@ class Keyboard
       @anchor = tud_mounted?
       report_hid(0, "\000\000\000\000\000\000")
       if @anchor
-        rgb_init(@rgb_pin)
-        resume_rgb
         uart_rx_init(@uart_pin)
       else
-        gpio_init(@rgb_pin); # LED on board
-        gpio_set_dir(@rgb_pin, GPIO_OUT);
-        gpio_put(@rgb_pin, HI)
         uart_tx_init(@uart_pin)
       end
     end
@@ -305,7 +306,7 @@ class Keyboard
                            ary = Array.new
                            param[0].each do |sym|
                              ary << if KEYCODE.include?(sym)
-                               KEYCODE.index(sym) * -1
+                                      KEYCODE.index(sym) * -1
                              elsif KEYCODE_SFT[sym]
                                (KEYCODE_SFT[sym] + 0x100) * -1
                              else # Should be a modifier
