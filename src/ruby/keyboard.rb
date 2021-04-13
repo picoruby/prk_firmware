@@ -223,6 +223,7 @@ class Keyboard
     @anchor = true
     @anchor_left = true # so-called "master left"
     @uart_pin = 1
+    @rgb_pin = 25
   end
 
   attr_accessor :split, :uart_pin
@@ -238,11 +239,13 @@ class Keyboard
       @anchor = tud_mounted?
       report_hid(0, "\000\000\000\000\000\000")
       if @anchor
+        rgb_init(@rgb_pin)
+        resume_rgb
         uart_rx_init(@uart_pin)
       else
-        gpio_init(25); # LED on board
-        gpio_set_dir(25, GPIO_OUT);
-        gpio_put(25, HI)
+        gpio_init(@rgb_pin); # LED on board
+        gpio_set_dir(@rgb_pin, GPIO_OUT);
+        gpio_put(@rgb_pin, HI)
         uart_tx_init(@uart_pin)
       end
     end
