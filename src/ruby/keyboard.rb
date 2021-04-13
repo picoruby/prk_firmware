@@ -13,9 +13,9 @@ MOD_KEYCODE = {
   KC_LSFT: 0b00000010,
   KC_LALT: 0b00000100,
   KC_LGUI: 0b00001000,
-  KC_RALT: 0b00010000,
+  KC_RCTL: 0b00010000,
   KC_RSFT: 0b00100000,
-  KC_RCTL: 0b01000000,
+  KC_RALT: 0b01000000,
   KC_RGUI: 0b10000000
 }
 
@@ -294,14 +294,29 @@ class Keyboard
       map.each_with_index do |row, row_index|
         row.each_with_index do |key_symbol, col_index|
           if key_name == key_symbol
-            on_release = if KEYCODE.include?(param[0])
-                           KEYCODE.index(param[0]) * -1
-                         elsif KEYCODE_SFT[param[0]]
-                           (KEYCODE_SFT[param[0]] + 0x100) * -1
-                         else
+            on_release = case param[0].class
+                         when Symbol
+                           if KEYCODE.include?(param[0])
+                             KEYCODE.index(param[0]) * -1
+                           elsif KEYCODE_SFT[param[0]]
+                             (KEYCODE_SFT[param[0]] + 0x100) * -1
+                           end
+                         when Array # Should be an Array of Symbol
+                           ary = Array.new
+                           param[0].each do |sym|
+                             ary << if KEYCODE.include?(sym)
+                               KEYCODE.index(sym) * -1
+                             elsif KEYCODE_SFT[sym]
+                               (KEYCODE_SFT[sym] + 0x100) * -1
+                             else # Should be a modifier
+                               MOD_KEYCODE[sym]
+                             end
+                           end
+                           ary
+                         else # Should be a Proc or a NilClass
                            param[0]
                          end
-            on_hold    = MOD_KEYCODE[param[1]] ? MOD_KEYCODE[param[1]]    : param[1]
+            on_hold = MOD_KEYCODE[param[1]] ? MOD_KEYCODE[param[1]] : param[1]
             @mode_keys << {
               layer_name:        layer_name,
               on_release:        on_release,
@@ -329,9 +344,9 @@ class Keyboard
   #   KC_LSFT: 0b00000010,
   #   KC_LALT: 0b00000100,
   #   KC_LGUI: 0b00001000,
-  #   KC_RALT: 0b00010000,
+  #   KC_RCTL: 0b00010000,
   #   KC_RSFT: 0b00100000,
-  #   KC_RCTL: 0b01000000,
+  #   KC_RALT: 0b01000000,
   #   KC_RGUI: 0b10000000
   # }
   def invert_sft
@@ -350,10 +365,21 @@ class Keyboard
     case mode_key.class
     when Fixnum # should be a normal key
       if mode_key < -255
-        @keycodes << ((mode_key + 0x100 ) * -1).chr
+        @keycodes << ((mode_key + 0x100) * -1).chr
         @modifier |= 0b00000010
       else
         @keycodes << (mode_key * -1).chr
+      end
+    when Array # Should be an array of Fixnum
+      mode_key.each do |key|
+        if key < -255
+          @keycodes << ((key + 0x100) * -1).chr
+          @modifier |= 0b00000010
+        elsif key < 0
+          @keycodes << (key * -1).chr
+        else # Should be a modifier
+          @modifier |= key
+        end
       end
     when Proc
       mode_key.call
