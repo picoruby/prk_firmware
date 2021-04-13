@@ -395,6 +395,13 @@ class Keyboard
     end
   end
 
+  # **************************************************************
+  #  For those who are willing to contribute to PRK Firmware:
+  #
+  #   The author has intentionally made this method big and
+  #   redundant for resilience against a change of spec.
+  #   Please refrain from "refactoring" for a while.
+  # **************************************************************
   def start!
     @keycodes = Array.new
     while true

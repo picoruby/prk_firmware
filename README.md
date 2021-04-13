@@ -1,19 +1,28 @@
 ## PRK firmware (public beta)
 
-PRK is a keyboard firmware written and configured in [PicoRuby](https://github.com/hasumikin/picoruby) which is an alternative mruby implementation targeting on one-chip microcontroller.
+PRK is a keyboard firmware written and configured in [PicoRuby](https://github.com/picoruby/picoruby) which is an alternative mruby implementation targeting on one-chip microcontroller.
 
 ### Features
 
 - A "keymap" can be configured in Ruby which is a concise, readable and happy language
-- Raspberry Pi Pico (RP2040 series) is the platform microcontroller
+- RP2040 is the target platform microcontroller
 - You can write your own "action" which will be invoked when you tap or hold a key ([example]()(TBD))
+
+### Boards
+
+- Raspberry Pi Pico
+- Sparkfun Pro Micro RP2040 (DEV-17177)
+
+![](doc/images/RP2040_boards.jpg)
+
+_(left: Raspberry Pi Pico / right: DEV-17717)_
 
 ### Roadmap
 
 - [x] Unsplit keyboard
 - [ ] Split keyboard
-  - [x] Symmetrical type
-  - [ ] Asymmetrical type (but for example?)
+  - [x] Symmetrical type. eg) Crkbd
+  - [ ] Asymmetrical type. eg) ???
   - [x] UART communication between left and right
   - [ ] I2C communication between left and right
 - [ ] LED
@@ -32,7 +41,7 @@ PRK is a keyboard firmware written and configured in [PicoRuby](https://github.c
 - Clone the `prk_firmware` (this repository) wherever you like
 
     ```
-    git clone --recursive https://github.com/hasumikin/prk_firmware.git # Don't forget --recursive
+    git clone --recursive https://github.com/picoruby/prk_firmware.git # Don't forget --recursive
     cd prk_firmware
     ```
 
@@ -40,7 +49,7 @@ PRK is a keyboard firmware written and configured in [PicoRuby](https://github.c
 
     ```
     cd keyboards
-    git clone https://github.com/hasumikin/prk_meishi2.git
+    git clone https://github.com/picoruby/prk_meishi2.git
     ```
 
 - Build with `cmake`
@@ -59,7 +68,7 @@ Fork, clone, patch and send a pull request.
 
 - It's possible that your Ruby code can't be compiled as you wish
   - Remember that "Ruby" in PRK is neither CRuby nor even mruby
-  - [PicoRuby](https://github.com/hasumikin/picoruby) doesn't support some Ruby syntax and may have bugs. It would be great if you send a patch, too!
+  - [PicoRuby](https://github.com/picoruby/picoruby) doesn't support some Ruby syntax and may have bugs. It would be great if you send a patch, too!
 - Unlike QMK Firmware, prk_firmware repository doesn't include individual keymaps
 
 ### License
