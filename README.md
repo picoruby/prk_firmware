@@ -94,7 +94,7 @@ Feel free to reach out to [me](https://twitter.com/hasumikin) if you want me to 
 
 - Q: Can I use Sparkfun Pro Micro RP2040 as a drop-in replacement instead of a Pro Micro without having to modify the CRKBD PCB?
   
-  A: Yes you can!. However, note that RGBLED feature is still not implemented on PRK. And don't expect your existing CRKBS's LEDs will blink even the feature is ready because the logic voltage of RP2040 is 3.3V while 5V on "normal Pro Micro".
+  A: Yes you can! However, note that RGBLED feature is still not implemented on PRK. And don't expect your existing CRKBS's LEDs will blink even the feature is ready because the logic voltage of RP2040 is 3.3V while 5V on "normal Pro Micro".
 
 ### License
 
