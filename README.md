@@ -1,4 +1,4 @@
-## PRK firmware (public beta)
+## PRK Firmware (public beta)
 
 PRK is a keyboard firmware written and configured in [PicoRuby](https://github.com/picoruby/picoruby) which is an alternative mruby implementation targeting on one-chip microcontroller.
 
