@@ -69,7 +69,7 @@ _(left: Raspberry Pi Pico / right: DEV-17717)_
 
 Fork, clone, patch and send a pull request.
 
-#### For those who are willing to contribute to PRK or write your own keymaps
+#### For those who are willing to contribute to PRK or write your own keymaps:
 
 - It's possible that your Ruby code can't be compiled as you wish
   - Remember that "Ruby" in PRK is neither CRuby nor even mruby
@@ -85,6 +85,10 @@ Fork, clone, patch and send a pull request.
   - [meishi2](https://github.com/picoruby/prk_meishi2)
   - [Crkbd](https://github.com/picoruby/prk_crkbd)
   - [Claw44](https://github.com/picoruby/prk_claw44)
+
+#### To keyboard creators:
+
+Feel free to reach out to [me](https://twitter.com/hasumikin) if you want me to link your keymap on this README.
 
 ### License
 
