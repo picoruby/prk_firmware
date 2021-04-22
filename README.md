@@ -1,6 +1,6 @@
 ## PRK Firmware (public beta)
 
-PRK is a keyboard firmware written and configured in [PicoRuby](https://github.com/picoruby/picoruby) which is an alternative mruby implementation targeting on one-chip microcontroller.
+PRK Firmware is a framework for DIY-keyboards written and configured in [PicoRuby](https://github.com/picoruby/picoruby) which is an alternative mruby implementation targeting on one-chip microcontroller.
 
 ### Features
 
@@ -9,6 +9,8 @@ PRK is a keyboard firmware written and configured in [PicoRuby](https://github.c
 - You can write your own "action" which will be invoked when you tap or hold a key ([example]()(TBD))
 
 ### Boards
+
+The following boards have been confirmed to work as of now:
 
 - Raspberry Pi Pico
 - Sparkfun Pro Micro RP2040 (DEV-17177)
