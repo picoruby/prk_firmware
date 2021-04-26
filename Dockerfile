@@ -25,13 +25,11 @@ WORKDIR "${PICO_SDK_PATH}"
 RUN git submodule update --init
 
 WORKDIR "${PRK_HOME}"
-ARG REPO_URL
-ARG REPO_NAME
+ARG KEYBOARD
 
 WORKDIR "${PRK_HOME}/keyboards"
 
-RUN git clone $REPO_URL
-WORKDIR "${PRK_HOME}/keyboards/${REPO_NAME}/build"
+WORKDIR "${PRK_HOME}/keyboards/${KEYBOARD}/build"
 
 RUN cmake ../../..
 RUN make
@@ -39,9 +37,11 @@ RUN make
 FROM scratch AS export
 
 ENV PRK_HOME /prk_firmware
-COPY --from=build "${PRK_HOME}/keyboards/${REPO_NAME}" "./${REPO_NAME}"
+COPY --from=build "${PRK_HOME}/keyboards/${KEYBOARD}" "./${KEYBOARD}"
 
-# ex. docker build -o keyboards --build-arg REPO_NAME=prk_meishi2 --build-arg REPO_URL=https://github.com/picoruby/prk_meishi2.git .
-# ex. docker build -o keyboards --build-arg REPO_NAME=prk_crkbd --build-arg REPO_URL=https://github.com/picoruby/prk_crkbd.git .
-# ex. docker build -o keyboards --build-arg REPO_NAME=prk_claw44 --build-arg REPO_URL=https://github.com/picoruby/prk_claw44.git .
-
+# ex. git clone https://github.com/picoruby/prk_meishi2.git keyboards/prk_meishi2 &&
+#     docker build -o keyboards --build-arg KEYBOARD=prk_meishi2 --build-arg .
+# ex. git clone https://github.com/picoruby/prk_meishi2.git keyboards/prk_crkbd &&
+#     docker build -o keyboards --build-arg KEYBOARD=prk_crkbd --build-arg .
+# ex. git clone https://github.com/picoruby/prk_meishi2.git keyboards/prk_claw44 &&
+#     docker build -o keyboards --build-arg KEYBOARD=prk_claw44 --build-arg .
