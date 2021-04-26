@@ -40,8 +40,8 @@ ENV PRK_HOME /prk_firmware
 COPY --from=build "${PRK_HOME}/keyboards/${KEYBOARD}" "./${KEYBOARD}"
 
 # ex. git clone https://github.com/picoruby/prk_meishi2.git keyboards/prk_meishi2 &&
-#     docker build -o keyboards --build-arg KEYBOARD=prk_meishi2 --build-arg .
-# ex. git clone https://github.com/picoruby/prk_meishi2.git keyboards/prk_crkbd &&
-#     docker build -o keyboards --build-arg KEYBOARD=prk_crkbd --build-arg .
-# ex. git clone https://github.com/picoruby/prk_meishi2.git keyboards/prk_claw44 &&
-#     docker build -o keyboards --build-arg KEYBOARD=prk_claw44 --build-arg .
+#     docker build -o keyboards --build-arg KEYBOARD=prk_meishi2 .
+# ex. git clone https://github.com/picoruby/prk_crkbd.git keyboards/prk_crkbd &&
+#     docker build -o keyboards --build-arg KEYBOARD=prk_crkbd .
+# ex. git clone https://github.com/picoruby/prk_claw44.git keyboards/prk_claw44 &&
+#     docker build -o keyboards --build-arg KEYBOARD=prk_claw44 .
