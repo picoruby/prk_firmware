@@ -229,10 +229,18 @@ class Keyboard
     @anchor = true
     @anchor_left = true # so-called "master left"
     @uart_pin = 1
-    @rgb_pin = 0
+    $rgb = nil
   end
 
   attr_accessor :split, :uart_pin
+
+  def init_rgb(pwm_pin)
+    $rgb = RGB.new(pwm_pin)
+  end
+
+  def start_rgb
+    ws2812_resume if $rgb
+  end
 
   # val should be treated as `:left` if it's anything other than `:right`
   def set_anchor(val)
@@ -404,6 +412,7 @@ class Keyboard
   #   Please refrain from "refactoring" for a while.
   # **************************************************************
   def start!
+    start_rgb if $rgb
     @keycodes = Array.new
     while true
       now = board_millis
@@ -528,6 +537,8 @@ class Keyboard
 
       time = 10 - (board_millis - now)
       sleep_ms(time) if time > 0
+
+      $rgb.fifo_push_blocking(true) unless @switches.empty?
     end
   end
 
