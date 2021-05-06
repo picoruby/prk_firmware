@@ -26,7 +26,6 @@ c_rand(mrb_vm *vm, mrb_value *v, int argc)
   SET_INT_RETURN(rand());
 }
 
-
 #define MEMORY_SIZE (1024*180)
 
 static uint8_t memory_pool[MEMORY_SIZE];

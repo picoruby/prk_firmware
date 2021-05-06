@@ -1,53 +1,99 @@
 class RGB
-  def initialize(pwm_pin)
+  def initialize(pin, pixel_size, is_rgbw)
     @fifo = Array.new
-    ws2812_init(pwm_pin)
+    ws2812_init(pin, is_rgbw)
+    @pixels = Array.new(pixel_size, 0) # => [0, 0, 0, 0, 0,...
+    @max_brightness = 20
   end
 
-  def fifo_push_blocking(data)
-    return if @fifo.size > 3
+  def adjust(val, rr, gg, bb)
+    r = ((val & 0x00ff00) >> 8) + rr
+    g = (val >> 16)             + gg
+    b = (val & 0x0000ff)        + bb
+    if r > @max_brightness
+      r = @max_brightness
+    elsif r < 0
+      r = 0
+    end
+    if g > @max_brightness
+      g = @max_brightness
+    elsif g < 0
+      g = 0
+    end
+    if b > @max_brightness
+      b = @max_brightness
+    elsif b < 0
+      b = 0
+    end
+    return r<<8 | g<<16 | b
+  end
+
+  def adjust_at(i, rr, gg, bb)
+    set_at(i, adjust(@pixels[i], rr, gg, bb))
+  end
+
+  def adjust_all(rr, gg, bb)
+    @pixels.size.times do |i|
+      adjust_at(i, rr, gg, bb)
+    end
+  end
+
+  def fill(val)
+    @pixel.size.times do |i|
+      set_at(i, val)
+    end
+  end
+
+  def set_at(i, val)
+    @pixels[i] = val
+  end
+
+  def show
+    sparkle unless @fifo.empty?
+    sleep_ms 30
+    ws2812_show(@pixels)
+  end
+
+  def fifo_push(data)
+    return if @fifo.size > 2
     @fifo << data
   end
 
-  def flash
-    if @fifo.empty?
-      ws2812_off
-    else
-      rand % 2 == 0 ? snake : sparkle
-      @fifo.shift
-    end
-  end
-
   def sparkle
-    75.times do
-      if rand % 16 > 0
-        ws2812_put_pixel(32, 32, 32);
-      else
-        ws2812_put_pixel(0);
+    7.times do |t|
+      @pixels.size.times do |i|
+        if rand & 0xf > t + 2
+          set_at(i, 0x202020)
+        else
+          set_at(i, 0)
+        end
       end
+      ws2812_show(@pixels)
+      sleep_ms 10
     end
+    @fifo.shift
   end
 
-  def snake
-    75.times do |i|
-      x = i % 32
-      if x < 5
-        ws2812_put_pixel(32, 0, 0)
-      elsif x >= 8 && x < 12
-        ws2812_put_pixel(0, 32, 0)
-      elsif x >= 15 && x < 20
-        ws2812_put_pixel(0, 0, 32)
-      else
-        ws2812_put_pixel(0, 0, 0)
-      end
-    end
-  end
 end
 
 # Suspend itself until being resumed in Keyboard#start_rgb
 suspend_task
 
+$rgb.fill(0x200000)
+$rgb.show
+
 while true
-  $rgb.flash
-  sleep_ms 50
+  0x20.times do
+    $rgb.adjust_all(-1, 1, 0)
+    $rgb.show
+  end
+  0x20.times do
+    $rgb.adjust_all(0, -1, 1)
+    $rgb.show
+  end
+  0x20.times do
+    $rgb.adjust_all(1, 0, -1)
+    $rgb.show
+  end
 end
+

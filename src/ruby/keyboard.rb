@@ -234,8 +234,8 @@ class Keyboard
 
   attr_accessor :split, :uart_pin
 
-  def init_rgb(pwm_pin)
-    $rgb = RGB.new(pwm_pin)
+  def init_rgb(pin, pixel_size, is_rgbw)
+    $rgb = RGB.new(pin, pixel_size, is_rgbw)
   end
 
   def start_rgb
@@ -422,18 +422,6 @@ class Keyboard
       @switches.clear
       @modifier = 0
 
-      if @split && @anchor
-        sleep_ms(5)
-        # receive data from split partner
-        while true
-          data = uart_getc
-          break if data.nil?
-          switch = [data >> 4, data & 0b00001111]
-          # To avoid chattering
-          @switches << switch unless @switches.include?(switch)
-        end
-      end
-
       # detect physical switches that are pushed
       @rows.each_with_index do |row_pin, row|
         gpio_put(row_pin, LO)
@@ -461,6 +449,21 @@ class Keyboard
           break if @switches.size > 5
         end
         gpio_put(row_pin, HI)
+      end
+
+      # TODO: more features
+      $rgb.fifo_push(true) unless @switches.empty?
+
+      # Receive swithes from partner
+      if @split && @anchor
+        sleep_ms 5
+        while true
+          data = uart_getc
+          break if data.nil?
+          switch = [data >> 4, data & 0b00001111]
+          # To avoid chattering
+          @switches << switch unless @switches.include?(switch)
+        end
       end
 
       if @anchor
@@ -537,8 +540,6 @@ class Keyboard
 
       time = 10 - (board_millis - now)
       sleep_ms(time) if time > 0
-
-      $rgb.fifo_push_blocking(true) unless @switches.empty?
     end
   end
 

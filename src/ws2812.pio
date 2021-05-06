@@ -83,4 +83,3 @@ static inline void ws2812_parallel_program_init(PIO pio, uint sm, uint offset, u
     pio_sm_set_enabled(pio, sm, true);
 }
 %}
-
