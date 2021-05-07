@@ -1,8 +1,9 @@
 class RGB
-  def initialize(pin, pixel_size, is_rgbw)
+  def initialize(pin, underglow_size, backlight_size, is_rgbw)
     @fifo = Array.new
     ws2812_init(pin, is_rgbw)
-    @pixels = Array.new(pixel_size, 0) # => [0, 0, 0, 0, 0,...
+    # TODO: @underglow_size @backlight_size
+    @pixels = Array.new(underglow_size + backlight_size, 0) # => [0, 0, 0, 0, 0,...
     @max_brightness = 20
   end
 
@@ -49,7 +50,7 @@ class RGB
   end
 
   def show
-    sparkle unless @fifo.empty?
+    thunder unless @fifo.empty?
     sleep_ms 30
     ws2812_show(@pixels)
   end
@@ -59,8 +60,8 @@ class RGB
     @fifo << data
   end
 
-  def sparkle
-    7.times do |t|
+  def thunder
+    3.times do |t|
       @pixels.size.times do |i|
         if rand & 0xf > t + 2
           set_at(i, 0x202020)
@@ -69,7 +70,7 @@ class RGB
         end
       end
       ws2812_show(@pixels)
-      sleep_ms 10
+      sleep_ms 5
     end
     @fifo.shift
   end

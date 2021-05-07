@@ -452,9 +452,9 @@ class Keyboard
       end
 
       # TODO: more features
-      $rgb.fifo_push(true) unless @switches.empty?
+      $rgb.fifo_push(true) if $rgb && !@switches.empty?
 
-      # Receive swithes from partner
+      # Receive switches from partner
       if @split && @anchor
         sleep_ms 5
         while true
