@@ -1,58 +1,76 @@
+class Float
+  def modulo(right)
+    left = self
+    while left > right
+      left -= right
+    end
+    left
+  end
+  def ceil
+    n = self.to_i
+    (self > n) ? (n + 1) : n
+  end
+end
+
+def hsv2rgb(h, s, v)
+  s /= 100.0
+  v /= 100.0
+  c = v * s
+  x = c * (1 - ((h / 60.0).modulo(2) - 1).abs)
+  m = v - c
+  rgb = if h < 60
+          [c, x, 0]
+        elsif h < 120
+          [x, c, 0]
+        elsif h < 180
+          [0, c, x]
+        elsif h < 240
+          [0, x, c]
+        elsif h < 300
+          [x, 0, c]
+        else
+          [c, 0, x]
+        end
+  ((rgb[0] + m) * 255).ceil << 16 |
+    ((rgb[1] + m) * 255).ceil << 8 |
+    ((rgb[2] + m) * 255).ceil
+end
+
 class RGB
   def initialize(pin, underglow_size, backlight_size, is_rgbw)
     @fifo = Array.new
-    ws2812_init(pin, is_rgbw)
-    # TODO: @underglow_size @backlight_size
-    @pixels = Array.new(underglow_size + backlight_size, 0) # => [0, 0, 0, 0, 0,...
-    @max_brightness = 20
+    # TODO: @underglow_size, @backlight_size
+    @pixel_size = underglow_size + backlight_size
+    ws2812_init(pin, @pixel_size, is_rgbw)
+    @delay = 100
   end
 
-  def adjust(val, rr, gg, bb)
-    r = ((val & 0x00ff00) >> 8) + rr
-    g = (val >> 16)             + gg
-    b = (val & 0x0000ff)        + bb
-    if r > @max_brightness
-      r = @max_brightness
-    elsif r < 0
-      r = 0
-    end
-    if g > @max_brightness
-      g = @max_brightness
-    elsif g < 0
-      g = 0
-    end
-    if b > @max_brightness
-      b = @max_brightness
-    elsif b < 0
-      b = 0
-    end
-    return r<<8 | g<<16 | b
-  end
-
-  def adjust_at(i, rr, gg, bb)
-    set_at(i, adjust(@pixels[i], rr, gg, bb))
-  end
-
-  def adjust_all(rr, gg, bb)
-    @pixels.size.times do |i|
-      adjust_at(i, rr, gg, bb)
-    end
-  end
+  attr_reader :pixel_size
+  attr_accessor :delay
 
   def fill(val)
-    @pixel.size.times do |i|
-      set_at(i, val)
-    end
+    ws2812_fill(val)
   end
 
-  def set_at(i, val)
-    @pixels[i] = val
+  def set_pixel_at(i, val)
+    ws2812_set_pixel_at(i, val)
+  end
+
+  def rotate
+    ws2812_rotate
+  end
+
+  def save
+    ws2812_save
+  end
+
+  def restore
+    ws2812_restore
   end
 
   def show
-    thunder unless @fifo.empty?
-    sleep_ms 30
-    ws2812_show(@pixels)
+    sleep_ms @delay
+    ws2812_show
   end
 
   def fifo_push(data)
@@ -61,18 +79,18 @@ class RGB
   end
 
   def thunder
-    3.times do |t|
-      @pixels.size.times do |i|
-        if rand & 0xf > t + 2
-          set_at(i, 0x202020)
-        else
-          set_at(i, 0)
-        end
-      end
-      ws2812_show(@pixels)
-      sleep_ms 5
+    save
+    4.times do |salt|
+      ws2812_rand_fill(0x202020, (salt+1) * 2)
+      ws2812_show
+      sleep_ms 3
     end
     @fifo.shift
+    restore
+  end
+
+  def key?
+    !@fifo.empty?
   end
 
 end
@@ -80,21 +98,15 @@ end
 # Suspend itself until being resumed in Keyboard#start_rgb
 suspend_task
 
-$rgb.fill(0x200000)
+step = 360.0 / $rgb.pixel_size
+$rgb.pixel_size.times do |i|
+  $rgb.set_pixel_at(i, hsv2rgb(i * step, 100, 12.5))
+end
 $rgb.show
 
 while true
-  0x20.times do
-    $rgb.adjust_all(-1, 1, 0)
-    $rgb.show
-  end
-  0x20.times do
-    $rgb.adjust_all(0, -1, 1)
-    $rgb.show
-  end
-  0x20.times do
-    $rgb.adjust_all(1, 0, -1)
-    $rgb.show
-  end
+  $rgb.thunder if $rgb.key?
+  $rgb.rotate
+  $rgb.show
 end
 
