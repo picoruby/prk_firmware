@@ -229,10 +229,22 @@ class Keyboard
     @anchor = true
     @anchor_left = true # so-called "master left"
     @uart_pin = 1
-    @rgb_pin = 0
+    $rgb = nil
   end
 
   attr_accessor :split, :uart_pin
+
+  # TODO: OLED, SDCard
+  def append(feature)
+    case feature.class
+    when RGB
+      $rgb = feature
+    end
+  end
+
+  def start_rgb
+    ws2812_resume if $rgb
+  end
 
   # val should be treated as `:left` if it's anything other than `:right`
   def set_anchor(val)
@@ -404,6 +416,7 @@ class Keyboard
   #   Please refrain from "refactoring" for a while.
   # **************************************************************
   def start!
+    start_rgb if $rgb
     @keycodes = Array.new
     while true
       now = board_millis
@@ -412,18 +425,6 @@ class Keyboard
 
       @switches.clear
       @modifier = 0
-
-      if @split && @anchor
-        sleep_ms(5)
-        # receive data from split partner
-        while true
-          data = uart_getc
-          break if data.nil?
-          switch = [data >> 4, data & 0b00001111]
-          # To avoid chattering
-          @switches << switch unless @switches.include?(switch)
-        end
-      end
 
       # detect physical switches that are pushed
       @rows.each_with_index do |row_pin, row|
@@ -452,6 +453,21 @@ class Keyboard
           break if @switches.size > 5
         end
         gpio_put(row_pin, HI)
+      end
+
+      # TODO: more features
+      $rgb.fifo_push(true) if $rgb && !@switches.empty?
+
+      # Receive switches from partner
+      if @split && @anchor
+        sleep_ms 5
+        while true
+          data = uart_getc
+          break if data.nil?
+          switch = [data >> 4, data & 0b00001111]
+          # To avoid chattering
+          @switches << switch unless @switches.include?(switch)
+        end
       end
 
       if @anchor
