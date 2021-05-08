@@ -27,7 +27,7 @@ _(left: Raspberry Pi Pico / right: DEV-17717)_
   - [ ] I2C communication between left and right
 - [ ] Macros
 - [ ] Media keys
-- [ ] RGBLED
+- [x] *new!* RGBLED. An example on [picoruby/prk_crkbd](https://github.com/picoruby/prk_crkbd/blob/main/keymap.rb#L61-L76)
 - [ ] OLED display
 
 ### Getting started

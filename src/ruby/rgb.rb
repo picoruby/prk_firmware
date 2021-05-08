@@ -46,7 +46,7 @@ class RGB
   end
 
   attr_reader :pixel_size
-  attr_accessor :delay
+  attr_accessor :delay, :effect, :action
 
   def fill(val)
     ws2812_fill(val)
@@ -98,15 +98,30 @@ end
 # Suspend itself until being resumed in Keyboard#start_rgb
 suspend_task
 
-step = 360.0 / $rgb.pixel_size
-$rgb.pixel_size.times do |i|
-  $rgb.set_pixel_at(i, hsv2rgb(i * step, 100, 12.5))
+case $rgb.effect
+when :rainbow
+  step = 360.0 / $rgb.pixel_size
+  $rgb.pixel_size.times do |i|
+    $rgb.set_pixel_at(i, hsv2rgb(i * step, 100, 12.5))
+  end
+when :breathing
+  hue = 0
 end
-$rgb.show
 
 while true
-  $rgb.thunder if $rgb.key?
-  $rgb.rotate
+  if $rgb.key?
+    case $rgb.action
+    when :thunder
+      $rgb.thunder
+    end
+  end
+  case $rgb.effect
+  when :rainbow
+    $rgb.rotate
+  when :breathing
+    $rgb.fill(hsv2rgb(hue, 100, 12.5))
+    hue >= 360 ? hue = 0 : hue += 10
+  end
   $rgb.show
 end
 

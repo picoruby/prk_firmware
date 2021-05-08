@@ -234,8 +234,12 @@ class Keyboard
 
   attr_accessor :split, :uart_pin
 
-  def init_rgb(pin, pixel_size, is_rgbw)
-    $rgb = RGB.new(pin, pixel_size, is_rgbw)
+  # TODO: OLED, SDCard
+  def append(feature)
+    case feature.class
+    when RGB
+      $rgb = feature
+    end
   end
 
   def start_rgb
