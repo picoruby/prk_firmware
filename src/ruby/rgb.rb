@@ -1,17 +1,3 @@
-class Float
-  def modulo(right)
-    left = self
-    while left > right
-      left -= right
-    end
-    left
-  end
-  def ceil
-    n = self.to_i
-    (self > n) ? (n + 1) : n
-  end
-end
-
 def hsv2rgb(h, s, v)
   s /= 100.0
   v /= 100.0
