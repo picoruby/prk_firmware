@@ -2,6 +2,20 @@ $mutex = Mutex.new
 
 $mutex.lock
 
+class Float
+  def modulo(right)
+    left = self
+    while left > right
+      left -= right
+    end
+    left
+  end
+  def ceil
+    n = self.to_i
+    (self > n) ? (n + 1) : n
+  end
+end
+
 GPIO_OUT = 1
 GPIO_IN  = 0
 
@@ -253,7 +267,7 @@ class Keyboard
 
   def init_pins(rows, cols)
     if @split
-      sleep 3 # Wait until USB ready
+      sleep 2 # Wait until USB ready
       @anchor = tud_mounted?
       report_hid(0, "\000\000\000\000\000\000")
       if @anchor
@@ -274,6 +288,9 @@ class Keyboard
       gpio_set_dir(pin, GPIO_IN);
       gpio_pull_up(pin);
     end
+    # for split type
+    @offset_a = (@cols.size / 2.0).ceil
+    @offset_b = @cols.size * 2 - @offset_a - 1
   end
 
   # Input
@@ -437,7 +454,7 @@ class Keyboard
                            col
                          else
                            # right
-                           (col - 3) * -1 + 8
+                           (col - @offset_a) * -1 + @offset_b
                          end
                        else # right side is the anchor
                          unless @anchor
@@ -445,12 +462,12 @@ class Keyboard
                            col
                          else
                            # right
-                           (col - 3) * -1 + 8
+                           (col - @offset_a) * -1 + @offset_b
                          end
                        end
             @switches << [row, col_data]
           end
-          break if @switches.size > 5
+          break if @switches.size >= @cols.size
         end
         gpio_put(row_pin, HI)
       end
