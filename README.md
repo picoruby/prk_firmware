@@ -88,6 +88,7 @@ Fork, clone, patch and send a pull request.
   - [meishi2](https://github.com/picoruby/prk_meishi2)
   - [Crkbd](https://github.com/picoruby/prk_crkbd)
   - [Claw44](https://github.com/picoruby/prk_claw44)
+  - [Helix rev3](https://github.com/picoruby/prk_helix_rev3)
 
 #### To keyboard creators:
 
