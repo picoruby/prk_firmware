@@ -269,7 +269,6 @@ class Keyboard
     if @split
       sleep 2 # Wait until USB ready
       @anchor = tud_mounted?
-      report_hid(0, "\000\000\000\000\000\000")
       if @anchor
         uart_rx_init(@uart_pin)
       else
@@ -435,6 +434,15 @@ class Keyboard
   def start!
     start_rgb if $rgb
     @keycodes = Array.new
+    # To avoid unintentional report on startup
+    # which happens only on Sparkfun Pro Micro RP2040
+    if @split
+      sleep_ms 100
+      while true
+        data = uart_getc
+        break if data.nil?
+      end
+    end
     while true
       now = board_millis
       @keycodes.clear
