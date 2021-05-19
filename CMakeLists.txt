@@ -33,7 +33,7 @@ add_custom_target(ruby
   COMMAND ${RBC} -Brgb rgb.rb
   COMMAND ${RBC} -Bkeymap ${PROJECT_BINARY_DIR}/../keymap.rb
   COMMAND mv ${PROJECT_BINARY_DIR}/../keymap.c ./
-  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src/ruby
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src/ruby/lib
 )
 
 add_dependencies(prk_firmware

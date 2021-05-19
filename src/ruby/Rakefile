@@ -1,0 +1,12 @@
+
+task :steep do
+  require "steep"
+  require "steep/cli"
+  Steep::CLI.new(argv: ["check"], stdout: $stdout, stderr: $stderr, stdin: $stdin).run
+end
+
+namespace :steep do
+  task :stats do
+    exec %q(bundle exec steep stats --log-level=error --format=table)
+  end
+end

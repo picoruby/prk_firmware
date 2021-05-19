@@ -9,10 +9,10 @@
 //TODO: #include "spi.h"
 
 /* ruby */
-#include "ruby/keyboard.c"
-#include "ruby/keymap.c"
-#include "ruby/tud.c"
-#include "ruby/rgb.c"
+#include "ruby/lib/keyboard.c"
+#include "ruby/lib/keymap.c"
+#include "ruby/lib/tud.c"
+#include "ruby/lib/rgb.c"
 
 void
 c_board_millis(mrb_vm *vm, mrb_value *v, int argc)

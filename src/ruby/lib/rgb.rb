@@ -84,6 +84,8 @@ end
 # Suspend itself until being resumed in Keyboard#start_rgb
 suspend_task
 
+hue = 0
+
 case $rgb.effect
 when :rainbow
   step = 360.0 / $rgb.pixel_size
