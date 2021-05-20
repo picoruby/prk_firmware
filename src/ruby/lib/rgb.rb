@@ -17,9 +17,9 @@ def hsv2rgb(h, s, v)
         else
           [c, 0, x]
         end
-  ((rgb[0] + m) * 255).ceil << 16 |
-    ((rgb[1] + m) * 255).ceil << 8 |
-    ((rgb[2] + m) * 255).ceil
+  ((rgb[0] + m) * 255).ceil_to_i << 16 |
+    ((rgb[1] + m) * 255).ceil_to_i << 8 |
+    ((rgb[2] + m) * 255).ceil_to_i
 end
 
 class RGB

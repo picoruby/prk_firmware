@@ -14,7 +14,7 @@ class Keyboard
   KEYCODE: Array[Symbol]
   KEYCODE_SFT: {KC_EXLM: Integer, KC_AT: Integer, KC_HASH: Integer, KC_DLR: Integer, KC_PERC: Integer, KC_CIRC: Integer, KC_AMPR: Integer, KC_ASTER: Integer, KC_LPRN: Integer, KC_RPRN: Integer, KC_UNDS: Integer, KC_PLUS: Integer, KC_LCBR: Integer, KC_RCBR: Integer, KC_PIPE: Integer, KC_COLON: Integer, KC_DQUO: Integer, KC_TILD: Integer, KC_LABK: Integer, KC_RABK: Integer, KC_QUES: Integer}
 
-  @before_filters: Array[Proc]
+  @before_filters: Array[^() -> void]
   @layers: Hash[Symbol?, Array[Array[Integer]]]
   @mode_keys: Array[untyped]
   @switches: Array[Array[Integer]]
@@ -40,9 +40,10 @@ class Keyboard
   def add_layer: (Symbol name, Array[untyped] map) -> void
   def define_mode_key: (untyped key_name, untyped param) -> void
   def invert_sft: -> void
-  def before_report: (Proc) -> void
+  def before_report: () { () -> void } -> void
+  def keys_include?: (Symbol) -> bool
   def action_on_release: (Integer | Array[Integer] | Proc) -> void
-  def action_on_hold: (Integer | Array[Integer] | Proc) -> void
+  def action_on_hold: (Integer | Proc) -> void
   def start!: -> void
   def raise_layer: -> void
   def lower_layer: -> void

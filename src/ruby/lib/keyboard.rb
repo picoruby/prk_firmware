@@ -10,7 +10,7 @@ class Float
     end
     left
   end
-  def ceil
+  def ceil_to_i
     n = self.to_i
     (self > n) ? (n + 1) : n
   end
@@ -288,7 +288,7 @@ class Keyboard
       gpio_pull_up(pin);
     end
     # for split type
-    @offset_a = (@cols.size / 2.0).ceil
+    @offset_a = (@cols.size / 2.0).ceil_to_i
     @offset_b = @cols.size * 2 - @offset_a - 1
   end
 
@@ -389,9 +389,14 @@ class Keyboard
     @before_filters << block
   end
 
+  def keys_include?(key)
+    keycode = KEYCODE.index(key)
+    !keycode.nil? && @keycodes.include?(keycode.chr)
+  end
+
   def action_on_release(mode_key)
     case mode_key.class
-    when Fixnum # should be a normal key
+    when Fixnum
       # @type var mode_key: Integer
       if mode_key < -255
         @keycodes << ((mode_key + 0x100) * -1).chr
@@ -399,8 +404,8 @@ class Keyboard
       else
         @keycodes << (mode_key * -1).chr
       end
-    when Array # Should be an array of Fixnum
-      # @type var mode_key: Array
+    when Array
+      # @type var mode_key: Array[Integer]
       mode_key.each do |key|
         if key < -255
           @keycodes << ((key + 0x100) * -1).chr
@@ -419,7 +424,7 @@ class Keyboard
 
   def action_on_hold(mode_key)
     case mode_key.class
-    when Fixnum # should be a modifier key
+    when Fixnum
       # @type var mode_key: Integer
       @modifier |= mode_key
     when Proc
@@ -517,7 +522,7 @@ class Keyboard
               end
             when :pushed_then_released_then_pushed
               action_on_release(mode_key[:on_release])
-              break([]) # FIXME
+              break([]) # to make steep check passed
             end
           else
             case mode_key[:prev_state]
@@ -526,7 +531,7 @@ class Keyboard
                 action_on_release(mode_key[:on_release])
                 mode_key[:prev_state] = :pushed_then_released
                 mode_key[:released_at] = now
-                break([]) # FIXME
+                break([]) # to make steep check passed
               else
                 mode_key[:prev_state] = :released
               end
