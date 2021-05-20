@@ -10,13 +10,24 @@ class Keyboard
   GPIO_IN: Integer
   HI: Integer
   LO: Integer
-  MOD_KEYCODE: {KC_LCTL: Integer, KC_LSFT: Integer, KC_LALT: Integer, KC_LGUI: Integer, KC_RCTL: Integer, KC_RSFT: Integer, KC_RALT: Integer, KC_RGUI: Integer}
+  MOD_KEYCODE: Hash[Symbol, Integer]
   KEYCODE: Array[Symbol]
-  KEYCODE_SFT: {KC_EXLM: Integer, KC_AT: Integer, KC_HASH: Integer, KC_DLR: Integer, KC_PERC: Integer, KC_CIRC: Integer, KC_AMPR: Integer, KC_ASTER: Integer, KC_LPRN: Integer, KC_RPRN: Integer, KC_UNDS: Integer, KC_PLUS: Integer, KC_LCBR: Integer, KC_RCBR: Integer, KC_PIPE: Integer, KC_COLON: Integer, KC_DQUO: Integer, KC_TILD: Integer, KC_LABK: Integer, KC_RABK: Integer, KC_QUES: Integer}
+  KEYCODE_SFT: Hash[Symbol, Integer]
 
   @before_filters: Array[^() -> void]
-  @layers: Hash[Symbol?, Array[Array[Integer]]]
-  @mode_keys: Array[untyped]
+  @layers: Hash[Symbol, Array[Array[Integer | Symbol]]]
+  @mode_keys: Array[{
+    layer_name:        Symbol,
+    on_release:        Integer | Array[Integer] | Proc | nil,
+    on_hold:           Integer | Proc,
+    release_threshold: Integer,
+    repush_threshold:  Integer,
+    switch:            [Integer, Integer],
+    prev_state:        Symbol,
+    pushed_at:         Integer,
+    released_at:       Integer
+    }
+    ]
   @switches: Array[Array[Integer]]
   @layer_names: Array[Symbol]
   @anchor: bool
@@ -25,10 +36,10 @@ class Keyboard
   @cols: Array[Integer]
   @offset_a: Integer
   @offset_b: Integer
-  @locked_layer_name: Symbol?
+  @locked_layer_name: Symbol
   @keycodes: Array[String]
   @modifier: Integer
-  @layer_name: Symbol?
+  @layer_name: Symbol
 
   def initialize: -> nil
   attr_accessor split: bool
@@ -37,12 +48,12 @@ class Keyboard
   def start_rgb: -> void
   def set_anchor: (Symbol val) -> void
   def init_pins: (Array[Integer] rows, Array[Integer] cols) -> void
-  def add_layer: (Symbol name, Array[untyped] map) -> void
-  def define_mode_key: (untyped key_name, untyped param) -> void
+  def add_layer: (Symbol name, Array[Array[Symbol]] map) -> void
+  def define_mode_key: (Symbol key_name, [Symbol | Array[Symbol] | Proc | nil, Symbol | Proc, Integer?, Integer?] param) -> void
   def invert_sft: -> void
   def before_report: () { () -> void } -> void
   def keys_include?: (Symbol) -> bool
-  def action_on_release: (Integer | Array[Integer] | Proc) -> void
+  def action_on_release: (Integer | Array[Integer] | Proc | nil) -> void
   def action_on_hold: (Integer | Proc) -> void
   def start!: -> void
   def raise_layer: -> void

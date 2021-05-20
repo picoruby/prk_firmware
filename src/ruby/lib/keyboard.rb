@@ -298,19 +298,21 @@ class Keyboard
   # Result
   #   layer: { default:      [ [ -0x04, -0x05, 0b00000001, :MACRO_1 ],... ] }
   def add_layer(name, map)
+    new_map = Array.new(map.size)
     map.each_with_index do |row, row_index|
+      new_map[row_index] = Array.new(row.size)
       row.each_with_index do |key, col_index|
         keycode_index = KEYCODE.index(key)
         if keycode_index
-          map[row_index][col_index] = keycode_index * -1
+          new_map[row_index][col_index] = keycode_index * -1
         elsif KEYCODE_SFT[key]
-          map[row_index][col_index] = (KEYCODE_SFT[key] + 0x100) * -1
+          new_map[row_index][col_index] = (KEYCODE_SFT[key] + 0x100) * -1
         elsif MOD_KEYCODE[key]
-          map[row_index][col_index] = MOD_KEYCODE[key]
+          new_map[row_index][col_index] = MOD_KEYCODE[key]
         end
       end
     end
-    @layers[name] = map
+    @layers[name] = new_map
     @locked_layer_name ||= name
     @layer_names << name
   end
@@ -320,41 +322,56 @@ class Keyboard
   # param[2] :release_threshold
   # param[3] :repush_threshold
   def define_mode_key(key_name, param)
+    on_release = param[0]
+    on_hold = param[1]
+    release_threshold = param[2]
+    repush_threshold = param[3]
     @layers.each do |layer_name, map|
       map.each_with_index do |row, row_index|
         row.each_with_index do |key_symbol, col_index|
           if key_name == key_symbol
-            on_release = case param[0].class
-                         when Symbol
-                           keycode_index = KEYCODE.index(param[0])
-                           if keycode_index
-                             keycode_index * -1
-                           elsif KEYCODE_SFT[param[0]]
-                             (KEYCODE_SFT[param[0]] + 0x100) * -1
-                           end
-                         when Array # Should be an Array of Symbol
-                           ary = Array.new
-                           param[0].each do |sym|
-                             keycode_index = KEYCODE.index(sym)
-                             ary << if keycode_index
-                               keycode_index * -1
-                             elsif KEYCODE_SFT[sym]
-                               (KEYCODE_SFT[sym] + 0x100) * -1
-                             else # Should be a modifier
-                               MOD_KEYCODE[sym]
-                             end
-                           end
-                           ary
-                         else # Should be a Proc or a NilClass
-                           param[0]
-                         end
-            on_hold = MOD_KEYCODE[param[1]] ? MOD_KEYCODE[param[1]] : param[1]
+            # @type var on_release_action: Integer | Array[Integer] | Proc | nil
+            on_release_action = case on_release.class
+            when Symbol
+              # @type var on_release: Symbol
+              keycode_index = KEYCODE.index(on_release)
+              if keycode_index
+                keycode_index * -1
+              elsif KEYCODE_SFT[on_release]
+                (KEYCODE_SFT[on_release] + 0x100) * -1
+              end
+            when Array
+              # @type var on_release: Array[Symbol]
+              # @type var ary: Array[Integer]
+              ary = Array.new
+              on_release.each do |sym|
+                keycode_index = KEYCODE.index(sym)
+                ary << if keycode_index
+                  keycode_index * -1
+                elsif KEYCODE_SFT[sym]
+                  (KEYCODE_SFT[sym] + 0x100) * -1
+                else # Should be a modifier
+                  MOD_KEYCODE[sym]
+                end
+              end
+              ary
+            when Proc
+              # @type var on_release: Proc
+              on_release
+            end
+            on_hold_action = if on_hold.is_a?(Symbol)
+              # @type var on_hold: Symbol
+              MOD_KEYCODE[on_hold]
+            else
+              # @type var on_hold: Proc
+              on_hold
+            end
             @mode_keys << {
               layer_name:        layer_name,
-              on_release:        on_release,
-              on_hold:           on_hold,
-              release_threshold: (param[2] || 0),
-              repush_threshold:  (param[3] || 0),
+              on_release:        on_release_action,
+              on_hold:           on_hold_action,
+              release_threshold: (release_threshold || 0),
+              repush_threshold:  (repush_threshold || 0),
               switch:            [row_index, col_index],
               prev_state:        :released,
               pushed_at:         0,
@@ -406,6 +423,7 @@ class Keyboard
       end
     when Array
       # @type var mode_key: Array[Integer]
+      0 # `steep check` will fail if you remove this line 🤔
       mode_key.each do |key|
         if key < -255
           @keycodes << ((key + 0x100) * -1).chr
@@ -549,12 +567,10 @@ class Keyboard
         @switches.each do |switch|
           keycode = layer[switch[0]][switch[1]]
           next unless keycode.is_a?(Fixnum)
-          # @type var keycode: Integer
           if keycode < -255 # Key with SHIFT
             @keycodes << ((keycode + 0x100) * -1).chr
             @modifier |= 0b00100000
           elsif keycode < 0 # Normal keys
-            # @type var keycode: Integer
             @keycodes << (keycode * -1).chr
           else # Modifier keys
             @modifier |= keycode
@@ -596,7 +612,7 @@ class Keyboard
       # @type var current_index: Integer
       @locked_layer_name = @layer_names[current_index + 1]
     else
-      @locked_layer_name = @layer_names.first
+      @locked_layer_name = @layer_names.first || :default
     end
   end
 
@@ -604,7 +620,7 @@ class Keyboard
   def lower_layer
     current_index = @layer_names.index(@locked_layer_name)
     if current_index == 0
-      @locked_layer_name = @layer_names.last
+      @locked_layer_name = @layer_names.last || :default
     else
       # @type var current_index: Integer
       @locked_layer_name = @layer_names[current_index - 1]
