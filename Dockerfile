@@ -1,4 +1,4 @@
-FROM debian:10-slim AS build
+FROM ruby:3.0.1-slim AS build
 
 RUN apt-get update && apt-get install --no-install-recommends -y \
   cmake \
@@ -19,6 +19,10 @@ VOLUME "${PRK_HOME}"
 WORKDIR "${PRK_HOME}"
 COPY . .
 
+WORKDIR "${PRK_HOME}/src/ruby"
+RUN bundle install
+
+WORKDIR "${PRK_HOME}"
 RUN git clone https://github.com/raspberrypi/pico-sdk.git
 ENV PICO_SDK_PATH "${PRK_HOME}/pico-sdk"
 WORKDIR "${PICO_SDK_PATH}"

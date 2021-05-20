@@ -2,5 +2,6 @@ target :lib do
   signature "sig"
 
   check "lib"
-  check "../../keyboards/**/keymap.rb"
+  # PROJECT_BINARY_DIR is configured in CMakeLists.txt
+  check "../../#{(ENV['PROJECT_BINARY_DIR'] || 'keyboards/**/build').split('/')[-3..-2].join('/')}/keymap.rb"
 end
