@@ -303,12 +303,14 @@ class Keyboard
       new_map[row_index] = Array.new(row.size)
       row.each_with_index do |key, col_index|
         keycode_index = KEYCODE.index(key)
-        if keycode_index
-          new_map[row_index][col_index] = keycode_index * -1
+        new_map[row_index][col_index] = if keycode_index
+          keycode_index * -1
         elsif KEYCODE_SFT[key]
-          new_map[row_index][col_index] = (KEYCODE_SFT[key] + 0x100) * -1
+          (KEYCODE_SFT[key] + 0x100) * -1
         elsif MOD_KEYCODE[key]
-          new_map[row_index][col_index] = MOD_KEYCODE[key]
+          MOD_KEYCODE[key]
+        else
+          key
         end
       end
     end
