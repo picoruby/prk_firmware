@@ -35,6 +35,8 @@ _(left: Raspberry Pi Pico / right: Sparkfun Pro Micro RP2040)_
 
 ### Getting started
 
+- Install CRuby (MRI) because "Static type checking" by [Steep](https://github.com/soutaro/steep) will be invoked in build process
+
 - Setup Raspberry Pi Pico C/C++ SDK
 
   - Follow the instructions on [https://github.com/raspberrypi/pico-sdk#quick-start-your-own-project](https://github.com/raspberrypi/pico-sdk#quick-start-your-own-project)

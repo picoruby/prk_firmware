@@ -27,13 +27,23 @@ pico_generate_pio_header(prk_firmware ${CMAKE_CURRENT_LIST_DIR}/src/ws2812.pio)
 set(RBC ${CMAKE_CURRENT_SOURCE_DIR}/lib/picoruby/build/host-production/bin/picorbc)
 #set(RBC RBENV_VERSION=mruby-2.1.1 mrbc -E)
 
+add_custom_target(steep
+  COMMAND bundle install
+  COMMAND ${CMAKE_COMMAND} -E env PROJECT_BINARY_DIR=${PROJECT_BINARY_DIR} rake steep
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src/ruby
+)
+
 add_custom_target(ruby
   COMMAND ${RBC} -Bkeyboard keyboard.rb
   COMMAND ${RBC} -Btud tud.rb
   COMMAND ${RBC} -Brgb rgb.rb
   COMMAND ${RBC} -Bkeymap ${PROJECT_BINARY_DIR}/../keymap.rb
   COMMAND mv ${PROJECT_BINARY_DIR}/../keymap.c ./
-  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src/ruby
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src/ruby/lib
+)
+
+add_dependencies(ruby
+  steep
 )
 
 add_dependencies(prk_firmware

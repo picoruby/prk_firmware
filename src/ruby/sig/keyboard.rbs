@@ -1,0 +1,63 @@
+# TypeProf 0.14.1
+
+# Global variables
+$mutex: Thread::Mutex
+$rgb: RGB
+
+# Classes
+class Keyboard
+  GPIO_OUT: Integer
+  GPIO_IN: Integer
+  HI: Integer
+  LO: Integer
+  MOD_KEYCODE: Hash[Symbol, Integer]
+  KEYCODE: Array[Symbol]
+  KEYCODE_SFT: Hash[Symbol, Integer]
+
+  @before_filters: Array[^() -> void]
+  @layers: Hash[Symbol, Array[Array[Integer | Symbol]]]
+  @mode_keys: Array[{
+    layer_name:        Symbol,
+    on_release:        Integer | Array[Integer] | Proc | nil,
+    on_hold:           Integer | Proc,
+    release_threshold: Integer,
+    repush_threshold:  Integer,
+    switch:            [Integer, Integer],
+    prev_state:        Symbol,
+    pushed_at:         Integer,
+    released_at:       Integer
+    }
+    ]
+  @switches: Array[Array[Integer]]
+  @layer_names: Array[Symbol]
+  @anchor: bool
+  @anchor_left: bool
+  @rows: Array[Integer]
+  @cols: Array[Integer]
+  @offset_a: Integer
+  @offset_b: Integer
+  @locked_layer_name: Symbol
+  @keycodes: Array[String]
+  @modifier: Integer
+  @layer_name: Symbol
+
+  def initialize: -> nil
+  attr_accessor split: bool
+  attr_accessor uart_pin: Integer
+  def append: (RGB feature) -> void
+  def start_rgb: -> void
+  def set_anchor: (Symbol val) -> void
+  def init_pins: (Array[Integer] rows, Array[Integer] cols) -> void
+  def add_layer: (Symbol name, Array[Array[Symbol]] map) -> void
+  def define_mode_key: (Symbol key_name, [Symbol | Array[Symbol] | Proc | nil, Symbol | Proc, Integer?, Integer?] param) -> void
+  def invert_sft: -> void
+  def before_report: () { () -> void } -> void
+  def keys_include?: (Symbol) -> bool
+  def action_on_release: (Integer | Array[Integer] | Proc | nil) -> void
+  def action_on_hold: (Integer | Proc) -> void
+  def start!: -> void
+  def raise_layer: -> void
+  def lower_layer: -> void
+  def hold_layer: (Symbol layer_name) -> void
+  def switch_layer: (Symbol layer_name) -> void
+end
