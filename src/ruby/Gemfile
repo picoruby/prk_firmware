@@ -2,4 +2,3 @@ source 'https://rubygems.org'
 
 gem 'steep'
 gem 'typeprof'
-gem 'guard-rake'

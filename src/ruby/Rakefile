@@ -1,7 +1,3 @@
-task :guard do
-    exec %q(bundle exec guard)
-end
-
 task :steep do
   require "steep"
   require "steep/cli"
@@ -11,5 +7,8 @@ end
 namespace :steep do
   task :stats do
     exec %q(bundle exec steep stats --log-level=error --format=table)
+  end
+  task :watch do
+    exec %q(bundle exec steep watch lib sig)
   end
 end
