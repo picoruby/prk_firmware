@@ -1,3 +1,5 @@
+[![Ruby CI](https://github.com/picoruby/prk_firmware/actions/workflows/ruby.yml/badge.svg)](https://github.com/picoruby/prk_firmware/actions/workflows/ruby.yml)
+
 ## PRK Firmware (public beta)
 
 PRK Firmware is a framework for DIY-keyboards written and configured in [PicoRuby](https://github.com/picoruby/picoruby) which is an alternative mruby implementation targeting on one-chip microcontroller.
