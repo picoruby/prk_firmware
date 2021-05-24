@@ -1,0 +1,15 @@
+name: Static tipe check
+on: [push, pull_request]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      BUNDLE_GEMFILE: ./src/ruby/Gemfile
+    steps:
+    - uses: actions/checkout@v2
+    - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 3.0.1
+        bundler-cache: true # runs 'bundle install' and caches installed gems automatically
+    - run: BUNDLE_GEMFILE=Gemfile bundle exec steep check
+      working-directory: src/ruby
