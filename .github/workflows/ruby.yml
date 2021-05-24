@@ -11,5 +11,6 @@ jobs:
       with:
         ruby-version: 3.0.1
         bundler-cache: true # runs 'bundle install' and caches installed gems automatically
-    - run: bundle exec steep check
-      working-directory: ./src/ruby
+    - run: |
+        bundle exec steep check
+      working-directory: src/ruby
