@@ -1,3 +1,7 @@
+task :guard do
+    exec %q(bundle exec guard)
+end
+
 task :steep do
   require "steep"
   require "steep/cli"
