@@ -166,7 +166,7 @@ class Keyboard
     :KC_COPY,
     :KC_PASTE,
     :KC_FIND,
-    :KC__MUTE,
+    :KC_MUTE,
     :KC_,                 # 0x80
     :KC_,
     :KC_,
