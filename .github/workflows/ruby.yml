@@ -1,4 +1,4 @@
-name: Static tipe check
+name: Static type check
 on: [push, pull_request]
 jobs:
   check:
