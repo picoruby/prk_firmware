@@ -40,12 +40,13 @@ class Keyboard
   @keycodes: Array[String]
   @modifier: Integer
   @layer_name: Symbol
+  @rotary_encoder: RotaryEncoder
 
   def initialize: -> nil
   attr_accessor split: bool
   attr_accessor uart_pin: Integer
-  def append: (RGB feature) -> void
-  def start_rgb: -> void
+  def append: (RGB | RotaryEncoder feature) -> void
+  def start_features: -> void
   def set_anchor: (Symbol val) -> void
   def init_pins: (Array[Integer] rows, Array[Integer] cols) -> void
   def add_layer: (Symbol name, Array[Array[Symbol]] map) -> void

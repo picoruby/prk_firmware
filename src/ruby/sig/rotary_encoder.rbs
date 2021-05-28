@@ -1,0 +1,14 @@
+class Object
+  def init_rotary_encoder: (Integer, Integer) -> void
+  def consume_rotation_rotary_encoder: () -> Integer
+end
+
+class RotaryEncoder
+  @proc_a: ^() -> void
+  @proc_b: ^() -> void
+
+  def initialize: (Integer pin_a, Integer pin_b) -> void
+  def clockwise: () { () -> void } -> void
+  def counterclockwise: () { () -> void } -> void
+  def consume_rotation: () -> void
+end

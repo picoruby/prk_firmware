@@ -6,13 +6,14 @@
 #include "usb.h"
 #include "uart.h"
 #include "ws2812.h"
-//TODO: #include "spi.h"
+#include "rotary_encoder.h"
 
 /* ruby */
 #include "ruby/lib/keyboard.c"
 #include "ruby/lib/keymap.c"
 #include "ruby/lib/tud.c"
 #include "ruby/lib/rgb.c"
+#include "ruby/lib/rotary_encoder.c"
 
 void
 c_board_millis(mrb_vm *vm, mrb_value *v, int argc)
@@ -43,7 +44,9 @@ int main() {
   USB_INIT();
   UART_INIT();
   WS2812_INIT();
+  ROTARY_ENCODER_INIT();
   tcb_rgb = mrbc_create_task(rgb, 0);
+  mrbc_create_task(rotary_encoder, 0);
   mrbc_create_task(tud, 0);
   mrbc_create_task(keyboard, 0);
   mrbc_create_task(keymap, 0);

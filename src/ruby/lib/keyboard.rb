@@ -252,11 +252,15 @@ class Keyboard
   def append(feature)
     case feature.class
     when RGB
+      # @type var feature: RGB
       $rgb = feature
+    when RotaryEncoder
+      # @type var feature: RotaryEncoder
+      @rotary_encoder = feature
     end
   end
 
-  def start_rgb
+  def start_features
     ws2812_resume if $rgb
   end
 
@@ -461,7 +465,7 @@ class Keyboard
   #   Please refrain from "refactoring" for a while.
   # **************************************************************
   def start!
-    start_rgb if $rgb
+    start_features
     @keycodes = Array.new
     # To avoid unintentional report on startup
     # which happens only on Sparkfun Pro Micro RP2040
@@ -587,6 +591,7 @@ class Keyboard
           block.call
         end
 
+        @rotary_encoder.consume_rotation if @rotary_encoder
         report_hid(@modifier, @keycodes.join)
       else
         @switches.each do |switch|
@@ -600,6 +605,7 @@ class Keyboard
       time = 10 - (board_millis - now)
       sleep_ms(time) if time > 0
     end
+
   end
 
   #
