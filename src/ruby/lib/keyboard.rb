@@ -534,7 +534,6 @@ class Keyboard
       end
 
       if @anchor
-        something_held = false
         @mode_keys.each do |mode_key|
           next if mode_key[:layer] != @layer
           if @switches.include?(mode_key[:switch])
@@ -544,12 +543,10 @@ class Keyboard
               mode_key[:prev_state] = :pushed
               @prev_layer ||= @layer
               action_on_hold(mode_key[:on_hold]) if mode_key[:on_hold].is_a?(Proc)
-              something_held = true
             when :pushed
               if now - mode_key[:pushed_at] > mode_key[:release_threshold]
                 action_on_hold(mode_key[:on_hold])
               end
-              something_held = true
             when :pushed_then_released
               if now - mode_key[:released_at] <= mode_key[:repush_threshold]
                 mode_key[:prev_state] = :pushed_then_released_then_pushed
@@ -561,14 +558,14 @@ class Keyboard
             case mode_key[:prev_state]
             when :pushed
               if now - mode_key[:pushed_at] <= mode_key[:release_threshold]
-                @layer = @prev_layer || :default
-                @prev_layer = nil
                 action_on_release(mode_key[:on_release])
                 mode_key[:prev_state] = :pushed_then_released
               else
                 mode_key[:prev_state] = :released
               end
               mode_key[:released_at] = now
+              @layer = @prev_layer || :default
+              @prev_layer = nil
             when :pushed_then_released
               if now - mode_key[:released_at] > mode_key[:release_threshold]
                 mode_key[:prev_state] = :released
@@ -578,8 +575,6 @@ class Keyboard
             end
           end
         end
-
-        @layer = :default unless something_held
 
         layer = @layers[@layer]
         @switches.each do |switch|
@@ -604,6 +599,8 @@ class Keyboard
         end
 
         report_hid(@modifier, @keycodes.join)
+
+        @layer = :default if @switches.empty?
       else
         @switches.each do |switch|
           # 0b11111111
