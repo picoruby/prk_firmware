@@ -247,6 +247,7 @@ class Keyboard
   end
 
   attr_accessor :split, :uart_pin
+  attr_reader :layer
 
   # TODO: OLED, SDCard
   def append(feature)
@@ -298,20 +299,27 @@ class Keyboard
   # Result
   #   layer: { default:      [ [ -0x04, -0x05, 0b00000001, :MACRO_1 ],... ] }
   def add_layer(name, map)
-    new_map = Array.new(map.size)
-    map.each_with_index do |row, row_index|
-      new_map[row_index] = Array.new(row.size)
-      row.each_with_index do |key, col_index|
-        keycode_index = KEYCODE.index(key)
-        new_map[row_index][col_index] = if keycode_index
-          keycode_index * -1
-        elsif KEYCODE_SFT[key]
-          (KEYCODE_SFT[key] + 0x100) * -1
-        elsif MOD_KEYCODE[key]
-          MOD_KEYCODE[key]
-        else
-          key
-        end
+    new_map = Array.new(@rows.size)
+    row_index = 0
+    col_index = 0
+    cols_size = @split ? @cols.size * 2 : @cols.size
+    map.each do |key|
+      new_map[row_index] = Array.new(@cols.size) if col_index == 0
+      keycode_index = KEYCODE.index(key)
+      new_map[row_index][col_index] = if keycode_index
+        keycode_index * -1
+      elsif KEYCODE_SFT[key]
+        (KEYCODE_SFT[key] + 0x100) * -1
+      elsif MOD_KEYCODE[key]
+        MOD_KEYCODE[key]
+      else
+        key
+      end
+      if col_index == cols_size - 1
+        col_index = 0
+        row_index += 1
+      else
+        col_index += 1
       end
     end
     @layers[name] = new_map
@@ -328,7 +336,7 @@ class Keyboard
     on_hold = param[1]
     release_threshold = param[2]
     repush_threshold = param[3]
-    @layers.each do |layer_name, map|
+    @layers.each do |layer, map|
       map.each_with_index do |row, row_index|
         row.each_with_index do |key_symbol, col_index|
           if key_name == key_symbol
@@ -369,7 +377,7 @@ class Keyboard
               on_hold
             end
             @mode_keys << {
-              layer_name:        layer_name,
+              layer:             layer,
               on_release:        on_release_action,
               on_hold:           on_hold_action,
               release_threshold: (release_threshold || 0),
@@ -463,6 +471,7 @@ class Keyboard
   def start!
     start_rgb if $rgb
     @keycodes = Array.new
+    @layer = :default
     # To avoid unintentional report on startup
     # which happens only on Sparkfun Pro Micro RP2040
     if @split
@@ -475,7 +484,6 @@ class Keyboard
     while true
       now = board_millis
       @keycodes.clear
-      @layer_name = @locked_layer_name
 
       @switches.clear
       @modifier = 0
@@ -526,23 +534,25 @@ class Keyboard
       end
 
       if @anchor
+        something_held = false
         @mode_keys.each do |mode_key|
-          next if mode_key[:layer_name] != @layer_name
+          next if mode_key[:layer] != @layer
           if @switches.include?(mode_key[:switch])
             case mode_key[:prev_state]
             when :released
               mode_key[:pushed_at] = now
               mode_key[:prev_state] = :pushed
-              action_on_hold(mode_key[:on_hold])
             when :pushed
-              action_on_hold(mode_key[:on_hold])
+              if now - mode_key[:pushed_at] > mode_key[:release_threshold]
+                action_on_hold(mode_key[:on_hold])
+              end
+              something_held = true
             when :pushed_then_released
               if now - mode_key[:released_at] <= mode_key[:repush_threshold]
                 mode_key[:prev_state] = :pushed_then_released_then_pushed
               end
             when :pushed_then_released_then_pushed
               action_on_release(mode_key[:on_release])
-              break([]) # to make steep check passed
             end
           else
             case mode_key[:prev_state]
@@ -550,11 +560,10 @@ class Keyboard
               if now - mode_key[:pushed_at] <= mode_key[:release_threshold]
                 action_on_release(mode_key[:on_release])
                 mode_key[:prev_state] = :pushed_then_released
-                mode_key[:released_at] = now
-                break([]) # to make steep check passed
               else
                 mode_key[:prev_state] = :released
               end
+              mode_key[:released_at] = now
             when :pushed_then_released
               if now - mode_key[:released_at] > mode_key[:release_threshold]
                 mode_key[:prev_state] = :released
@@ -565,7 +574,9 @@ class Keyboard
           end
         end
 
-        layer = @layers[@layer_name]
+        @layer = :default unless something_held
+
+        layer = @layers[@layer]
         @switches.each do |switch|
           keycode = layer[switch[0]][switch[1]]
           next unless keycode.is_a?(Fixnum)
@@ -600,6 +611,7 @@ class Keyboard
       time = 10 - (board_millis - now)
       sleep_ms(time) if time > 0
     end
+
   end
 
   #
@@ -630,13 +642,13 @@ class Keyboard
   end
 
   # Holds specified layer while pressed
-  def hold_layer(layer_name)
-    @layer_name = layer_name
+  def hold_layer(layer)
+    @layer = layer
   end
 
   # Switch to specified layer
-  def switch_layer(layer_name)
-    @locked_layer_name = layer_name
+  def switch_layer(layer)
+    @locked_layer_name = layer
   end
 
 end
