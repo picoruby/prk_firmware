@@ -542,6 +542,9 @@ class Keyboard
             when :released
               mode_key[:pushed_at] = now
               mode_key[:prev_state] = :pushed
+              @prev_layer ||= @layer
+              action_on_hold(mode_key[:on_hold]) if mode_key[:on_hold].is_a?(Proc)
+              something_held = true
             when :pushed
               if now - mode_key[:pushed_at] > mode_key[:release_threshold]
                 action_on_hold(mode_key[:on_hold])
@@ -558,6 +561,8 @@ class Keyboard
             case mode_key[:prev_state]
             when :pushed
               if now - mode_key[:pushed_at] <= mode_key[:release_threshold]
+                @layer = @prev_layer || :default
+                @prev_layer = nil
                 action_on_release(mode_key[:on_release])
                 mode_key[:prev_state] = :pushed_then_released
               else
