@@ -235,10 +235,11 @@ class Keyboard
 
   def initialize
     @before_filters = Array.new
-    @layers = Hash.new
+    @keymaps = Hash.new
     @mode_keys = Array.new
     @switches = Array.new
     @layer_names = Array.new
+    @layer = :default
     @split = false
     @anchor = true
     @anchor_left = true # so-called "master left"
@@ -322,8 +323,7 @@ class Keyboard
         col_index += 1
       end
     end
-    @layers[name] = new_map
-    @locked_layer_name ||= name
+    @keymaps[name] = new_map
     @layer_names << name
   end
 
@@ -336,7 +336,7 @@ class Keyboard
     on_hold = param[1]
     release_threshold = param[2]
     repush_threshold = param[3]
-    @layers.each do |layer, map|
+    @keymaps.each do |layer, map|
       map.each_with_index do |row, row_index|
         row.each_with_index do |key_symbol, col_index|
           if key_name == key_symbol
@@ -371,7 +371,7 @@ class Keyboard
             end
             on_hold_action = if on_hold.is_a?(Symbol)
               # @type var on_hold: Symbol
-              MOD_KEYCODE[on_hold]
+              MOD_KEYCODE[on_hold] ? MOD_KEYCODE[on_hold] : on_hold
             else
               # @type var on_hold: Proc
               on_hold
@@ -387,7 +387,6 @@ class Keyboard
               pushed_at:         0,
               released_at:       0,
             }
-            break
           end
         end
       end
@@ -455,6 +454,9 @@ class Keyboard
     when Fixnum
       # @type var mode_key: Integer
       @modifier |= mode_key
+    when Symbol
+      # @type var mode_key: Symbol
+      @layer = mode_key
     when Proc
       # @type var mode_key: Proc
       mode_key.call
@@ -471,7 +473,6 @@ class Keyboard
   def start!
     start_rgb if $rgb
     @keycodes = Array.new
-    @layer = :default
     # To avoid unintentional report on startup
     # which happens only on Sparkfun Pro Micro RP2040
     if @split
@@ -534,6 +535,7 @@ class Keyboard
       end
 
       if @anchor
+        desired_layer = @layer
         @mode_keys.each do |mode_key|
           next if mode_key[:layer] != @layer
           if @switches.include?(mode_key[:switch])
@@ -541,10 +543,12 @@ class Keyboard
             when :released
               mode_key[:pushed_at] = now
               mode_key[:prev_state] = :pushed
-              @prev_layer ||= @layer
-              action_on_hold(mode_key[:on_hold]) if mode_key[:on_hold].is_a?(Proc)
+              if mode_key[:on_hold].is_a?(Symbol) &&
+                  @layer_names.index(desired_layer).to_i < @layer_names.index(mode_key[:on_hold]).to_i
+                desired_layer = mode_key[:on_hold]
+              end
             when :pushed
-              if now - mode_key[:pushed_at] > mode_key[:release_threshold]
+              if !mode_key[:on_hold].is_a?(Symbol) && (now - mode_key[:pushed_at] > mode_key[:release_threshold])
                 action_on_hold(mode_key[:on_hold])
               end
             when :pushed_then_released
@@ -576,9 +580,14 @@ class Keyboard
           end
         end
 
-        layer = @layers[@layer]
+        if @layer != desired_layer
+          @prev_layer ||= @layer
+          action_on_hold(desired_layer)
+        end
+
+        keymap = @keymaps[@locked_layer || @layer]
         @switches.each do |switch|
-          keycode = layer[switch[0]][switch[1]]
+          keycode = keymap[switch[0]][switch[1]]
           next unless keycode.is_a?(Fixnum)
           if keycode < -255 # Key with SHIFT
             @keycodes << ((keycode + 0x100) * -1).chr
@@ -600,7 +609,11 @@ class Keyboard
 
         report_hid(@modifier, @keycodes.join)
 
-        @layer = :default if @switches.empty?
+        if @switches.empty? && @locked_layer.nil?
+          @layer = :default
+        elsif @locked_layer
+          @layer = @locked_layer
+        end
       else
         @switches.each do |switch|
           # 0b11111111
@@ -622,35 +635,35 @@ class Keyboard
 
   # Raises layer and keeps it
   def raise_layer
-    current_index = @layer_names.index(@locked_layer_name)
+    current_index = @layer_names.index(@locked_layer || @layer)
     return if current_index.nil?
     if current_index < @layer_names.size - 1
       # @type var current_index: Integer
-      @locked_layer_name = @layer_names[current_index + 1]
+      @locked_layer = @layer_names[current_index + 1]
     else
-      @locked_layer_name = @layer_names.first || :default
+      @locked_layer = @layer_names.first
     end
   end
 
   # Lowers layer and keeps it
   def lower_layer
-    current_index = @layer_names.index(@locked_layer_name)
+    current_index = @layer_names.index(@locked_layer || @layer)
+    return if current_index.nil?
     if current_index == 0
-      @locked_layer_name = @layer_names.last || :default
+      @locked_layer = @layer_names.last
     else
       # @type var current_index: Integer
-      @locked_layer_name = @layer_names[current_index - 1]
+      @locked_layer = @layer_names[current_index - 1]
     end
   end
 
-  # Holds specified layer while pressed
-  def hold_layer(layer)
-    @layer = layer
+  # Switch to specified layer
+  def lock_layer(layer)
+    @locked_layer = layer
   end
 
-  # Switch to specified layer
-  def switch_layer(layer)
-    @locked_layer_name = layer
+  def unlock_layer
+    @locked_layer = nil
   end
 
 end
