@@ -235,10 +235,11 @@ class Keyboard
 
   def initialize
     @before_filters = Array.new
-    @layers = Hash.new
+    @keymaps = Hash.new
     @mode_keys = Array.new
     @switches = Array.new
     @layer_names = Array.new
+    @layer = :default
     @split = false
     @anchor = true
     @anchor_left = true # so-called "master left"
@@ -247,6 +248,7 @@ class Keyboard
   end
 
   attr_accessor :split, :uart_pin
+  attr_reader :layer
 
   # TODO: OLED, SDCard
   def append(feature)
@@ -302,24 +304,30 @@ class Keyboard
   # Result
   #   layer: { default:      [ [ -0x04, -0x05, 0b00000001, :MACRO_1 ],... ] }
   def add_layer(name, map)
-    new_map = Array.new(map.size)
-    map.each_with_index do |row, row_index|
-      new_map[row_index] = Array.new(row.size)
-      row.each_with_index do |key, col_index|
-        keycode_index = KEYCODE.index(key)
-        new_map[row_index][col_index] = if keycode_index
-          keycode_index * -1
-        elsif KEYCODE_SFT[key]
-          (KEYCODE_SFT[key] + 0x100) * -1
-        elsif MOD_KEYCODE[key]
-          MOD_KEYCODE[key]
-        else
-          key
-        end
+    new_map = Array.new(@rows.size)
+    row_index = 0
+    col_index = 0
+    cols_size = @split ? @cols.size * 2 : @cols.size
+    map.each do |key|
+      new_map[row_index] = Array.new(@cols.size) if col_index == 0
+      keycode_index = KEYCODE.index(key)
+      new_map[row_index][col_index] = if keycode_index
+        keycode_index * -1
+      elsif KEYCODE_SFT[key]
+        (KEYCODE_SFT[key] + 0x100) * -1
+      elsif MOD_KEYCODE[key]
+        MOD_KEYCODE[key]
+      else
+        key
+      end
+      if col_index == cols_size - 1
+        col_index = 0
+        row_index += 1
+      else
+        col_index += 1
       end
     end
-    @layers[name] = new_map
-    @locked_layer_name ||= name
+    @keymaps[name] = new_map
     @layer_names << name
   end
 
@@ -332,7 +340,7 @@ class Keyboard
     on_hold = param[1]
     release_threshold = param[2]
     repush_threshold = param[3]
-    @layers.each do |layer_name, map|
+    @keymaps.each do |layer, map|
       map.each_with_index do |row, row_index|
         row.each_with_index do |key_symbol, col_index|
           if key_name == key_symbol
@@ -367,13 +375,13 @@ class Keyboard
             end
             on_hold_action = if on_hold.is_a?(Symbol)
               # @type var on_hold: Symbol
-              MOD_KEYCODE[on_hold]
+              MOD_KEYCODE[on_hold] ? MOD_KEYCODE[on_hold] : on_hold
             else
               # @type var on_hold: Proc
               on_hold
             end
             @mode_keys << {
-              layer_name:        layer_name,
+              layer:             layer,
               on_release:        on_release_action,
               on_hold:           on_hold_action,
               release_threshold: (release_threshold || 0),
@@ -383,7 +391,6 @@ class Keyboard
               pushed_at:         0,
               released_at:       0,
             }
-            break
           end
         end
       end
@@ -451,6 +458,9 @@ class Keyboard
     when Fixnum
       # @type var mode_key: Integer
       @modifier |= mode_key
+    when Symbol
+      # @type var mode_key: Symbol
+      @layer = mode_key
     when Proc
       # @type var mode_key: Proc
       mode_key.call
@@ -479,7 +489,6 @@ class Keyboard
     while true
       now = board_millis
       @keycodes.clear
-      @layer_name = @locked_layer_name
 
       @switches.clear
       @modifier = 0
@@ -530,23 +539,28 @@ class Keyboard
       end
 
       if @anchor
+        desired_layer = @layer
         @mode_keys.each do |mode_key|
-          next if mode_key[:layer_name] != @layer_name
+          next if mode_key[:layer] != @layer
           if @switches.include?(mode_key[:switch])
             case mode_key[:prev_state]
             when :released
               mode_key[:pushed_at] = now
               mode_key[:prev_state] = :pushed
-              action_on_hold(mode_key[:on_hold])
+              if mode_key[:on_hold].is_a?(Symbol) &&
+                  @layer_names.index(desired_layer).to_i < @layer_names.index(mode_key[:on_hold]).to_i
+                desired_layer = mode_key[:on_hold]
+              end
             when :pushed
-              action_on_hold(mode_key[:on_hold])
+              if !mode_key[:on_hold].is_a?(Symbol) && (now - mode_key[:pushed_at] > mode_key[:release_threshold])
+                action_on_hold(mode_key[:on_hold])
+              end
             when :pushed_then_released
               if now - mode_key[:released_at] <= mode_key[:repush_threshold]
                 mode_key[:prev_state] = :pushed_then_released_then_pushed
               end
             when :pushed_then_released_then_pushed
               action_on_release(mode_key[:on_release])
-              break([]) # to make steep check passed
             end
           else
             case mode_key[:prev_state]
@@ -554,11 +568,12 @@ class Keyboard
               if now - mode_key[:pushed_at] <= mode_key[:release_threshold]
                 action_on_release(mode_key[:on_release])
                 mode_key[:prev_state] = :pushed_then_released
-                mode_key[:released_at] = now
-                break([]) # to make steep check passed
               else
                 mode_key[:prev_state] = :released
               end
+              mode_key[:released_at] = now
+              @layer = @prev_layer || :default
+              @prev_layer = nil
             when :pushed_then_released
               if now - mode_key[:released_at] > mode_key[:release_threshold]
                 mode_key[:prev_state] = :released
@@ -569,9 +584,14 @@ class Keyboard
           end
         end
 
-        layer = @layers[@layer_name]
+        if @layer != desired_layer
+          @prev_layer ||= @layer
+          action_on_hold(desired_layer)
+        end
+
+        keymap = @keymaps[@locked_layer || @layer]
         @switches.each do |switch|
-          keycode = layer[switch[0]][switch[1]]
+          keycode = keymap[switch[0]][switch[1]]
           next unless keycode.is_a?(Fixnum)
           if keycode < -255 # Key with SHIFT
             @keycodes << ((keycode + 0x100) * -1).chr
@@ -593,6 +613,12 @@ class Keyboard
 
         @rotary_encoder.consume_rotation if @rotary_encoder
         report_hid(@modifier, @keycodes.join)
+
+        if @switches.empty? && @locked_layer.nil?
+          @layer = :default
+        elsif @locked_layer
+          @layer = @locked_layer
+        end
       else
         @switches.each do |switch|
           # 0b11111111
@@ -614,35 +640,35 @@ class Keyboard
 
   # Raises layer and keeps it
   def raise_layer
-    current_index = @layer_names.index(@locked_layer_name)
+    current_index = @layer_names.index(@locked_layer || @layer)
     return if current_index.nil?
     if current_index < @layer_names.size - 1
       # @type var current_index: Integer
-      @locked_layer_name = @layer_names[current_index + 1]
+      @locked_layer = @layer_names[current_index + 1]
     else
-      @locked_layer_name = @layer_names.first || :default
+      @locked_layer = @layer_names.first
     end
   end
 
   # Lowers layer and keeps it
   def lower_layer
-    current_index = @layer_names.index(@locked_layer_name)
+    current_index = @layer_names.index(@locked_layer || @layer)
+    return if current_index.nil?
     if current_index == 0
-      @locked_layer_name = @layer_names.last || :default
+      @locked_layer = @layer_names.last
     else
       # @type var current_index: Integer
-      @locked_layer_name = @layer_names[current_index - 1]
+      @locked_layer = @layer_names[current_index - 1]
     end
   end
 
-  # Holds specified layer while pressed
-  def hold_layer(layer_name)
-    @layer_name = layer_name
+  # Switch to specified layer
+  def lock_layer(layer)
+    @locked_layer = layer
   end
 
-  # Switch to specified layer
-  def switch_layer(layer_name)
-    @locked_layer_name = layer_name
+  def unlock_layer
+    @locked_layer = nil
   end
 
 end

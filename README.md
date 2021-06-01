@@ -86,7 +86,7 @@ Fork, clone, patch and send a pull request.
 ### Keymaps for example
 
 - Raspberrypi Pi Pico
-  - PiPi Gherkin (coming soon)
+  - [PiPi Gherkin](https://github.com/picoruby/prk_pipigherkin)
 
 - Sparkfun Pro Micro RP2040 (DEV-17717)
   - [meishi2](https://github.com/picoruby/prk_meishi2)
