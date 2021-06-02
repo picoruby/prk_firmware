@@ -6,18 +6,20 @@
 class Object
   private
   def hsv2rgb: (Float | Integer h, Integer s, Float v) -> Integer
-  def ws2812_init: (Integer, Integer, bool) -> void
-  def ws2812_show: () -> void
-  def ws2812_save: () -> void
-  def ws2812_restore: () -> void
-  def ws2812_resume: () -> void
-  def ws2812_rotate: () -> void
-  def ws2812_fill: (Integer) -> void
-  def ws2812_rand_fill: (Integer, Integer) -> void
-  def ws2812_set_pixel_at: (Integer, Integer) -> void
 end
 
 class RGB
+  def ws2812_init: (Integer, Integer, bool) -> void
+  def ws2812_off: () -> void
+  def ws2812_resume: () -> void
+  def ws2812_show: () -> void
+  def ws2812_fill: (Integer) -> void
+  def ws2812_rand_fill: (Integer, Integer) -> void
+  def ws2812_set_pixel_at: (Integer, Integer) -> void
+  def ws2812_rotate: () -> void
+  def ws2812_save: () -> void
+  def ws2812_restore: () -> void
+
   @fifo: Array[true]
 
   def initialize: (Integer pin, Integer underglow_size, Integer backlight_size, bool is_rgbw) -> void

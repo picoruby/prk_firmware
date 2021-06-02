@@ -259,7 +259,7 @@ class Keyboard
   end
 
   def start_rgb
-    ws2812_resume if $rgb
+    $rgb.ws2812_resume if $rgb
   end
 
   # val should be treated as `:left` if it's anything other than `:right`
