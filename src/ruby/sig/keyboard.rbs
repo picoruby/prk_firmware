@@ -39,11 +39,17 @@ class Keyboard
   @locked_layer: Symbol | nil
   @keycodes: Array[String]
   @modifier: Integer
-  @layer_name: Symbol
+  @layer: Symbol
 
-  def initialize: -> nil
   attr_accessor split: bool
   attr_accessor uart_pin: Integer
+
+  def uart_putc_raw : (Integer) -> void
+  def uart_getc : -> Integer
+  def uart_rx_init : (Integer) -> void
+  def uart_tx_init : (Integer) -> void
+  def report_hid : (Integer, String) -> void
+  def initialize: -> nil
   def layer: () -> Symbol
   def append: (RGB feature) -> void
   def start_rgb: -> void

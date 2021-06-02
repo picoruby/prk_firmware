@@ -259,7 +259,7 @@ class Keyboard
   end
 
   def start_rgb
-    ws2812_resume if $rgb
+    $rgb.ws2812_resume if $rgb
   end
 
   # val should be treated as `:left` if it's anything other than `:right`
@@ -528,7 +528,7 @@ class Keyboard
           data = uart_getc
           break if data == nil
           # @type var data: Integer
-          switch = [data >> 4, data & 0b00001111]
+          switch = [data >> 5, data & 0b00011111]
           # To avoid chattering
           @switches << switch unless @switches.include?(switch)
         end
@@ -543,9 +543,10 @@ class Keyboard
             when :released
               mode_key[:pushed_at] = now
               mode_key[:prev_state] = :pushed
-              if mode_key[:on_hold].is_a?(Symbol) &&
-                  @layer_names.index(desired_layer).to_i < @layer_names.index(mode_key[:on_hold]).to_i
-                desired_layer = mode_key[:on_hold]
+              on_hold = mode_key[:on_hold]
+              if on_hold.is_a?(Symbol) &&
+                  @layer_names.index(desired_layer).to_i < @layer_names.index(on_hold).to_i
+                desired_layer = on_hold
               end
             when :pushed
               if !mode_key[:on_hold].is_a?(Symbol) && (now - mode_key[:pushed_at] > mode_key[:release_threshold])
@@ -612,14 +613,15 @@ class Keyboard
         if @switches.empty? && @locked_layer.nil?
           @layer = :default
         elsif @locked_layer
+          # @type ivar @locked_layer: Symbol
           @layer = @locked_layer
         end
       else
         @switches.each do |switch|
           # 0b11111111
-          #   ^^^^     row number (0 to 15)
-          #       ^^^^ col number (0 to 15)
-          uart_putc_raw((switch[0] << 4) + switch[1])
+          #   ^^^      row number (0 to 7)
+          #      ^^^^^ col number (0 to 31)
+          uart_putc_raw((switch[0] << 5) + switch[1])
         end
       end
 
