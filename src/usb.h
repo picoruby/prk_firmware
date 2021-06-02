@@ -1,13 +1,3 @@
-#include "tusb.h"
-#include "usb_descriptors.h"
-#include "bsp/board.h"
-#include "hardware/timer.h"
-#include "hardware/clocks.h"
-#include "hardware/irq.h"
-#include "hardware/structs/scb.h"
-#include "hardware/sync.h"
-#include "hardware/gpio.h"
-
 /* mruby/c VM */
 #include <mrubyc.h>
 

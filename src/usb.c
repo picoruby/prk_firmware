@@ -1,5 +1,14 @@
 #include "usb.h"
 
+#include "tusb.h"
+#include "usb_descriptors.h"
+#include "hardware/timer.h"
+#include "hardware/clocks.h"
+#include "hardware/irq.h"
+#include "hardware/structs/scb.h"
+#include "hardware/sync.h"
+#include "hardware/gpio.h"
+
 const uint8_t device_desc[] = {
   18, // bLength
   1, // bDescriptorType

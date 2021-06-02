@@ -39,7 +39,7 @@ class Keyboard
   @locked_layer: Symbol | nil
   @keycodes: Array[String]
   @modifier: Integer
-  @layer_name: Symbol
+  @layer: Symbol
 
   attr_accessor split: bool
   attr_accessor uart_pin: Integer

@@ -1,5 +1,7 @@
 #include "gpio.h"
 
+#include "hardware/gpio.h"
+
 void
 c_gpio_get(mrb_vm *vm, mrb_value *v, int argc)
 {

@@ -1,5 +1,3 @@
-#include "hardware/gpio.h"
-
 /* mruby/c VM */
 #include <mrubyc.h>
 
