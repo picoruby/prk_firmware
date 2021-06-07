@@ -4,8 +4,8 @@ class Object
 end
 
 class RotaryEncoder
-  @proc_a: ^() -> void
-  @proc_b: ^() -> void
+  @proc_cw: ^() -> void
+  @proc_ccw: ^() -> void
 
   def initialize: (Integer pin_a, Integer pin_b) -> void
   def clockwise: () { () -> void } -> void
