@@ -1,5 +1,10 @@
 #include "ws2812.h"
 
+#include <stdlib.h>
+#include "hardware/pio.h"
+#include "ws2812.pio.h"
+#include "hardware/clocks.h"
+
 static PIO pio = pio1;
 static uint sm = 0;
 

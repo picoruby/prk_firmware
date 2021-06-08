@@ -1,7 +1,14 @@
 /* PicoRuby compiler */
 #include <picorbc.h>
 
-/* C */
+/* Raspi SDK */
+#include <stdio.h>
+#include <stdlib.h>
+#include "pico/stdlib.h"
+#include "bsp/board.h"
+#include "hardware/clocks.h"
+
+/* mrbc_class */
 #include "gpio.h"
 #include "usb.h"
 #include "uart.h"

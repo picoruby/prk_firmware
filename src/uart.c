@@ -1,5 +1,11 @@
 #include "uart.h"
 
+#include "pico/stdlib.h"
+#include "hardware/uart.h"
+#include "hardware/irq.h"
+#include "hardware/pio.h"
+#include "uart_tx.pio.h"
+
 #define UART_ID uart0
 #define BAUD_RATE 115200
 #define DATA_BITS 8
