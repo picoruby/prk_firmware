@@ -1,6 +1,6 @@
 class RotaryEncoder
   def initialize(pin_a, pin_b)
-    init_rotary_encoder(pin_a, pin_b)
+    init_encoder(pin_a, pin_b)
   end
 
   def clockwise(&block)
@@ -12,11 +12,16 @@ class RotaryEncoder
   end
 
   def consume_rotation
-    rotation = consume_rotation_rotary_encoder
-    if rotation > 0 && @proc_cw
-      @proc_cw.call
-    elsif rotation < 0 && @proc_ccw
-      @proc_ccw.call
+    rotation = encoder_value
+    if rotation != 0
+      if rotation > 0 && @proc_cw
+        @proc_cw.call
+        sleep_ms 30
+      elsif @proc_ccw
+        @proc_ccw.call
+        sleep_ms 70
+      end
+      reset_encoder
     end
   end
 end

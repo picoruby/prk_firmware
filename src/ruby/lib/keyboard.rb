@@ -245,6 +245,7 @@ class Keyboard
     @anchor_left = true # so-called "master left"
     @uart_pin = 1
     $rgb = nil
+    $rotary_encoder = nil
   end
 
   attr_accessor :split, :uart_pin
@@ -258,7 +259,7 @@ class Keyboard
       $rgb = feature
     when RotaryEncoder
       # @type var feature: RotaryEncoder
-      @rotary_encoder = feature
+      $rotary_encoder = feature
     end
   end
 
@@ -612,7 +613,7 @@ class Keyboard
           block.call
         end
 
-        @rotary_encoder.consume_rotation if @rotary_encoder
+        $rotary_encoder.consume_rotation if $rotary_encoder
         report_hid(@modifier, @keycodes.join)
 
         if @switches.empty? && @locked_layer.nil?
