@@ -13,5 +13,4 @@ class Object
   def gpio_pull_up : (Integer) -> void
   def gpio_put : (Integer, Integer) -> void
   def gpio_get : (Integer) -> Integer
-  def rotary_encoder_callback : () -> void
 end

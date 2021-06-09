@@ -2,7 +2,6 @@
 
 # Global variables
 $mutex: Thread::Mutex
-$rgb: RGB
 
 # Classes
 class Keyboard
@@ -40,7 +39,6 @@ class Keyboard
   @keycodes: Array[String]
   @modifier: Integer
   @layer: Symbol
-  @rotary_encoder: RotaryEncoder
 
   attr_accessor split: bool
   attr_accessor uart_pin: Integer
@@ -52,7 +50,7 @@ class Keyboard
   def uart_rx_init : (Integer) -> void
   def uart_tx_init : (Integer) -> void
   def report_hid : (Integer, String) -> void
-  def initialize: -> nil
+  def initialize: -> untyped
   def layer: () -> Symbol
   def set_anchor: (Symbol val) -> void
   def init_pins: (Array[Integer] rows, Array[Integer] cols) -> void

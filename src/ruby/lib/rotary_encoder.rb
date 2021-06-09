@@ -1,6 +1,13 @@
 class RotaryEncoder
   def initialize(pin_a, pin_b)
     init_encoder(pin_a, pin_b)
+    @pin_a = pin_a
+    @pin_b = pin_b
+    @rotation = 0
+  end
+
+  def read
+    @rotation += read_encoder(@pin_a, @pin_b)
   end
 
   def clockwise(&block)
@@ -12,16 +19,15 @@ class RotaryEncoder
   end
 
   def consume_rotation
-    rotation = encoder_value
-    if rotation != 0
-      if rotation > 0 && @proc_cw
-        @proc_cw.call
-        sleep_ms 30
-      elsif @proc_ccw
-        @proc_ccw.call
-        sleep_ms 70
-      end
-      reset_encoder
+    # ignore values of 1 and -1
+    if @rotation > 1 && @proc_cw
+      @proc_cw.call
+      sleep_ms 20
+    elsif @rotation < -1 && @proc_ccw
+      @proc_ccw.call
+      # counterclockwise seems more sensitive
+      sleep_ms 40
     end
+    @rotation = 0
   end
 end

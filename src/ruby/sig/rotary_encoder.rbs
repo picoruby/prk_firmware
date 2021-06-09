@@ -1,14 +1,20 @@
+# TypeProf 0.14.1
+
+# Global variables
+$encoders: Array[RotaryEncoder]
+
 class RotaryEncoder
   @proc_cw: ^() -> void
   @proc_ccw: ^() -> void
+  @pin_a: Integer
+  @pin_b: Integer
+  @rotation: Integer
 
   def init_encoder: (Integer, Integer) -> void
-  def read_encoder: () -> Integer
-  def encoder_value: () -> Integer
-  def reset_encoder: () -> void
+  def read_encoder: (Integer, Integer) -> Integer
 
   def initialize: (Integer pin_a, Integer pin_b) -> void
+  def read: () -> Integer
   def clockwise: () { () -> void } -> void
   def counterclockwise: () { () -> void } -> void
-  def consume_rotation: () -> void
 end
