@@ -14,7 +14,7 @@ class Keyboard
   KEYCODE_SFT: Hash[Symbol, Integer]
 
   @before_filters: Array[^() -> void]
-  @layers: Hash[Symbol, Array[Array[Integer | Symbol]]]
+  @keymaps: Hash[Symbol, Array[Array[Integer | Symbol | Proc]]]
   @mode_keys: Array[{
     layer:             Symbol,
     on_release:        Integer | Array[Integer] | Proc | nil,
@@ -29,6 +29,7 @@ class Keyboard
     ]
   @switches: Array[Array[Integer]]
   @layer_names: Array[Symbol]
+  @layer: Symbol
   @anchor: bool
   @anchor_left: bool
   @rows: Array[Integer]
@@ -38,7 +39,6 @@ class Keyboard
   @locked_layer: Symbol | nil
   @keycodes: Array[String]
   @modifier: Integer
-  @layer: Symbol
 
   attr_accessor split: bool
   attr_accessor uart_pin: Integer
