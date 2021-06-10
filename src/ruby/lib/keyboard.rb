@@ -468,6 +468,25 @@ class Keyboard
     end
   end
 
+  def send_key(symbol)
+    keycode = KEYCODE.index(symbol)
+    if keycode
+      modifier = 0
+      c = keycode.chr
+    else
+      keycode = KEYCODE_SFT[symbol]
+      if keycode
+        modifier = 0b00100000
+        c = keycode.chr
+      else
+        return
+      end
+    end
+    report_hid(modifier, "#{c}\000\000\000\000\000")
+    sleep_ms 5
+    report_hid(0, "\000\000\000\000\000\000")
+  end
+
   # **************************************************************
   #  For those who are willing to contribute to PRK Firmware:
   #

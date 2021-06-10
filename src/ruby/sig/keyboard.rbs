@@ -50,7 +50,7 @@ class Keyboard
   def uart_rx_init : (Integer) -> void
   def uart_tx_init : (Integer) -> void
   def report_hid : (Integer, String) -> void
-  def initialize: -> untyped
+  def initialize: -> void
   def layer: () -> Symbol
   def set_anchor: (Symbol val) -> void
   def init_pins: (Array[Integer] rows, Array[Integer] cols) -> void
@@ -61,6 +61,7 @@ class Keyboard
   def keys_include?: (Symbol) -> bool
   def action_on_release: (Integer | Array[Integer] | Proc | nil) -> void
   def action_on_hold: (Integer | Symbol | Proc) -> void
+  def send_key: (Symbol) -> void
   def start!: -> void
   def raise_layer: -> void
   def lower_layer: -> void
