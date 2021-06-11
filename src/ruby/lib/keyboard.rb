@@ -246,6 +246,7 @@ class Keyboard
     @uart_pin = 1
     $rgb = nil
     $encoders = Array.new
+    @partner_encoders = Array.new
   end
 
   attr_accessor :split, :uart_pin
@@ -259,7 +260,26 @@ class Keyboard
       $rgb = feature
     when RotaryEncoder
       # @type var feature: RotaryEncoder
-      $encoders << feature
+      if @split
+        feature.create_keycodes(@partner_encoders.size)
+        if @anchor_left
+          if @anchor == feature.left? # XNOR
+            feature.init_pins
+            $encoders << feature
+          end
+        else
+          if @anchor != feature.left? #XOR
+            feature.init_pins
+            $encoders << feature
+          end
+        end
+        if @anchor && (@anchor_left != feature.left?)
+          @partner_encoders << feature
+        end
+      else
+        feature.init_pins
+        $encoders << feature
+      end
     end
   end
 
@@ -550,11 +570,15 @@ class Keyboard
         sleep_ms 5
         while true
           data = uart_getc
-          break if data == nil
+          break unless data
           # @type var data: Integer
-          switch = [data >> 5, data & 0b00011111]
-          # To avoid chattering
-          @switches << switch unless @switches.include?(switch)
+          if data > 246
+            @partner_encoders.each { |encoder| encoder.call_proc_if(data) }
+          else
+            switch = [data >> 5, data & 0b00011111]
+            # To avoid chattering
+            @switches << switch unless @switches.include?(switch)
+          end
         end
       end
 
@@ -632,7 +656,9 @@ class Keyboard
           block.call
         end
 
-        $encoders.each {|encoder| encoder.consume_rotation } unless $encoders.empty?
+        $encoders.each do |encoder|
+          encoder.consume_rotation_anchor
+        end
 
         report_hid(@modifier, @keycodes.join)
 
@@ -643,6 +669,10 @@ class Keyboard
           @layer = @locked_layer
         end
       else
+        $encoders.each do |encoder|
+          data = encoder.consume_rotation_partner
+          uart_putc_raw(data) if data && data > 0
+        end
         @switches.each do |switch|
           # 0b11111111
           #   ^^^      row number (0 to 7)
