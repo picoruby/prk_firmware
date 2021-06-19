@@ -33,7 +33,7 @@ _(left: Raspberry Pi Pico / right: Sparkfun Pro Micro RP2040)_
 - [ ] Media keys
 - [x] RGBLED. An example on [picoruby/prk_crkbd](https://github.com/picoruby/prk_crkbd/blob/main/keymap.rb#L61-L76)
 - [ ] OLED display
-- [x] Rotary encoder *new!*
+- [x] Rotary encoder *new!* An example on [prk_helix_rev3/keymap.rb](https://github.com/picoruby/prk_helix_rev3/blob/master/keymap.rb#L79-L100)
 - [ ] Mouse / Trackball
 
 ### Getting started
