@@ -245,6 +245,8 @@ class Keyboard
     @anchor_left = true # so-called "master left"
     @uart_pin = 1
     $rgb = nil
+    $encoders = Array.new
+    @partner_encoders = Array.new
   end
 
   attr_accessor :split, :uart_pin
@@ -254,11 +256,34 @@ class Keyboard
   def append(feature)
     case feature.class
     when RGB
+      # @type var feature: RGB
       $rgb = feature
+    when RotaryEncoder
+      # @type var feature: RotaryEncoder
+      if @split
+        feature.create_keycodes(@partner_encoders.size)
+        if @anchor_left
+          if @anchor == feature.left? # XNOR
+            feature.init_pins
+            $encoders << feature
+          end
+        else
+          if @anchor != feature.left? #XOR
+            feature.init_pins
+            $encoders << feature
+          end
+        end
+        if @anchor && (@anchor_left != feature.left?)
+          @partner_encoders << feature
+        end
+      else
+        feature.init_pins
+        $encoders << feature
+      end
     end
   end
 
-  def start_rgb
+  def start_features
     $rgb.ws2812_resume if $rgb
   end
 
@@ -463,6 +488,25 @@ class Keyboard
     end
   end
 
+  def send_key(symbol)
+    keycode = KEYCODE.index(symbol)
+    if keycode
+      modifier = 0
+      c = keycode.chr
+    else
+      keycode = KEYCODE_SFT[symbol]
+      if keycode
+        modifier = 0b00100000
+        c = keycode.chr
+      else
+        return
+      end
+    end
+    report_hid(modifier, "#{c}\000\000\000\000\000")
+    sleep_ms 5
+    report_hid(0, "\000\000\000\000\000\000")
+  end
+
   # **************************************************************
   #  For those who are willing to contribute to PRK Firmware:
   #
@@ -471,7 +515,7 @@ class Keyboard
   #   Please refrain from "refactoring" for a while.
   # **************************************************************
   def start!
-    start_rgb if $rgb
+    start_features
     @keycodes = Array.new
     # To avoid unintentional report on startup
     # which happens only on Sparkfun Pro Micro RP2040
@@ -526,11 +570,15 @@ class Keyboard
         sleep_ms 5
         while true
           data = uart_getc
-          break if data == nil
+          break unless data
           # @type var data: Integer
-          switch = [data >> 5, data & 0b00011111]
-          # To avoid chattering
-          @switches << switch unless @switches.include?(switch)
+          if data > 246
+            @partner_encoders.each { |encoder| encoder.call_proc_if(data) }
+          else
+            switch = [data >> 5, data & 0b00011111]
+            # To avoid chattering
+            @switches << switch unless @switches.include?(switch)
+          end
         end
       end
 
@@ -608,6 +656,10 @@ class Keyboard
           block.call
         end
 
+        $encoders.each do |encoder|
+          encoder.consume_rotation_anchor
+        end
+
         report_hid(@modifier, @keycodes.join)
 
         if @switches.empty? && @locked_layer.nil?
@@ -617,6 +669,10 @@ class Keyboard
           @layer = @locked_layer
         end
       else
+        $encoders.each do |encoder|
+          data = encoder.consume_rotation_partner
+          uart_putc_raw(data) if data && data > 0
+        end
         @switches.each do |switch|
           # 0b11111111
           #   ^^^      row number (0 to 7)

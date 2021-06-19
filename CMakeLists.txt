@@ -19,6 +19,7 @@ add_executable(prk_firmware
   src/usb.c
   src/uart.c
   src/ws2812.c
+  src/rotary_encoder.c
 )
 
 pico_generate_pio_header(prk_firmware ${CMAKE_CURRENT_LIST_DIR}/src/uart_tx.pio)
@@ -37,6 +38,7 @@ add_custom_target(ruby
   COMMAND ${RBC} -Bkeyboard keyboard.rb
   COMMAND ${RBC} -Btud tud.rb
   COMMAND ${RBC} -Brgb rgb.rb
+  COMMAND ${RBC} -Brotary_encoder rotary_encoder.rb
   COMMAND ${RBC} -Bkeymap ${PROJECT_BINARY_DIR}/../keymap.rb
   COMMAND mv ${PROJECT_BINARY_DIR}/../keymap.c ./
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src/ruby/lib
@@ -58,6 +60,7 @@ target_link_libraries(prk_firmware
   picoruby
   hardware_pio
   hardware_pwm
+  pico_multicore
 )
 
 include_directories(prk_firmware

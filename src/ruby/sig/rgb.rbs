@@ -1,6 +1,7 @@
 # TypeProf 0.14.1
 
 # Global variables
+$rgb: RGB
 
 # Classes
 class Object

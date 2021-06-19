@@ -2,7 +2,6 @@
 
 # Global variables
 $mutex: Thread::Mutex
-$rgb: RGB
 
 # Classes
 class Keyboard
@@ -15,7 +14,7 @@ class Keyboard
   KEYCODE_SFT: Hash[Symbol, Integer]
 
   @before_filters: Array[^() -> void]
-  @layers: Hash[Symbol, Array[Array[Integer | Symbol]]]
+  @keymaps: Hash[Symbol, Array[Array[Integer | Symbol | Proc]]]
   @mode_keys: Array[{
     layer:             Symbol,
     on_release:        Integer | Array[Integer] | Proc | nil,
@@ -30,6 +29,7 @@ class Keyboard
     ]
   @switches: Array[Array[Integer]]
   @layer_names: Array[Symbol]
+  @layer: Symbol
   @anchor: bool
   @anchor_left: bool
   @rows: Array[Integer]
@@ -39,20 +39,19 @@ class Keyboard
   @locked_layer: Symbol | nil
   @keycodes: Array[String]
   @modifier: Integer
-  @layer: Symbol
 
   attr_accessor split: bool
   attr_accessor uart_pin: Integer
 
+  def append: (RGB | RotaryEncoder feature) -> void
+  def start_features: -> void
   def uart_putc_raw : (Integer) -> void
   def uart_getc : -> Integer
   def uart_rx_init : (Integer) -> void
   def uart_tx_init : (Integer) -> void
   def report_hid : (Integer, String) -> void
-  def initialize: -> nil
+  def initialize: -> void
   def layer: () -> Symbol
-  def append: (RGB feature) -> void
-  def start_rgb: -> void
   def set_anchor: (Symbol val) -> void
   def init_pins: (Array[Integer] rows, Array[Integer] cols) -> void
   def add_layer: (Symbol name, Array[Symbol] map) -> void
@@ -62,6 +61,7 @@ class Keyboard
   def keys_include?: (Symbol) -> bool
   def action_on_release: (Integer | Array[Integer] | Proc | nil) -> void
   def action_on_hold: (Integer | Symbol | Proc) -> void
+  def send_key: (Symbol) -> void
   def start!: -> void
   def raise_layer: -> void
   def lower_layer: -> void
