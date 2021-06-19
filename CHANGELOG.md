@@ -1,5 +1,10 @@
 # Change log
 
+## 2021/06/19
+###  New feature added
+- Rotary Encoders &#x1F39B;
+  - Find an example in [prk_helix_rev3/keymap.rb](https://github.com/picoruby/prk_helix_rev3/blob/master/keymap.rb)
+
 ## 2021/06/01
 ### Breaking Change 💣
 - The second argument of `Keyboard#add_layer`
