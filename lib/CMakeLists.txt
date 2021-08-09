@@ -37,12 +37,10 @@ add_library(picoruby STATIC
   ./picoruby/src/stream.c
   ./picoruby/src/token.c
   ./picoruby/src/tokenizer.c
-
-  ./picoruby/src/ruby-lemon-parse/crc.c
 )
 
 add_custom_target(picorbc
-  COMMAND make host_production
+  COMMAND make host_production_libc
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/picoruby
 )
 
@@ -62,7 +60,7 @@ target_include_directories(picoruby INTERFACE
   ./picoruby/src
   ./picoruby/src/ruby-lemon-parse
   ./picoruby/src/mrubyc/src
-  ./picoruby/src/mrubyc/src/hal_raspi_pico
+  ./picoruby/src/mrubyc/src/hal_rp2040
 )
 set_target_properties(picoruby
   PROPERTIES

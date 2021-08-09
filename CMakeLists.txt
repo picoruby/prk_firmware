@@ -25,8 +25,8 @@ add_executable(prk_firmware
 pico_generate_pio_header(prk_firmware ${CMAKE_CURRENT_LIST_DIR}/src/uart_tx.pio)
 pico_generate_pio_header(prk_firmware ${CMAKE_CURRENT_LIST_DIR}/src/ws2812.pio)
 
-set(RBC ${CMAKE_CURRENT_SOURCE_DIR}/lib/picoruby/build/host-production/bin/picorbc)
-#set(RBC RBENV_VERSION=mruby-2.1.1 mrbc -E)
+#set(RBC ${CMAKE_CURRENT_SOURCE_DIR}/lib/picoruby/build/bin/host-production/alloc_libc/picorbc)
+set(RBC RBENV_VERSION=mruby-3.0.0 mrbc)
 
 add_custom_target(steep
   COMMAND bundle install
