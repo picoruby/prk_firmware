@@ -3,6 +3,9 @@ class Object
   def relinquish : -> bool
   def sleep_ms : (Integer) -> void
   def suspend_task : () -> void
+  def sandbox_state : () -> Integer
+  def sandbox_result : () -> untyped
+  def invoke_ruby: (String) -> bool
 
   # Raspi
   def board_millis : -> Integer

@@ -30,7 +30,9 @@ add_library(picoruby STATIC
 
   ./picoruby/src/common.c
   ./picoruby/src/compiler.c
+  ./picoruby/src/dump.c
   ./picoruby/src/generator.c
+  ./picoruby/src/regex_light/src/regex.c
   ./picoruby/src/my_regex.c
   ./picoruby/src/node.c
   ./picoruby/src/scope.c

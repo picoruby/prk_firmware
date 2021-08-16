@@ -15,12 +15,15 @@
 #include "ws2812.h"
 #include "rotary_encoder.h"
 
+#include "ruby_mode.h"
+
 /* ruby */
 #include "ruby/lib/keyboard.c"
 #include "ruby/lib/keymap.c"
 #include "ruby/lib/tud.c"
 #include "ruby/lib/rgb.c"
 #include "ruby/lib/rotary_encoder.c"
+#include "ruby/lib/sandbox.c"
 
 void
 c_board_millis(mrb_vm *vm, mrb_value *v, int argc)
@@ -52,7 +55,8 @@ int main() {
   UART_INIT();
   WS2812_INIT();
   ROTARY_ENCODER_INIT();
-  tcb_rgb = mrbc_create_task(rgb, 0);
+  RUBY_MODE_INIT();
+//  tcb_rgb = mrbc_create_task(rgb, 0);
   mrbc_create_task(rotary_encoder, 0);
   mrbc_create_task(tud, 0);
   mrbc_create_task(keyboard, 0);

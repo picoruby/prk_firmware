@@ -34,6 +34,109 @@ class Keyboard
     KC_RGUI: 0b10000000
   }
 
+  LETTER = {
+    'a' =>  4,
+    'b' =>  5,
+    'c' =>  6,
+    'd' =>  7,
+    'e' =>  8,
+    'f' =>  9,
+    'g' => 10,
+    'h' => 11,
+    'i' => 12,
+    'j' => 13,
+    'k' => 14,
+    'l' => 15,
+    'm' => 16,               # 0x10
+    'n' => 17,
+    'o' => 18,
+    'p' => 19,
+    'q' => 20,
+    'r' => 21,
+    's' => 22,
+    't' => 23,
+    'u' => 24,
+    'v' => 25,
+    'w' => 26,
+    'x' => 27,
+    'y' => 28,
+    'z' => 29,
+    '1' => 30,
+    '2' => 31,
+    '3' => 32,               # 0x20
+    '4' => 33,
+    '5' => 34,
+    '6' => 35,
+    '7' => 36,
+    '8' => 37,
+    '9' => 38,
+    '0' => 39,
+    "\n" => 40,
+    ' ' => 44,
+    '-' => 45,
+    '=' => 46,
+    '[' => 47,
+    ']' => 48,         # 0x30
+    "\\" => 49,
+  # ' ' => 50,
+    ';' => 51,
+    "'" => 52,
+    '`' => 53,
+    ',' => 54,
+    '.' => 55,
+    '/' => 56,
+  }
+  LETTER.merge!({
+    'A' =>  -4,
+    'B' =>  -5,
+    'C' =>  -6,
+    'D' =>  -7,
+    'E' =>  -8,
+    'F' =>  -9,
+    'G' => -10,
+    'H' => -11,
+    'I' => -12,
+    'J' => -13,
+    'K' => -14,
+    'L' => -15,
+    'M' => -16,               # 0x10
+    'N' => -17,
+    'O' => -18,
+    'P' => -19,
+    'Q' => -20,
+    'R' => -21,
+    'S' => -22,
+    'T' => -23,
+    'U' => -24,
+    'V' => -25,
+    'W' => -26,
+    'X' => -27,
+    'Y' => -28,
+    'Z' => -29,
+    '!' => -30,
+    '@' => -31,
+    '#' => -32,
+    '$' => -33,
+    '%' => -34,
+    '^' => -35,
+    '&' => -36,
+    '*' => -37,
+    '(' => -38,
+    ')' => -39,
+    '_' => -45,
+    '+' => -46,
+    '{' => -47,
+    '}' => -48,
+    '|' => -49,
+  # '' =>  -50, # KC_TILD
+    ':' => -51,
+    '"' => -52,
+    '~' => -53,
+    '<' => -54,
+    '>' => -55,
+    '?' => -56,
+  })
+
   # Due to PicoRuby's limitation,
   # a big array can't be created at once
   KEYCODE = [
@@ -247,6 +350,7 @@ class Keyboard
     $rgb = nil
     $encoders = Array.new
     @partner_encoders = Array.new
+    @macro_key_numbers = Array.new
   end
 
   attr_accessor :split, :uart_pin
@@ -526,6 +630,7 @@ class Keyboard
         break if data.nil?
       end
     end
+    default_sleep = 10
     while true
       now = board_millis
       @keycodes.clear
@@ -648,6 +753,20 @@ class Keyboard
           end
         end
 
+        # Macro
+        macro_key_number = @macro_key_numbers.shift
+        if macro_key_number
+          if macro_key_number < 0 # Key with SHIFT
+            @modifier |= 0b00100000
+            @keycodes << (macro_key_number * -1).chr
+          else
+            @keycodes << macro_key_number.chr
+          end
+          default_sleep = 20 # To avoid accidental skip
+        else
+          default_sleep = 10
+        end
+
         (6 - @keycodes.size).times do
           @keycodes << "\000"
         end
@@ -681,7 +800,7 @@ class Keyboard
         end
       end
 
-      time = 10 - (board_millis - now)
+      time = default_sleep - (board_millis - now)
       sleep_ms(time) if time > 0
     end
 
@@ -722,6 +841,38 @@ class Keyboard
 
   def unlock_layer
     @locked_layer = nil
+  end
+
+  def macro(text)
+    prev_c = ""
+    text.each_char do |c|
+      if prev_c == c
+        # Cansel anti-chattering
+        @macro_key_numbers << 0
+        @macro_key_numbers << 0
+        @macro_key_numbers << 0
+      end
+      @macro_key_numbers << LETTER[c]
+      prev_c = c
+    end
+    @macro_key_numbers << LETTER["\n"]
+  end
+
+  def ruby_mode(script)
+    if invoke_ruby(script)
+      n = 0
+      while sandbox_state != 0 do # 0: TASKSTATE_DORMANT == finished(?)
+        sleep_ms 50
+        n += 1
+        if n > 20
+          macro("Error: Timeout")
+          break;
+        end
+      end
+      macro(sandbox_result.inspect)
+    else
+      macro("Error: Compile failed")
+    end
   end
 
 end

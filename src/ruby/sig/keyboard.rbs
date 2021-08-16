@@ -12,6 +12,7 @@ class Keyboard
   MOD_KEYCODE: Hash[Symbol, Integer]
   KEYCODE: Array[Symbol]
   KEYCODE_SFT: Hash[Symbol, Integer]
+  LETTER: Hash[String, Integer]
 
   @before_filters: Array[^() -> void]
   @keymaps: Hash[Symbol, Array[Array[Integer | Symbol | Proc]]]
@@ -38,6 +39,7 @@ class Keyboard
   @offset_b: Integer
   @locked_layer: Symbol | nil
   @keycodes: Array[String]
+  @macro_keys: Array[Integer]
   @modifier: Integer
 
   attr_accessor split: bool
@@ -67,4 +69,6 @@ class Keyboard
   def lower_layer: -> void
   def lock_layer: (Symbol layer_name) -> void
   def unlock_layer: () -> void
+  def macro: (String) -> void
+  def ruby_mode: (String) -> void
 end
