@@ -1,7 +1,7 @@
 # TypeProf 0.14.1
 
 # Global variables
-$mutex: Thread::Mutex
+$mutex: bool
 
 # Classes
 class Keyboard
@@ -70,5 +70,5 @@ class Keyboard
   def lock_layer: (Symbol layer_name) -> void
   def unlock_layer: () -> void
   def macro: (String) -> void
-  def ruby_mode: (String) -> void
+  def eval: (String) -> void
 end

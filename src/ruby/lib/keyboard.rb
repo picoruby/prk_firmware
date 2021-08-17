@@ -1,7 +1,3 @@
-$mutex = Mutex.new
-
-$mutex.lock
-
 class Float
   def modulo(right)
     left = self.to_f
@@ -762,7 +758,7 @@ class Keyboard
           else
             @keycodes << macro_key_number.chr
           end
-          default_sleep = 20 # To avoid accidental skip
+          default_sleep = 30 # To avoid accidental skip
         else
           default_sleep = 10
         end
@@ -845,7 +841,7 @@ class Keyboard
 
   def macro(text)
     prev_c = ""
-    text.each_char do |c|
+    text.to_s.each_char do |c|
       if prev_c == c
         # Cansel anti-chattering
         @macro_key_numbers << 0
@@ -858,7 +854,7 @@ class Keyboard
     @macro_key_numbers << LETTER["\n"]
   end
 
-  def ruby_mode(script)
+  def eval(script)
     if invoke_ruby(script)
       n = 0
       while sandbox_state != 0 do # 0: TASKSTATE_DORMANT == finished(?)
@@ -877,4 +873,4 @@ class Keyboard
 
 end
 
-$mutex.unlock
+$mutex = true
