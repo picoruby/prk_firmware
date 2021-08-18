@@ -1,5 +1,9 @@
 # Change log
 
+## 2021/08/17
+### Breaking Change 💣
+- Code upgraded to correspond to the newest pico-sdk as of today. Please upgrade your pico-sdk
+
 ## 2021/08/16
 ### Changed
 - Bump up PicoRuby to "mruby3 version"
