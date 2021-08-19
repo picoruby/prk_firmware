@@ -30,108 +30,128 @@ class Keyboard
     KC_RGUI: 0b10000000
   }
 
-  LETTER = {
-    'a' =>  4,
-    'b' =>  5,
-    'c' =>  6,
-    'd' =>  7,
-    'e' =>  8,
-    'f' =>  9,
-    'g' => 10,
-    'h' => 11,
-    'i' => 12,
-    'j' => 13,
-    'k' => 14,
-    'l' => 15,
-    'm' => 16,               # 0x10
-    'n' => 17,
-    'o' => 18,
-    'p' => 19,
-    'q' => 20,
-    'r' => 21,
-    's' => 22,
-    't' => 23,
-    'u' => 24,
-    'v' => 25,
-    'w' => 26,
-    'x' => 27,
-    'y' => 28,
-    'z' => 29,
-    '1' => 30,
-    '2' => 31,
-    '3' => 32,               # 0x20
-    '4' => 33,
-    '5' => 34,
-    '6' => 35,
-    '7' => 36,
-    '8' => 37,
-    '9' => 38,
-    '0' => 39,
-    "\n" => 40,
-    ' ' => 44,
-    '-' => 45,
-    '=' => 46,
-    '[' => 47,
-    ']' => 48,         # 0x30
-    "\\" => 49,
-  # ' ' => 50,
-    ';' => 51,
-    "'" => 52,
-    '`' => 53,
-    ',' => 54,
-    '.' => 55,
-    '/' => 56,
-  }
-  LETTER.merge!({
-    'A' =>  -4,
-    'B' =>  -5,
-    'C' =>  -6,
-    'D' =>  -7,
-    'E' =>  -8,
-    'F' =>  -9,
-    'G' => -10,
-    'H' => -11,
-    'I' => -12,
-    'J' => -13,
-    'K' => -14,
-    'L' => -15,
-    'M' => -16,               # 0x10
-    'N' => -17,
-    'O' => -18,
-    'P' => -19,
-    'Q' => -20,
-    'R' => -21,
-    'S' => -22,
-    'T' => -23,
-    'U' => -24,
-    'V' => -25,
-    'W' => -26,
-    'X' => -27,
-    'Y' => -28,
-    'Z' => -29,
-    '!' => -30,
-    '@' => -31,
-    '#' => -32,
-    '$' => -33,
-    '%' => -34,
-    '^' => -35,
-    '&' => -36,
-    '*' => -37,
-    '(' => -38,
-    ')' => -39,
-    '_' => -45,
-    '+' => -46,
-    '{' => -47,
-    '}' => -48,
-    '|' => -49,
-  # '' =>  -50, # KC_TILD
-    ':' => -51,
-    '"' => -52,
-    '~' => -53,
-    '<' => -54,
-    '>' => -55,
-    '?' => -56,
-  })
+#  LETTER = {'a' => 4}
+  letter = [
+    nil,nil,nil,nil,
+    'a', # 0x04
+    'b',
+    'c',
+    'd',
+    'e',
+    'f',
+    'g',
+    'h',
+    'i',
+    'j',
+    'k',
+    'l',
+    'm', # 0x10
+    'n',
+    'o',
+    'p',
+    'q',
+    'r',
+    's',
+    't',
+    'u',
+    'v',
+    'w',
+    'x',
+    'y',
+    'z',
+    '1',
+    '2',
+    '3', # 0x20
+    '4',
+    '5',
+    '6',
+    '7',
+    '8',
+    '9',
+    '0',
+    "\n",
+    :ESCAPE,
+    :BSPACE,
+    "\t",
+    ' ',
+    '-',
+    '=',
+    '[',
+    ']', # 0x30
+    "\\",
+    nil, # ???
+    ';',
+    "'",
+    '`',
+    ',',
+    '.',
+    '/'
+  ]
+  letter[75] = :HOME
+  letter += [
+    :HOME,
+    :PGUP,
+    :DELETE,
+    :END,
+    :PGDOWN,
+    :RIGHT,
+    :LEFT,   # 0x50
+    :DOWN,
+    :UP    # 82
+  ]
+  SHIFT_LETTER_OFFSET = letter.length - letter.index('a').to_i
+  LETTER = letter + [
+    'A',
+    'B',
+    'C',
+    'D',
+    'E',
+    'F',
+    'G',
+    'H',
+    'I',
+    'J',
+    'K',
+    'L',
+    'M', # 0x10
+    'N',
+    'O',
+    'P',
+    'Q',
+    'R',
+    'S',
+    'T',
+    'U',
+    'V',
+    'W',
+    'X',
+    'Y',
+    'Z',
+    '!',
+    '@',
+    '#',
+    '$',
+    '%',
+    '^',
+    '&',
+    '*',
+    '(',
+    ')',
+    '_',
+    '+',
+    '{',
+    '}',
+    '|',
+    nil, # KC_TILD
+    ':',
+    '"',
+    '~',
+    '<',
+    '>',
+    '?'
+  ]
+  SHIFT_LETTER_THRESHOLD = LETTER.index('A').to_i - 1
+  letter = nil
 
   # Due to PicoRuby's limitation,
   # a big array can't be created at once
@@ -752,13 +772,13 @@ class Keyboard
         # Macro
         macro_key_number = @macro_key_numbers.shift
         if macro_key_number
-          if macro_key_number < 0 # Key with SHIFT
+          if macro_key_number >= SHIFT_LETTER_THRESHOLD
             @modifier |= 0b00100000
-            @keycodes << (macro_key_number * -1).chr
+            @keycodes << (macro_key_number - SHIFT_LETTER_OFFSET).chr
           else
             @keycodes << macro_key_number.chr
           end
-          default_sleep = 30 # To avoid accidental skip
+          default_sleep = 40 # To avoid accidental skip
         else
           default_sleep = 10
         end
@@ -839,19 +859,24 @@ class Keyboard
     @locked_layer = nil
   end
 
-  def macro(text)
+  def macro(text, opts = [:ENTER])
     prev_c = ""
     text.to_s.each_char do |c|
-      if prev_c == c
-        # Cansel anti-chattering
-        @macro_key_numbers << 0
-        @macro_key_numbers << 0
-        @macro_key_numbers << 0
-      end
-      @macro_key_numbers << LETTER[c]
-      prev_c = c
+      # Cansel anti-chattering
+      @macro_key_numbers << 0
+      @macro_key_numbers << LETTER.index(c)
     end
-    @macro_key_numbers << LETTER["\n"]
+    opts.each do |opt|
+      @macro_key_numbers << 0
+      case opt
+      when :ENTER
+        @macro_key_numbers << LETTER.index("\n")
+      when :TAB
+        @macro_key_numbers << LETTER.index("\t")
+      else
+        @macro_key_numbers << LETTER.index(opt)
+      end
+    end
   end
 
   def eval(script)
