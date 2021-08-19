@@ -38,6 +38,7 @@ add_custom_target(steep
 add_custom_target(ruby
   COMMAND ${RBC} -Bcore           core.rb
   COMMAND ${RBC} -Bkeyboard       keyboard.rb
+  COMMAND ${RBC} -Bbuffer         buffer.rb
   COMMAND ${RBC} -Brgb            rgb.rb
   COMMAND ${RBC} -Brotary_encoder rotary_encoder.rb
   COMMAND ${RBC} -Btud            tud.rb

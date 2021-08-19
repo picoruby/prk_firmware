@@ -23,6 +23,7 @@
 #include "ruby/lib/keyboard.c"
 #include "ruby/lib/rotary_encoder.c"
 #include "ruby/lib/rgb.c"
+#include "ruby/lib/buffer.c"
 /* tasks */
 #include "ruby/lib/tud.c"
 #include "ruby/lib/rgb_task.c"
@@ -79,6 +80,7 @@ int main() {
   RUBY_MODE_INIT();
   mrbc_load_model(core);
   mrbc_load_model(rgb);
+  mrbc_load_model(buffer);
   mrbc_load_model(rotary_encoder);
   mrbc_load_model(keyboard);
   mrbc_create_task(sandbox, 0);
