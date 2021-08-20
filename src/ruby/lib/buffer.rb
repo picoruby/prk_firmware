@@ -3,6 +3,7 @@ class Buffer
     @cursor = {x: 0, y: 0}
     clear
   end
+  attr_reader :lines
   def cursor
     # Human readable
     {x: @cursor[:x] + 1, y: @cursor[:y] + 1}

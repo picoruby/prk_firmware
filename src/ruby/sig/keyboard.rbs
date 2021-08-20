@@ -13,8 +13,11 @@ class Keyboard
   KEYCODE: Array[Symbol]
   KEYCODE_SFT: Hash[Symbol, Integer]
   LETTER: Array[String | Symbol | nil]
-  SHIFT_LETTER_OFFSET: Integer
-  SHIFT_LETTER_THRESHOLD: Integer
+
+  @SHIFT_LETTER_OFFSET_A: Integer
+  @SHIFT_LETTER_OFFSET_UNDS: Integer
+  @SHIFT_LETTER_THRESHOLD_A: Integer
+  @SHIFT_LETTER_THRESHOLD_UNDS: Integer
 
   @before_filters: Array[^() -> void]
   @keymaps: Hash[Symbol, Array[Array[Integer | Symbol | Proc]]]
@@ -74,4 +77,5 @@ class Keyboard
   def unlock_layer: () -> void
   def macro: (String text, ?::Array[Symbol] opt) -> void
   def eval: (String) -> void
+  def ruby: () -> void
 end

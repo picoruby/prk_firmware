@@ -16,129 +16,6 @@ class Keyboard
     KC_RGUI: 0b10000000
   }
 
-#  LETTER = {'a' => 4}
-  letter = [
-    nil,nil,nil,nil,
-    'a', # 0x04
-    'b',
-    'c',
-    'd',
-    'e',
-    'f',
-    'g',
-    'h',
-    'i',
-    'j',
-    'k',
-    'l',
-    'm', # 0x10
-    'n',
-    'o',
-    'p',
-    'q',
-    'r',
-    's',
-    't',
-    'u',
-    'v',
-    'w',
-    'x',
-    'y',
-    'z',
-    '1',
-    '2',
-    '3', # 0x20
-    '4',
-    '5',
-    '6',
-    '7',
-    '8',
-    '9',
-    '0',
-    "\n",
-    :ESCAPE,
-    :BSPACE,
-    "\t",
-    ' ',
-    '-',
-    '=',
-    '[',
-    ']', # 0x30
-    "\\",
-    nil, # ???
-    ';',
-    "'",
-    '`',
-    ',',
-    '.',
-    '/'
-  ]
-  letter[75] = :HOME
-  letter += [
-    :HOME,
-    :PGUP,
-    :DELETE,
-    :END,
-    :PGDOWN,
-    :RIGHT,
-    :LEFT,   # 0x50
-    :DOWN,
-    :UP    # 82
-  ]
-  SHIFT_LETTER_OFFSET = letter.length - letter.index('a').to_i
-  LETTER = letter + [
-    'A',
-    'B',
-    'C',
-    'D',
-    'E',
-    'F',
-    'G',
-    'H',
-    'I',
-    'J',
-    'K',
-    'L',
-    'M', # 0x10
-    'N',
-    'O',
-    'P',
-    'Q',
-    'R',
-    'S',
-    'T',
-    'U',
-    'V',
-    'W',
-    'X',
-    'Y',
-    'Z',
-    '!',
-    '@',
-    '#',
-    '$',
-    '%',
-    '^',
-    '&',
-    '*',
-    '(',
-    ')',
-    '_',
-    '+',
-    '{',
-    '}',
-    '|',
-    nil, # KC_TILD
-    ':',
-    '"',
-    '~',
-    '<',
-    '>',
-    '?'
-  ]
-  SHIFT_LETTER_THRESHOLD = LETTER.index('A').to_i - 1
-  letter = nil
-
   # Due to PicoRuby's limitation,
   # a big array can't be created at once
   KEYCODE = [
@@ -338,7 +215,132 @@ class Keyboard
     KC_QUES:           0x38,
   }
 
+  letter = [
+    nil,nil,nil,nil,
+    'a', # 0x04
+    'b',
+    'c',
+    'd',
+    'e',
+    'f',
+    'g',
+    'h',
+    'i',
+    'j',
+    'k',
+    'l',
+    'm', # 0x10
+    'n',
+    'o',
+    'p',
+    'q',
+    'r',
+    's',
+    't',
+    'u',
+    'v',
+    'w',
+    'x',
+    'y',
+    'z',
+    '1',
+    '2',
+    '3', # 0x20
+    '4',
+    '5',
+    '6',
+    '7',
+    '8',
+    '9',
+    '0',
+    "\n",
+    :ESCAPE,
+    :BSPACE,
+    "\t",
+    ' ',
+    '-',
+    '=',
+    '[',
+    ']', # 0x30
+    "\\",
+    nil, # ???
+    ';',
+    "'",
+    '`',
+    ',',
+    '.',
+    '/'
+  ]
+  letter[74] = :HOME
+  letter += [
+    :PGUP,
+    :DELETE,
+    :END,
+    :PGDOWN,
+    :RIGHT,
+    :LEFT,   # 0x50
+    :DOWN,
+    :UP    # 82
+  ]
+  LETTER = letter + [
+    'A',
+    'B',
+    'C',
+    'D',
+    'E',
+    'F',
+    'G',
+    'H',
+    'I',
+    'J',
+    'K',
+    'L',
+    'M', # 0x10
+    'N',
+    'O',
+    'P',
+    'Q',
+    'R',
+    'S',
+    'T',
+    'U',
+    'V',
+    'W',
+    'X',
+    'Y',
+    'Z',
+    '!',
+    '@',
+    '#',
+    '$',
+    '%',
+    '^',
+    '&',
+    '*',
+    '(',
+    ')',
+    '_',
+    '+',
+    '{',
+    '}',
+    '|',
+    nil, # KC_TILD
+    ':',
+    '"',
+    '~',
+    '<',
+    '>',
+    '?'
+  ]
+  letter = nil
+
   def initialize
+    # mruby/c VM doesn't work with a CONSTANT to make another CONSTANT
+    # steep doesn't allow dynamic assignment of CONSTANT
+    @SHIFT_LETTER_THRESHOLD_A    = LETTER.index('A').to_i
+    @SHIFT_LETTER_OFFSET_A       = @SHIFT_LETTER_THRESHOLD_A - KEYCODE.index(:KC_A).to_i
+    @SHIFT_LETTER_THRESHOLD_UNDS = LETTER.index('_').to_i
+    @SHIFT_LETTER_OFFSET_UNDS    = @SHIFT_LETTER_THRESHOLD_UNDS - KEYCODE_SFT[:KC_UNDS]
     @before_filters = Array.new
     @keymaps = Hash.new
     @mode_keys = Array.new
@@ -352,7 +354,8 @@ class Keyboard
     $rgb = nil
     $encoders = Array.new
     @partner_encoders = Array.new
-    @macro_key_numbers = Array.new
+    @macro_keycodes = Array.new
+    @buffer = Buffer.new
   end
 
   attr_accessor :split, :uart_pin
@@ -756,13 +759,13 @@ class Keyboard
         end
 
         # Macro
-        macro_key_number = @macro_key_numbers.shift
-        if macro_key_number
-          if macro_key_number >= SHIFT_LETTER_THRESHOLD
+        macro_keycode = @macro_keycodes.shift
+        if macro_keycode
+          if macro_keycode < 0
             @modifier |= 0b00100000
-            @keycodes << (macro_key_number - SHIFT_LETTER_OFFSET).chr
+            @keycodes << (macro_keycode * -1).chr
           else
-            @keycodes << macro_key_number.chr
+            @keycodes << macro_keycode.chr
           end
           default_sleep = 40 # To avoid accidental skip
         else
@@ -781,7 +784,29 @@ class Keyboard
           encoder.consume_rotation_anchor
         end
 
-        report_hid(@modifier, @keycodes.join)
+        if @ruby_mode
+          code = @keycodes[0].ord
+          c = nil
+          if @ruby_mode_stop
+            @ruby_mode_stop = false if code == 0
+          elsif code > 0
+            if @modifier & 0b00100010 > 1 # with SHIFT
+              if code <= KEYCODE_SFT[:KC_RPRN].to_i
+                c = LETTER[code + @SHIFT_LETTER_OFFSET_A]
+              elsif code <= KEYCODE_SFT[:KC_QUES].to_i
+                c = LETTER[code + @SHIFT_LETTER_OFFSET_UNDS]
+              end
+            elsif code < @SHIFT_LETTER_THRESHOLD_A
+              c = LETTER[code]
+            end
+            @ruby_mode_stop = true
+          end
+          @buffer.put(c) if c
+          #(1..5).each { |i| @keycodes[i] = "\000" }
+          report_hid(@modifier, @keycodes.join)
+        else
+          report_hid(@modifier, @keycodes.join)
+        end
 
         if @switches.empty? && @locked_layer.nil?
           @layer = :default
@@ -848,19 +873,26 @@ class Keyboard
   def macro(text, opts = [:ENTER])
     prev_c = ""
     text.to_s.each_char do |c|
-      # Cansel anti-chattering
-      @macro_key_numbers << 0
-      @macro_key_numbers << LETTER.index(c)
+      index = LETTER.index(c)
+      next unless index
+      @macro_keycodes << 0
+      if index >= @SHIFT_LETTER_THRESHOLD_UNDS
+        @macro_keycodes << (index - @SHIFT_LETTER_OFFSET_UNDS) * -1
+      elsif index >= @SHIFT_LETTER_THRESHOLD_A
+        @macro_keycodes << (index - @SHIFT_LETTER_OFFSET_A) * -1
+      else
+        @macro_keycodes << index
+      end
     end
     opts.each do |opt|
-      @macro_key_numbers << 0
+      @macro_keycodes << 0
       case opt
       when :ENTER
-        @macro_key_numbers << LETTER.index("\n")
+        @macro_keycodes << LETTER.index("\n")
       when :TAB
-        @macro_key_numbers << LETTER.index("\t")
+        @macro_keycodes << LETTER.index("\t")
       else
-        @macro_key_numbers << LETTER.index(opt)
+        @macro_keycodes << LETTER.index(opt)
       end
     end
   end
@@ -879,6 +911,19 @@ class Keyboard
       macro(sandbox_result.inspect)
     else
       macro("Error: Compile failed")
+    end
+  end
+
+  def ruby
+    if @ruby_mode
+      macro "\n=> ", []
+      macro @buffer.lines[0]
+      #eval @buffer.dump
+      @buffer.clear
+      @ruby_mode = false
+    else
+      @ruby_mode = true
+      @ruby_mode_stop = false
     end
   end
 
