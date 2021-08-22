@@ -20,6 +20,7 @@ add_executable(prk_firmware
   src/uart.c
   src/ws2812.c
   src/rotary_encoder.c
+  src/ruby_mode.c
 )
 
 pico_generate_pio_header(prk_firmware ${CMAKE_CURRENT_LIST_DIR}/src/uart_tx.pio)
@@ -29,17 +30,21 @@ set(RBC ${CMAKE_CURRENT_SOURCE_DIR}/lib/picoruby/build/bin/host-production/alloc
 #set(RBC RBENV_VERSION=mruby-3.0.0 mrbc)
 
 add_custom_target(steep
-  COMMAND bundle install
+  #COMMAND bundle install
   COMMAND ${CMAKE_COMMAND} -E env PROJECT_BINARY_DIR=${PROJECT_BINARY_DIR} rake steep
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src/ruby
 )
 
 add_custom_target(ruby
-  COMMAND ${RBC} -Bkeyboard keyboard.rb
-  COMMAND ${RBC} -Btud tud.rb
-  COMMAND ${RBC} -Brgb rgb.rb
+  COMMAND ${RBC} -Bcore           core.rb
+  COMMAND ${RBC} -Bkeyboard       keyboard.rb
+  COMMAND ${RBC} -Bbuffer         buffer.rb
+  COMMAND ${RBC} -Brgb            rgb.rb
   COMMAND ${RBC} -Brotary_encoder rotary_encoder.rb
-  COMMAND ${RBC} -Bkeymap ${PROJECT_BINARY_DIR}/../keymap.rb
+  COMMAND ${RBC} -Btud            tud.rb
+  COMMAND ${RBC} -Brgb_task       rgb_task.rb
+  COMMAND ${RBC} -Bsandbox        sandbox.rb
+  COMMAND ${RBC} -Bkeymap         ${PROJECT_BINARY_DIR}/../keymap.rb
   COMMAND mv ${PROJECT_BINARY_DIR}/../keymap.c ./
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src/ruby/lib
 )
