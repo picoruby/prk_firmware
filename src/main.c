@@ -14,8 +14,7 @@
 #include "uart.h"
 #include "ws2812.h"
 #include "rotary_encoder.h"
-
-#include "ruby_mode.h"
+#include "sandbox.h"
 
 /* ruby */
 /* models */
@@ -76,7 +75,7 @@ int main() {
   UART_INIT();
   WS2812_INIT();
   ROTARY_ENCODER_INIT();
-  RUBY_MODE_INIT();
+  SANDBOX_INIT();
   mrbc_load_model(core);
   mrbc_load_model(rgb);
   mrbc_load_model(buffer);

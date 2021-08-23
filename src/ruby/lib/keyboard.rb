@@ -917,8 +917,8 @@ class Keyboard
   def ruby
     if @ruby_mode
       macro "\n=> ", []
-      macro @buffer.lines[0]
-      #eval @buffer.dump
+      #macro @buffer.lines[0]
+      eval @buffer.dump
       @buffer.clear
       @ruby_mode = false
     else

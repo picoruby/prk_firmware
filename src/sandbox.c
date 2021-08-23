@@ -1,46 +1,50 @@
 #include <picorbc.h>
-#include "ruby_mode.h"
+#include "sandbox.h"
 
-#define NODE_BOX_SIZE 30
+#ifndef NODE_BOX_SIZE
+#define NODE_BOX_SIZE 10
+#endif
 
 int loglevel = LOGLEVEL_INFO;
 
 static ParserState *p;
 
-mrbc_tcb *tcb_sandbox = NULL; /* from ruby_mode.h */
+mrbc_tcb *tcb_sandbox = NULL;
 
-static Lvar *lvar;
+static unsigned int nlocals;
 static Symbol *symbol;
+static Lvar *lvar;
 static Literal *literal;
-static StringPool *string_pool;
 static unsigned int sp;
 static unsigned int max_sp;
-static unsigned int nlocals;
+static StringPool *current_string_pool;
 
 void
 save_p_state(ParserState *p)
 {
-  lvar = p->scope->lvar;
-  symbol = p->scope->symbol;
+  nlocals = p->scope->nlocals;
+  symbol  = p->scope->symbol;
+  lvar    = p->scope->lvar;
   literal = p->scope->literal;
-  string_pool = p->current_string_pool;
-  sp = p->scope->sp;
-  max_sp = p->scope->max_sp;
-  p->scope->lvar = NULL;
-  p->scope->symbol = NULL;
-  p->scope->literal = NULL;
+  sp      = p->scope->sp;
+  max_sp  = p->scope->max_sp;
+  current_string_pool    = p->current_string_pool;
+  p->scope->symbol       = NULL;
+  p->scope->lvar         = NULL;
+  p->scope->literal      = NULL;
   p->current_string_pool = NULL;
 }
 
 void
 restore_p_state(ParserState *p)
 {
-  p->scope->lvar = lvar;
-  p->scope->symbol = symbol;
+  p->scope->nlocals = nlocals;
+  p->scope->symbol  = symbol;
+  p->scope->lvar    = lvar;
   p->scope->literal = literal;
-  p->current_string_pool = string_pool;
-  p->scope->sp = sp;
-  p->scope->max_sp = max_sp;
+  p->scope->sp      = sp;
+  p->scope->max_sp  = max_sp;
+  p->current_string_pool = current_string_pool;
 }
 
 void
@@ -67,11 +71,9 @@ void
 c_invoke_ruby(mrb_vm *vm, mrb_value *v, int argc)
 {
   mrbc_vm *sandbox_vm;
-  StreamInterface *si = StreamInterface_new(GET_STRING_ARG(1), STREAM_TYPE_MEMORY);
   p = Compiler_parseInitState(NODE_BOX_SIZE);
-  if (tcb_sandbox) {
-    restore_p_state(p);
-  }
+  if (tcb_sandbox) restore_p_state(p);
+  StreamInterface *si = StreamInterface_new(GET_STRING_ARG(1), STREAM_TYPE_MEMORY);
   if (!Compiler_compile(p, si)) {
     SET_FALSE_RETURN();
   } else if (!tcb_sandbox) {

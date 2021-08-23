@@ -20,7 +20,7 @@ add_executable(prk_firmware
   src/uart.c
   src/ws2812.c
   src/rotary_encoder.c
-  src/ruby_mode.c
+  src/sandbox.c
 )
 
 pico_generate_pio_header(prk_firmware ${CMAKE_CURRENT_LIST_DIR}/src/uart_tx.pio)
