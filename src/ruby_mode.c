@@ -6,7 +6,6 @@
 int loglevel = LOGLEVEL_INFO;
 
 static ParserState *p;
-static StreamInterface *si;
 
 mrbc_tcb *tcb_sandbox = NULL; /* from ruby_mode.h */
 
@@ -67,19 +66,18 @@ c_sandbox_result(mrb_vm *vm, mrb_value *v, int argc)
 void
 c_invoke_ruby(mrb_vm *vm, mrb_value *v, int argc)
 {
+  mrbc_vm *sandbox_vm;
+  StreamInterface *si = StreamInterface_new(GET_STRING_ARG(1), STREAM_TYPE_MEMORY);
   p = Compiler_parseInitState(NODE_BOX_SIZE);
-  si = StreamInterface_new(GET_STRING_ARG(1), STREAM_TYPE_MEMORY);
   if (tcb_sandbox) {
     restore_p_state(p);
   }
   if (!Compiler_compile(p, si)) {
     SET_FALSE_RETURN();
-    return;
-  }
-  mrbc_vm *sandbox_vm;
-  if (!tcb_sandbox) {
+  } else if (!tcb_sandbox) {
     tcb_sandbox = mrbc_create_task(p->scope->vm_code, 0);
     sandbox_vm = (mrbc_vm *)&tcb_sandbox->vm;
+    sandbox_vm->flag_permanence = 1;
     SET_TRUE_RETURN();
   } else {
     sandbox_vm = (mrbc_vm *)&tcb_sandbox->vm;
