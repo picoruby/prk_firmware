@@ -28,7 +28,6 @@
 #include "ruby/lib/tud.c"
 #include "ruby/lib/rgb_task.c"
 #include "ruby/lib/keymap.c"
-#include "ruby/lib/sandbox.c"
 
 void
 c_board_millis(mrb_vm *vm, mrb_value *v, int argc)
@@ -83,7 +82,6 @@ int main() {
   mrbc_load_model(buffer);
   mrbc_load_model(rotary_encoder);
   mrbc_load_model(keyboard);
-  mrbc_create_task(sandbox, 0);
   mrbc_create_task(tud, 0);
   tcb_rgb = mrbc_create_task(rgb_task, 0);
   mrbc_create_task(keymap, 0);
