@@ -83,6 +83,7 @@ int main() {
   mrbc_load_model(keyboard);
   mrbc_create_task(tud, 0);
   tcb_rgb = mrbc_create_task(rgb_task, 0);
+  create_sandbox();
   mrbc_create_task(keymap, 0);
   mrbc_run();
   return 0;

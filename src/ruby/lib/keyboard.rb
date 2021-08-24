@@ -528,20 +528,20 @@ class Keyboard
   end
 
   # MOD_KEYCODE = {
-  #   KC_LCTL: 0b00000001,
-  #   KC_LSFT: 0b00000010,
-  #   KC_LALT: 0b00000100,
-  #   KC_LGUI: 0b00001000,
-  #   KC_RCTL: 0b00010000,
-  #   KC_RSFT: 0b00100000,
-  #   KC_RALT: 0b01000000,
-  #   KC_RGUI: 0b10000000
+  #        KC_LCTL: 0b00000001,
+  #        KC_LSFT: 0b00000010,
+  #        KC_LALT: 0b00000100,
+  #        KC_LGUI: 0b00001000,
+  #        KC_RCTL: 0b00010000,
+  #        KC_RSFT: 0b00100000,
+  #        KC_RALT: 0b01000000,
+  #        KC_RGUI: 0b10000000
   # }
   def invert_sft
-    if ( (@modifier & 0b00000010) | (@modifier & 0b00100000) ) > 0
-      @modifier &= 0b11011101
+    if (@modifier & 0b00100010) > 0
+       @modifier &= 0b11011101
     else
-      @modifier |= 0b00000010
+       @modifier |= 0b00000010
     end
   end
 
@@ -556,7 +556,7 @@ class Keyboard
 
   def action_on_release(mode_key)
     case mode_key.class
-    when Fixnum
+    when Integer
       # @type var mode_key: Integer
       if mode_key < -255
         @keycodes << ((mode_key + 0x100) * -1).chr
@@ -585,7 +585,7 @@ class Keyboard
 
   def action_on_hold(mode_key)
     case mode_key.class
-    when Fixnum
+    when Integer
       # @type var mode_key: Integer
       @modifier |= mode_key
     when Symbol
@@ -747,7 +747,7 @@ class Keyboard
         keymap = @keymaps[@locked_layer || @layer]
         @switches.each do |switch|
           keycode = keymap[switch[0]][switch[1]]
-          next unless keycode.is_a?(Fixnum)
+          next unless keycode.is_a?(Integer)
           if keycode < -255 # Key with SHIFT
             @keycodes << ((keycode + 0x100) * -1).chr
             @modifier |= 0b00100000
@@ -917,7 +917,6 @@ class Keyboard
   def ruby
     if @ruby_mode
       macro "\n=> ", []
-      #macro @buffer.lines[0]
       eval @buffer.dump
       @buffer.clear
       @ruby_mode = false

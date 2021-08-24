@@ -1,9 +1,13 @@
 #include <mrubyc.h>
 #include <picorbc.h>
 
+extern mrbc_tcb *tcb_sandbox;
+
 void c_sandbox_state(mrb_vm *vm, mrb_value *v, int argc);
 void c_sandbox_result(mrb_vm *vm, mrb_value *v, int argc);
 void c_invoke_ruby(mrb_vm *vm, mrb_value *v, int argc);
+
+void create_sandbox(void);
 
 #define SANDBOX_INIT() do { \
   mrbc_class *mrbc_class_Keyboard = mrbc_define_class(0, "Keyboard", mrbc_class_object); \
