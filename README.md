@@ -115,7 +115,7 @@ Feel free to reach out to [me](https://twitter.com/hasumikin) if you want me to 
 
 - Q: PRK Firmware no longer works after pulling the newest master branch, why?
   
-  A: It likely happens when submodules like PicoRuby were also updated, try `git submodule update`. Besides, PRK may get a breaking change as it is still a beta version. Take a good look at [CHANGELOG.md](CHANGELOG.md)
+  A: It likely happens when submodules like PicoRuby were also updated, try `git submodule update --recursive`. Besides, PRK may get a breaking change as it is still a beta version. Take a good look at [CHANGELOG.md](CHANGELOG.md)
 
 
 ### License
