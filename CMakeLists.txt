@@ -30,8 +30,8 @@ set(RBC ${CMAKE_CURRENT_SOURCE_DIR}/lib/picoruby/build/bin/host-production/alloc
 #set(RBC RBENV_VERSION=mruby-3.0.0 mrbc)
 
 add_custom_target(steep
-  #COMMAND bundle install
-  COMMAND ${CMAKE_COMMAND} -E env PROJECT_BINARY_DIR=${PROJECT_BINARY_DIR} rake steep
+  COMMAND bundle exec steep -h || bundle install
+  COMMAND bundle exec steep -h && ${CMAKE_COMMAND} -E env PROJECT_BINARY_DIR=${PROJECT_BINARY_DIR} rake steep
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src/ruby
 )
 

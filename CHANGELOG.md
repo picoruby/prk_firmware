@@ -1,5 +1,14 @@
 # Change log
 
+## 2021/08/17
+### Breaking Change 💣
+- Code upgraded to correspond to the newest pico-sdk as of today. Please upgrade your pico-sdk
+
+## 2021/08/16
+### Changed
+- Bump up PicoRuby to "mruby3 version"
+- There is no external change though, if your keymap doesn't work, try to add `sleep 1` to the beggining of your keymap.rb
+
 ## 2021/06/19
 ###  New feature added
 - Rotary Encoders &#x1F39B;
