@@ -6,6 +6,8 @@ include(pico_sdk_import.cmake)
 
 project(prk_firmware)
 
+add_definitions(-DMRBC_USE_HAL_RP2040 -DMRBC_REQUIRE_32BIT_ALIGNMENT -DMAX_REGS_SIZE=256 -DMAX_SYMBOLS_COUNT=500 -DMAX_VM_COUNT=10)
+
 # initialize the Raspberry Pi Pico SDK
 pico_sdk_init()
 
@@ -20,7 +22,7 @@ add_executable(prk_firmware
   src/uart.c
   src/ws2812.c
   src/rotary_encoder.c
-  src/sandbox.c
+  lib/picoruby/cli/sandbox.c
 )
 
 pico_generate_pio_header(prk_firmware ${CMAKE_CURRENT_LIST_DIR}/src/uart_tx.pio)
@@ -38,15 +40,19 @@ add_custom_target(steep
 add_custom_target(ruby
   COMMAND ${RBC} -Bcore           core.rb
   COMMAND ${RBC} -Bkeyboard       keyboard.rb
-  COMMAND ${RBC} -Bbuffer         buffer.rb
   COMMAND ${RBC} -Brgb            rgb.rb
   COMMAND ${RBC} -Brotary_encoder rotary_encoder.rb
   COMMAND ${RBC} -Btud            tud.rb
   COMMAND ${RBC} -Brgb_task       rgb_task.rb
-  COMMAND ${RBC} -Bsandbox        sandbox.rb
   COMMAND ${RBC} -Bkeymap         ${PROJECT_BINARY_DIR}/../keymap.rb
   COMMAND mv ${PROJECT_BINARY_DIR}/../keymap.c ./
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src/ruby/lib
+)
+
+add_custom_target(ruby_2
+  COMMAND ${RBC} -Bbuffer         buffer.rb
+  COMMAND ${RBC} -Bsandbox        sandbox.rb
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/lib/picoruby/cli/ruby
 )
 
 add_dependencies(ruby
@@ -56,6 +62,7 @@ add_dependencies(ruby
 add_dependencies(prk_firmware
   picoruby
   ruby
+  ruby_2
 )
 
 target_link_libraries(prk_firmware

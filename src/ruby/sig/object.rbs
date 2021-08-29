@@ -5,7 +5,8 @@ class Object
   def suspend_task : () -> void
   def sandbox_state : () -> Integer
   def sandbox_result : () -> untyped
-  def invoke_ruby: (String) -> bool
+  def compile_ruby: (String) -> bool
+  def invoke_ruby: () -> bool
 
   # Raspi
   def board_millis : -> Integer

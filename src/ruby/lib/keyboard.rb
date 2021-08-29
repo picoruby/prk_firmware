@@ -898,17 +898,19 @@ class Keyboard
   end
 
   def eval(script)
-    if invoke_ruby(script)
-      n = 0
-      while sandbox_state != 0 do # 0: TASKSTATE_DORMANT == finished(?)
-        sleep_ms 50
-        n += 1
-        if n > 20
-          macro("Error: Timeout")
-          break;
+    if compile_ruby(script)
+      if invoke_ruby
+        n = 0
+        while sandbox_state != 0 do # 0: TASKSTATE_DORMANT == finished(?)
+          sleep_ms 50
+          n += 50
+          if n > 10000
+            puts "Error: Timeout (sandbox_state: #{sandbox_state})"
+            break;
+          end
         end
+        macro(sandbox_result.inspect)
       end
-      macro(sandbox_result.inspect)
     else
       macro("Error: Compile failed")
     end
@@ -916,7 +918,8 @@ class Keyboard
 
   def ruby
     if @ruby_mode
-      macro "\n=> ", []
+      @macro_keycodes << LETTER.index("\n")
+      macro "=> ", []
       eval @buffer.dump
       @buffer.clear
       @ruby_mode = false

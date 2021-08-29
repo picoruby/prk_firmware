@@ -14,7 +14,7 @@
 #include "uart.h"
 #include "ws2812.h"
 #include "rotary_encoder.h"
-#include "sandbox.h"
+#include "../lib/picoruby/cli/sandbox.h"
 
 /* ruby */
 /* models */
@@ -22,7 +22,7 @@
 #include "ruby/lib/keyboard.c"
 #include "ruby/lib/rotary_encoder.c"
 #include "ruby/lib/rgb.c"
-#include "ruby/lib/buffer.c"
+#include "../lib/picoruby/cli/ruby/buffer.c"
 /* tasks */
 #include "ruby/lib/tud.c"
 #include "ruby/lib/rgb_task.c"
