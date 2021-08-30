@@ -33,7 +33,7 @@ set(RBC ${CMAKE_CURRENT_SOURCE_DIR}/lib/picoruby/build/bin/host-production/alloc
 
 add_custom_target(steep
   COMMAND bundle exec steep -h || bundle install
-  COMMAND bundle exec steep -h && ${CMAKE_COMMAND} -E env PROJECT_BINARY_DIR=${PROJECT_BINARY_DIR} rake steep
+  COMMAND ${CMAKE_COMMAND} -E env PROJECT_BINARY_DIR=${PROJECT_BINARY_DIR} rake steep
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src/ruby
 )
 
