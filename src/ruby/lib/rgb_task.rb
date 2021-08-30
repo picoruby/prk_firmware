@@ -2,6 +2,7 @@
 suspend_task
 
 hue = 0
+value = 0
 
 case $rgb.effect
 when :rainbow
@@ -26,6 +27,9 @@ while true
   when :breathing
     $rgb.fill(hsv2rgb(hue, 100, 12.5))
     hue >= 360 ? hue = 0 : hue += 10
+  when :ruby
+    $rgb.fill(hsv2rgb(0, 100, value))
+    value >= 13 ? value = 0 : value += 1
   end
   $rgb.show
 end

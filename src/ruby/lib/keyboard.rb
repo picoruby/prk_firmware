@@ -923,9 +923,14 @@ class Keyboard
       eval @buffer.dump
       @buffer.clear
       @ruby_mode = false
+      $rgb.effect = @prev_rgb_effect || :rainbow if $rgb
+      $rgb.restore
     else
       @ruby_mode = true
       @ruby_mode_stop = false
+      @prev_rgb_effect = $rgb.effect
+      $rgb.save
+      $rgb.effect = :ruby if $rgb
     end
   end
 
