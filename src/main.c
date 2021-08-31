@@ -35,6 +35,12 @@ c_board_millis(mrb_vm *vm, mrb_value *v, int argc)
 }
 
 void
+c_srand(mrb_vm *vm, mrb_value *v, int argc)
+{
+  srand(GET_INT_ARG(1));
+}
+
+void
 c_rand(mrb_vm *vm, mrb_value *v, int argc)
 {
   SET_INT_RETURN(rand());
