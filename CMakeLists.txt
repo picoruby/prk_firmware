@@ -11,12 +11,25 @@ add_definitions(-DMRBC_USE_HAL_RP2040 -DMRBC_REQUIRE_32BIT_ALIGNMENT -DMAX_REGS_
 # initialize the Raspberry Pi Pico SDK
 pico_sdk_init()
 
-# rest of your project
+#####################################################
+# project specific configuration from here
+
+execute_process (COMMAND date +%Y%m%d OUTPUT_VARIABLE CMAKE_BUILDDATE OUTPUT_STRIP_TRAILING_WHITESPACE)
+execute_process (COMMAND git rev-parse --short HEAD OUTPUT_VARIABLE CMAKE_REVISION OUTPUT_STRIP_TRAILING_WHITESPACE)
+set (PRK_VERSION   0.9.0)
+set (PRK_BUILDDATE ${CMAKE_BUILDDATE})
+set (PRK_REVISION  ${CMAKE_REVISION})
+configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/src/version.h.in" "${CMAKE_CURRENT_SOURCE_DIR}/src/version.h")
+
+set(PROJECT "prk_firmware-${PRK_VERSION}-${PRK_BUILDDATE}-${PRK_REVISION}")
+#set(PROJECT "prk_firmware")  # for test
 
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/lib)
 
-add_executable(prk_firmware
+add_executable(${PROJECT}
   src/main.c
+  src/msc_disk.c
+  src/usb_descriptors.c
   src/gpio.c
   src/usb.c
   src/uart.c
@@ -25,8 +38,8 @@ add_executable(prk_firmware
   lib/picoruby/cli/sandbox.c
 )
 
-pico_generate_pio_header(prk_firmware ${CMAKE_CURRENT_LIST_DIR}/src/uart_tx.pio)
-pico_generate_pio_header(prk_firmware ${CMAKE_CURRENT_LIST_DIR}/src/ws2812.pio)
+pico_generate_pio_header(${PROJECT} ${CMAKE_CURRENT_LIST_DIR}/src/uart_tx.pio)
+pico_generate_pio_header(${PROJECT} ${CMAKE_CURRENT_LIST_DIR}/src/ws2812.pio)
 
 set(RBC ${CMAKE_CURRENT_SOURCE_DIR}/lib/picoruby/build/bin/host-production/alloc_libc/picorbc)
 #set(RBC RBENV_VERSION=mruby-3.0.0 mrbc)
@@ -59,13 +72,13 @@ add_dependencies(ruby
   steep
 )
 
-add_dependencies(prk_firmware
+add_dependencies(${PROJECT}
   picoruby
   ruby
   ruby_2
 )
 
-target_link_libraries(prk_firmware
+target_link_libraries(${PROJECT}
   pico_stdlib
   tinyusb_device
   tinyusb_board
@@ -73,9 +86,10 @@ target_link_libraries(prk_firmware
   hardware_pio
   hardware_pwm
   pico_multicore
+  hardware_flash
 )
 
-include_directories(prk_firmware
+include_directories(${PROJECT}
   PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}
     ${CMAKE_CURRENT_LIST_DIR}/include
@@ -83,4 +97,4 @@ include_directories(prk_firmware
 )
 
 # create map/bin/hex/uf2 file in addition to ELF.
-pico_add_extra_outputs(prk_firmware)
+pico_add_extra_outputs(${PROJECT})

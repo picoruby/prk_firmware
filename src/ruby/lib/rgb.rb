@@ -1,5 +1,6 @@
 class RGB
-  def initialize(pin, underglow_size, backlight_size, is_rgbw)
+ def initialize(pin, underglow_size, backlight_size, is_rgbw)
+    puts "Initializing RGB ..."
     @fifo = Array.new
     # TODO: @underglow_size, @backlight_size
     @pixel_size = underglow_size + backlight_size

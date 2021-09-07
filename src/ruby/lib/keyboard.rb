@@ -335,6 +335,7 @@ class Keyboard
   letter = nil
 
   def initialize
+    puts "Initializing Keyboard ..."
     # mruby/c VM doesn't work with a CONSTANT to make another CONSTANT
     # steep doesn't allow dynamic assignment of CONSTANT
     @SHIFT_LETTER_THRESHOLD_A    = LETTER.index('A').to_i
@@ -624,6 +625,8 @@ class Keyboard
   #   Please refrain from "refactoring" for a while.
   # **************************************************************
   def start!
+    puts "Starting keyboard task ..."
+
     start_features
     @keycodes = Array.new
     # To avoid unintentional report on startup
@@ -871,6 +874,7 @@ class Keyboard
   end
 
   def macro(text, opts = [:ENTER])
+    puts "macro: #{text}"
     prev_c = ""
     text.to_s.each_char do |c|
       index = LETTER.index(c)

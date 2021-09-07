@@ -9,6 +9,7 @@
 #include "hardware/clocks.h"
 
 /* mrbc_class */
+#include "msc_disk.h"
 #include "gpio.h"
 #include "usb.h"
 #include "uart.h"
@@ -46,7 +47,7 @@ c_rand(mrb_vm *vm, mrb_value *v, int argc)
   SET_INT_RETURN(rand());
 }
 
-#define MEMORY_SIZE (1024*220)
+#define MEMORY_SIZE (1024*200)
 
 static uint8_t memory_pool[MEMORY_SIZE];
 
@@ -73,9 +74,11 @@ int main() {
   stdio_init_all();
   board_init();
   tusb_init();
+  msc_init();
   mrbc_init(memory_pool, MEMORY_SIZE);
   mrbc_define_method(0, mrbc_class_object, "board_millis", c_board_millis);
   mrbc_define_method(0, mrbc_class_object, "rand",         c_rand);
+  MSC_INIT();
   GPIO_INIT();
   USB_INIT();
   UART_INIT();

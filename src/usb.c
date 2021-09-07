@@ -72,26 +72,26 @@ const uint16_t string_desc_product[] = { // Index: 1
   'P', 'R', 'K', 'f', 'i', 'r', 'm'
 };
 
-uint8_t const *tud_descriptor_device_cb(void) {
-  return device_desc;
-}
-uint8_t const *tud_descriptor_configuration_cb(uint8_t index) {
-  return conf_desc;
-}
-uint16_t const *tud_descriptor_string_cb(uint8_t index, uint16_t langid) {
-  uint16_t const *ret = NULL;
-  switch(index) {
-    case 0:
-      ret = string_desc_lang;
-      break;
-    case 1:
-      ret = string_desc_product;
-      break;
-    default:
-      break;
-  }
-  return ret;
-}
+//uint8_t const *tud_descriptor_device_cb(void) {
+//  return device_desc;
+//}
+//uint8_t const *tud_descriptor_configuration_cb(uint8_t index) {
+//  return conf_desc;
+//}
+//uint16_t const *tud_descriptor_string_cb(uint8_t index, uint16_t langid) {
+//  uint16_t const *ret = NULL;
+//  switch(index) {
+//    case 0:
+//      ret = string_desc_lang;
+//      break;
+//    case 1:
+//      ret = string_desc_product;
+//      break;
+//    default:
+//      break;
+//  }
+//  return ret;
+//}
 
 
 uint8_t const *tud_hid_descriptor_report_cb(uint8_t instance) {

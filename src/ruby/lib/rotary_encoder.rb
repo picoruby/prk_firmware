@@ -1,5 +1,6 @@
 class RotaryEncoder
-  def initialize(pin_a, pin_b)
+ def initialize(pin_a, pin_b)
+    puts "Initializing RotaryEncoder ..."
     @pin_a = pin_a
     @pin_b = pin_b
     @rotation = 0
