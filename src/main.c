@@ -14,8 +14,7 @@
 #include "uart.h"
 #include "ws2812.h"
 #include "rotary_encoder.h"
-
-#include "ruby_mode.h"
+#include "../lib/picoruby/cli/sandbox.h"
 
 /* ruby */
 /* models */
@@ -23,17 +22,22 @@
 #include "ruby/lib/keyboard.c"
 #include "ruby/lib/rotary_encoder.c"
 #include "ruby/lib/rgb.c"
-#include "ruby/lib/buffer.c"
+#include "../lib/picoruby/cli/ruby/buffer.c"
 /* tasks */
 #include "ruby/lib/tud.c"
 #include "ruby/lib/rgb_task.c"
 #include "ruby/lib/keymap.c"
-#include "ruby/lib/sandbox.c"
 
 void
 c_board_millis(mrb_vm *vm, mrb_value *v, int argc)
 {
   SET_INT_RETURN(board_millis());
+}
+
+void
+c_srand(mrb_vm *vm, mrb_value *v, int argc)
+{
+  srand(GET_INT_ARG(1));
 }
 
 void
@@ -77,15 +81,15 @@ int main() {
   UART_INIT();
   WS2812_INIT();
   ROTARY_ENCODER_INIT();
-  RUBY_MODE_INIT();
+  SANDBOX_INIT();
   mrbc_load_model(core);
   mrbc_load_model(rgb);
   mrbc_load_model(buffer);
   mrbc_load_model(rotary_encoder);
   mrbc_load_model(keyboard);
-  mrbc_create_task(sandbox, 0);
   mrbc_create_task(tud, 0);
   tcb_rgb = mrbc_create_task(rgb_task, 0);
+  create_sandbox();
   mrbc_create_task(keymap, 0);
   mrbc_run();
   return 0;

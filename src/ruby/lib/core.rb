@@ -37,19 +37,3 @@ class Object
       ((rgb[2] + m) * 255).ceil_to_i
   end
 end
-
-class Array
-  def my_insert(index, obj)
-    # @type var index: Integer
-    if index < 0
-      puts "Negative index doesn't work"
-      return
-    end
-    new_array = self.dup
-    partial = self[index, self.length] || Array.new
-    partial.each_with_index do |elem, i|
-      self[i] = new_array[i + 1]
-    end
-    self[index] = obj
-  end
-end
