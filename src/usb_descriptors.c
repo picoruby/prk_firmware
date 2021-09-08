@@ -25,6 +25,8 @@
 
 #include "tusb.h"
 
+#include "usb_descriptors.h"
+
 /* A combination of interfaces must have a unique product id, since PC will save device driver after the first plug.
  * Same VID/PID with different interface e.g MSC (first), then CDC (later) will possibly cause system error on PC.
  *
@@ -74,15 +76,6 @@ uint8_t const * tud_descriptor_device_cb(void)
 // Configuration Descriptor
 //--------------------------------------------------------------------+
 
-enum
-{
-  ITF_NUM_CDC = 0,
-  ITF_NUM_CDC_DATA,
-  ITF_NUM_MSC,
-  ITF_NUM_HID,
-  ITF_NUM_TOTAL
-};
-
 #define CONFIG_TOTAL_LEN    (TUD_CONFIG_DESC_LEN + TUD_CDC_DESC_LEN + TUD_MSC_DESC_LEN + TUD_HID_INOUT_DESC_LEN)
 
 #if CFG_TUSB_MCU == OPT_MCU_LPC175X_6X || CFG_TUSB_MCU == OPT_MCU_LPC177X_8X || CFG_TUSB_MCU == OPT_MCU_LPC40XX
@@ -127,19 +120,6 @@ enum
 
 #endif
 
-//enum {
-//    REPORT_ID_KEYBOARD = 1,
-//    REPORT_ID_MOUSE
-//};
-enum
-{
-  REPORT_ID_KEYBOARD = 1,
-  REPORT_ID_MOUSE,
-  REPORT_ID_CONSUMER_CONTROL,
-  REPORT_ID_GAMEPAD,
-  REPORT_ID_COUNT
-};
-
 #define EPNUM_HID_IN    0x04
 #define EPNUM_HID_OUT   0x84
 
@@ -147,6 +127,14 @@ uint8_t const desc_hid_report[] =
 {
   TUD_HID_REPORT_DESC_KEYBOARD( HID_REPORT_ID(REPORT_ID_KEYBOARD         )),
   TUD_HID_REPORT_DESC_MOUSE   ( HID_REPORT_ID(REPORT_ID_MOUSE            )),
+};
+
+enum
+{
+  ITF_NUM_CDC = 0,
+  ITF_NUM_HID,
+  ITF_NUM_MSC,
+  ITF_NUM_TOTAL
 };
 
 uint8_t const desc_fs_configuration[] =
@@ -164,24 +152,6 @@ uint8_t const desc_fs_configuration[] =
   TUD_HID_INOUT_DESCRIPTOR(ITF_NUM_HID, 0, 0, sizeof(desc_hid_report), EPNUM_HID_OUT, EPNUM_HID_IN, 64, 0x08),
 };
 
-#if TUD_OPT_HIGH_SPEED
-uint8_t const desc_hs_configuration[] =
-{
-  // Config number, interface count, string index, total length, attribute, power in mA
-  TUD_CONFIG_DESCRIPTOR(1, ITF_NUM_TOTAL, 0, CONFIG_TOTAL_LEN, 0x00, 100),
-
-  // Interface number, string index, EP notification address and size, EP data address (out, in) and size.
-  TUD_CDC_DESCRIPTOR(ITF_NUM_CDC, 4, EPNUM_CDC_NOTIF, 8, EPNUM_CDC_OUT, EPNUM_CDC_IN, 512),
-
-  // Interface number, string index, EP Out & EP In address, EP size
-  TUD_MSC_DESCRIPTOR(ITF_NUM_MSC, 5, EPNUM_MSC_OUT, EPNUM_MSC_IN, 512),
-
-  // Interface number, string index, protocol, report descriptor len, EP In address, size & polling interval
-  //TUD_HID_DESCRIPTOR(ITF_NUM_HID, 0, HID_ITF_PROTOCOL_NONE, sizeof(desc_hid_report), EPNUM_HID, CFG_TUD_HID_EP_BUFSIZE, 5)
-  //TUD_HID_INOUT_DESCRIPTOR(ITF_NUM_HID, 0, HID_ITF_PROTOCOL_NONE, sizeof(desc_hid_report), EPNUM_HID, 0x80 | EPNUM_HID, CFG_TUD_HID_EP_BUFSIZE, 10)
-};
-#endif
-
 
 // Invoked when received GET CONFIGURATION DESCRIPTOR
 // Application return pointer to descriptor
@@ -189,13 +159,7 @@ uint8_t const desc_hs_configuration[] =
 uint8_t const * tud_descriptor_configuration_cb(uint8_t index)
 {
   (void) index; // for multiple configurations
-
-#if TUD_OPT_HIGH_SPEED
-  // Although we are highspeed, host may be fullspeed.
-  return (tud_speed_get() == TUSB_SPEED_HIGH) ?  desc_hs_configuration : desc_fs_configuration;
-#else
   return desc_fs_configuration;
-#endif
 }
 
 //--------------------------------------------------------------------+
@@ -251,4 +215,71 @@ uint16_t const* tud_descriptor_string_cb(uint8_t index, uint16_t langid)
   _desc_str[0] = (TUSB_DESC_STRING << 8 ) | (2*chr_count + 2);
 
   return _desc_str;
+}
+
+
+//--------------------------------------------------------------------+
+// HID Descriptor
+//--------------------------------------------------------------------+
+
+const uint8_t hid_report_desc[] = {
+  TUD_HID_REPORT_DESC_KEYBOARD(HID_REPORT_ID(REPORT_ID_KEYBOARD)),
+  TUD_HID_REPORT_DESC_MOUSE(HID_REPORT_ID(REPORT_ID_MOUSE))
+};
+
+const uint16_t string_desc_product[] = { // Index: 1
+  16 | (3 << 8),
+  'P', 'R', 'K', 'f', 'i', 'r', 'm'
+};
+
+uint8_t const *tud_hid_descriptor_report_cb(uint8_t instance) {
+    return hid_report_desc;
+}
+uint16_t tud_hid_get_report_cb(uint8_t instance, uint8_t report_id, hid_report_type_t report_type, uint8_t* buffer, uint16_t reqlen) {
+    return 0;
+}
+void tud_hid_set_report_cb(uint8_t instance, uint8_t report_id, hid_report_type_t report_type, uint8_t const* buffer, uint16_t bufsize) {
+    return;
+}
+
+
+//--------------------------------------------------------------------+
+// Ruby methods
+//--------------------------------------------------------------------+
+
+void
+c_tud_task(mrb_vm *vm, mrb_value *v, int argc)
+{
+  tud_task();
+}
+
+void
+c_report_hid(mrb_vm *vm, mrb_value *v, int argc)
+{
+  uint32_t const btn = 1;
+
+  // Remote wakeup
+  if (tud_suspended() && btn) {
+    // Wake up host if we are in suspend mode
+    // and REMOTE_WAKEUP feature is enabled by host
+    tud_remote_wakeup();
+  }
+
+  uint8_t modifier = GET_INT_ARG(1);
+  uint8_t *keycodes = GET_STRING_ARG(2);
+
+  /*------------- Keyboard -------------*/
+  if (tud_hid_ready()) {
+    tud_hid_keyboard_report(REPORT_ID_KEYBOARD, modifier, keycodes);
+  }
+}
+
+void
+c_tud_mounted_q(mrb_vm *vm, mrb_value *v, int argc)
+{
+  if (tud_mounted()) {
+    SET_TRUE_RETURN();
+  } else {
+    SET_FALSE_RETURN();
+  }
 }

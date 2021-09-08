@@ -11,7 +11,7 @@
 /* mrbc_class */
 #include "msc_disk.h"
 #include "gpio.h"
-#include "usb.h"
+#include "usb_descriptors.h"
 #include "uart.h"
 #include "ws2812.h"
 #include "rotary_encoder.h"
@@ -80,7 +80,7 @@ int main() {
   mrbc_define_method(0, mrbc_class_object, "rand",         c_rand);
   MSC_INIT();
   GPIO_INIT();
-  USB_INIT();
+  TUD_INIT();
   UART_INIT();
   WS2812_INIT();
   ROTARY_ENCODER_INIT();

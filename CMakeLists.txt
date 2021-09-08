@@ -31,7 +31,6 @@ add_executable(${PROJECT}
   src/msc_disk.c
   src/usb_descriptors.c
   src/gpio.c
-  src/usb.c
   src/uart.c
   src/ws2812.c
   src/rotary_encoder.c
