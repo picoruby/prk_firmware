@@ -132,6 +132,7 @@ uint8_t const desc_hid_report[] =
 enum
 {
   ITF_NUM_CDC = 0,
+  ITF_NUM_CDC_DATA,
   ITF_NUM_HID,
   ITF_NUM_MSC,
   ITF_NUM_TOTAL
