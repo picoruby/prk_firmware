@@ -7,6 +7,8 @@ class Object
   def sandbox_result : () -> untyped
   def compile_ruby: (String) -> bool
   def invoke_ruby: () -> bool
+  def autoreload_ready?: () -> bool
+  def autoreload!: () -> void
 
   # Raspi
   def board_millis : -> Integer

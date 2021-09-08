@@ -4,10 +4,23 @@ puts "Welcome to PRK Firmware"
 puts
 puts "Starting tud task ..."
 
+autoreload_tick = 0
+
 while true
   tud_task
   cdc_task
   if $encoders && !$encoders.empty?
     $encoders.each { |encoder| encoder.read }
   end
+#  if autoreload_ready?
+#    if autoreload_tick == 0
+#      puts "Autoreload is ready ..."
+#      autoreload_tick = 500
+#    elsif autoreload_tick == 1
+#      puts "Autoreload!"
+#      autoreload!
+#      autoreload_tick = 0
+#    end
+#    autoreload_tick -= 1
+#  end
 end

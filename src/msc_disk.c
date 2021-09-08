@@ -33,11 +33,6 @@
 
 #include "msc_disk.h"
 
-#define FLASH_TARGET_OFFSET  0x00180000                       /* 1.5MB */
-#define FLASH_MMAP_ADDR      (XIP_BASE + FLASH_TARGET_OFFSET) /* 0x10180000 */
-#define SECTOR_SIZE          4096
-#define SECTOR_COUNT         128   /* 4096 * 128 = 512KB */
-
 // whether host does safe-eject
 static bool ejected = false;
 
@@ -314,25 +309,6 @@ void msc_init(void)
 }
 
 /*
- * Directory entry in FAT Volume
- * (FAT data is little endian)
- */
-typedef struct dir_ent {
-  char     Name[11];
-  uint8_t  Attr;
-  uint8_t  NTRes;
-  uint8_t  CrtTimeTenth;
-  char     CrtTime[2];
-  char     CrtDate[2];
-  char     LastAccDate[2];
-  uint16_t FstClusHI;
-  char     WrtTime[2];
-  char     WrtDate[2];
-  uint16_t FstClusLO;
-  uint32_t FileSize;
-} DirEnt;
-
-/*
  * Only works in top directory
  * Only works if SFN (short file name)
  */
@@ -359,12 +335,7 @@ void
 tud_msc_write10_complete_cb(uint8_t lun)
 {
   (void)lun;
-//  DirEnt entry;
-//  msc_findDirEnt("README  TXT", &entry);
-//  if (entry.Name[0] != '\0') {
-//    const char *program = (const char *)(FLASH_MMAP_ADDR + SECTOR_SIZE * (1 + entry.FstClusLO));
-//    ppp = program[0];
-//  }
+//  autoreload_state = AUTORELOAD_READY;
 }
 
 //--------------------------------------------------------------------+
