@@ -305,7 +305,7 @@ void msc_init(void)
      )
 #endif
   {
-    /* These functions know XIP_BASE */
+    /* These functions know XIP_BASE so you just have to give them FLASH_TARGET_OFFSET */
     flash_range_erase(FLASH_TARGET_OFFSET, SECTOR_SIZE * 4);
     flash_range_program(FLASH_TARGET_OFFSET, msc_disk[0], SECTOR_SIZE * 4);
   }
