@@ -6,7 +6,14 @@ include(pico_sdk_import.cmake)
 
 project(prk_firmware)
 
-add_definitions(-DMRBC_USE_HAL_RP2040 -DMRBC_REQUIRE_32BIT_ALIGNMENT -DMAX_REGS_SIZE=256 -DMAX_SYMBOLS_COUNT=500 -DMAX_VM_COUNT=10)
+add_definitions(
+  -DNDEBUG
+  -DMRBC_USE_HAL_RP2040
+  -DMRBC_REQUIRE_32BIT_ALIGNMENT
+  -DMAX_REGS_SIZE=256
+  -DMAX_SYMBOLS_COUNT=500
+  -DMAX_VM_COUNT=10
+)
 
 # initialize the Raspberry Pi Pico SDK
 pico_sdk_init()

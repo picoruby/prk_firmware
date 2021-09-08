@@ -72,29 +72,29 @@ mrbc_load_model(const uint8_t *mrb)
 #define NODE_BOX_SIZE 30
 #endif
 
-//mrbc_tcb*
-//autoreload(void)
-//{
-//  if (autoreload_state != AUTORELOAD_READY) return NULL;
-//  autoreload_state = AUTORELOAD_WAIT;
-//  DirEnt entry;
-//  msc_findDirEnt("KEYMAP  RB ", &entry);
-//  if (entry.Name[0] != '\0') {
-//    char *program = (char *)(FLASH_MMAP_ADDR + SECTOR_SIZE * (1 + entry.FstClusLO));
-//    ParserState *p = Compiler_parseInitState(NODE_BOX_SIZE);
-//    StreamInterface *si = StreamInterface_new(program, STREAM_TYPE_MEMORY);
-//    mrbc_tcb *tcb;
-//    if (Compiler_compile(p, si)) {
-//      tcb = mrbc_create_task(p->scope->vm_code, 0);
-//      p->scope->vm_code = NULL;
-//      Compiler_parserStateFree(p);
-//    }
-//    StreamInterface_free(si);
-//    return tcb;
-//  } else {
-//    return NULL;
-//  }
-//}
+mrbc_tcb*
+autoreload(void)
+{
+  if (autoreload_state != AUTORELOAD_READY) return NULL;
+  autoreload_state = AUTORELOAD_WAIT;
+  DirEnt entry;
+  msc_findDirEnt("KEYMAP  RB ", &entry);
+  if (entry.Name[0] != '\0') {
+    char *program = (char *)(FLASH_MMAP_ADDR + SECTOR_SIZE * (1 + entry.FstClusLO));
+    ParserState *p = Compiler_parseInitState(NODE_BOX_SIZE);
+    StreamInterface *si = StreamInterface_new(program, STREAM_TYPE_MEMORY);
+    mrbc_tcb *tcb;
+    if (Compiler_compile(p, si)) {
+      tcb = mrbc_create_task(p->scope->vm_code, 0);
+      p->scope->vm_code = NULL;
+      Compiler_parserStateFree(p);
+    }
+    StreamInterface_free(si);
+    return tcb;
+  } else {
+    return NULL;
+  }
+}
 
 
 
@@ -102,7 +102,7 @@ mrbc_tcb *tcb_keymap;
 
 mrbc_tcb *tcb_rgb; /* from ws2812.h */
 
-//int autoreload_state; /* from msc_disk.h */
+int autoreload_state; /* from msc_disk.h */
 
 //void
 //c_autoreload_bang(mrb_vm *vm, mrb_value *v, int argc)
@@ -119,8 +119,12 @@ mrbc_tcb *tcb_rgb; /* from ws2812.h */
 //  }
 //}
 
+int loglevel;
+
 int main() {
-//  autoreload_state = AUTORELOAD_READY;
+  loglevel = LOGLEVEL_WARN;
+
+  autoreload_state = AUTORELOAD_READY;
 
   stdio_init_all();
   board_init();
@@ -146,9 +150,9 @@ int main() {
   mrbc_create_task(tud, 0);
   tcb_rgb = mrbc_create_task(rgb_task, 0);
   create_sandbox();
-  //tcb_keymap = autoreload();
+  tcb_keymap = autoreload();
 //autoreload_state = AUTORELOAD_WAIT;
-  mrbc_create_task(keymap, 0);
+//  mrbc_create_task(keymap, 0);
   mrbc_run();
   return 0;
 }
