@@ -29,7 +29,7 @@ _(left: Raspberry Pi Pico / right: Sparkfun Pro Micro RP2040)_
   - [ ] Asymmetrical type. eg) ???
   - [x] UART communication between left and right
   - [ ] I2C communication between left and right
-- [ ] Macros
+- [x] Macros
 - [ ] Media keys
 - [x] RGBLED. An example on [picoruby/prk_crkbd](https://github.com/picoruby/prk_crkbd/blob/main/keymap.rb#L61-L76)
 - [ ] OLED display
@@ -38,6 +38,36 @@ _(left: Raspberry Pi Pico / right: Sparkfun Pro Micro RP2040)_
 
 ### Getting started
 
+There are two ways to install PRK Fiwmware:
+
+1. [Using a release binary (recommended)](#Using-a-release-binary)
+2. [Building a binary by yourself](Building-a-binary-by-yourself)
+
+Anyhow, you should:
+
+- Be knowledgeable how to install a UF2 file into Raspi Pico on [https://www.raspberrypi.org/documentation/rp2040/getting-started/#getting-started-with-c](https://www.raspberrypi.org/documentation/rp2040/getting-started/#getting-started-with-c)
+  - [https://learn.sparkfun.com/tutorials/pro-micro-rp2040-hookup-guide](https://learn.sparkfun.com/tutorials/pro-micro-rp2040-hookup-guide) will also be helpful if you use Sparkfun Pro Micro RP2040
+
+#### Using a release binary
+
+- Download the newest release binary from [Releases](https://github.com/picoruby/prk_firmware/releases)
+
+- Unzip it. You should get a file that looks like `prk_firmware-0.9.0-20210910-xxxxxxxx.uf2`
+
+- Flash the uf2 into RP2040
+
+  ![](doc/images/drag_and_drop_1.png)
+
+- `PRKFirmware` mass storage drive should be mounted, then drag and drop your `keymap.rb`
+
+  ![](doc/images/drag_and_drop_2.png)
+
+Your keyboard will automatically reboot. Enjoy!
+
+#### Building a binary by yourself
+
+You may not want PRK Firmware to be a mass storage device in case that your employer doesn't allow you to bring a USB memory 🙈
+
 - Install CRuby (MRI) because "Static type checking" by [Steep](https://github.com/soutaro/steep) will be invoked in build process
 
 - Setup Raspberry Pi Pico C/C++ SDK
@@ -45,9 +75,6 @@ _(left: Raspberry Pi Pico / right: Sparkfun Pro Micro RP2040)_
   - Follow the instructions on [https://github.com/raspberrypi/pico-sdk#quick-start-your-own-project](https://github.com/raspberrypi/pico-sdk#quick-start-your-own-project)
     - Make sure you have `PICO_SDK_PATH` environment variable
 
-  - Be knowledgeable how to install a UF2 file into Raspi Pico on [https://www.raspberrypi.org/documentation/rp2040/getting-started/#getting-started-with-c](https://www.raspberrypi.org/documentation/rp2040/getting-started/#getting-started-with-c)
-
-  - [https://learn.sparkfun.com/tutorials/pro-micro-rp2040-hookup-guide](https://learn.sparkfun.com/tutorials/pro-micro-rp2040-hookup-guide) will also help you if you use Sparkfun Pro Micro RP2040
 
 - Clone the `prk_firmware` (this repository) wherever you like
 
@@ -63,19 +90,37 @@ _(left: Raspberry Pi Pico / right: Sparkfun Pro Micro RP2040)_
     git clone https://github.com/picoruby/prk_meishi2.git
     ```
 
+- Edit `prk_meishi2/keymap.rb` as you wish
+
 - Build with `cmake` and `make`
 
     ```
     cd prk_meishi2/build
-    cmake ../../..
+    cmake -DPRK_NO_MSC=1 ../../..
     make
     ```
+    
+    (Defining PRK_NO_MSC macro will avoid implementing mass storage feature)
 
-    Now you should have `prk_firmware.uf2` file in `prk_firmware/keyboards/prk_meishi2/build/` directory.
+    Now you should have `prk_firmware-[version]-[date]-no_msc.uf2` file in `prk_firmware/keyboards/prk_meishi2/build/` directory which includes your keymap in code.
+
+- Install that `.uf2` file into RP2040
+
+### What if split type keyboard?
+
+- Make sure installing your setup on both side
 
 ### Contributing
 
-Fork, clone, patch and send a pull request.
+#### Building uf2 of excluding-keymap-version
+
+```
+cd prk_firmware/build
+cmake -DCMAKE_BUILD_TYPE=Debug ..
+make
+```
+
+Then patch and send a pull request.
 
 #### For those who are willing to contribute to PRK or write your own keymaps:
 

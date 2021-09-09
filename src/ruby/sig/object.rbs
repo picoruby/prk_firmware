@@ -7,9 +7,13 @@ class Object
   def sandbox_result : () -> untyped
   def compile_ruby: (String) -> bool
   def invoke_ruby: () -> bool
+  def autoreload_ready?: () -> bool
+  def suspend_keymap: () -> void
+  def reload_keymap: () -> void
 
   # Raspi
   def board_millis : -> Integer
+  def cdc_task : -> void
   def tud_task : -> void
   def tud_mounted? : () -> bool
   def gpio_init : (Integer) -> void

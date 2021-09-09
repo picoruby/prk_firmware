@@ -1,5 +1,11 @@
 # Change log
 
+## 2021/09/10
+### BIG BIG IMPROVEMENT 🍣
+- You no longer need any compiler toolchain!!!
+- No longer detaching USB cable every time amending your keymap, too!!!
+- See README.md 👀
+
 ## 2021/08/17
 ### Breaking Change 💣
 - Code upgraded to correspond to the newest pico-sdk as of today. Please upgrade your pico-sdk

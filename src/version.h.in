@@ -1,0 +1,5 @@
+#pragma once
+
+#define PRK_VERSION   "@PRK_VERSION@"
+#define PRK_BUILDDATE "@PRK_BUILDDATE@"
+#define PRK_REVISION  "@PRK_REVISION@"

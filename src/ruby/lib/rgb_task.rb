@@ -14,6 +14,8 @@ when :breathing
   hue = 0
 end
 
+puts "Starting rgb task ..."
+
 while true
   if $rgb.key?
     case $rgb.action
