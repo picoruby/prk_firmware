@@ -23,15 +23,15 @@
  *
  */
 
-#include "bsp/board.h"
-#include "tusb.h"
-
-#if CFG_TUD_MSC
-
 #include "hardware/flash.h"
 #include "hardware/sync.h"
+#include "bsp/board.h"
+
+#include "tusb.h"
 
 #include "msc_disk.h"
+#include <mrubyc.h>
+
 
 // whether host does safe-eject
 static bool ejected = false;
@@ -338,6 +338,7 @@ tud_msc_write10_complete_cb(uint8_t lun)
   autoreload_state = AUTORELOAD_READY;
 }
 
+
 //--------------------------------------------------------------------+
 // USB CDC
 //--------------------------------------------------------------------+
@@ -387,5 +388,3 @@ void tud_cdc_rx_cb(uint8_t itf)
 {
   (void) itf;
 }
-
-#endif

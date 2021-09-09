@@ -27,7 +27,9 @@
 /* tasks */
 #include "ruby/lib/tud.c"
 #include "ruby/lib/rgb_task.c"
+#ifdef PRK_NO_MSC
 #include "ruby/lib/keymap.c"
+#endif
 
 void
 c_board_millis(mrb_vm *vm, mrb_value *v, int argc)
@@ -47,26 +49,9 @@ c_rand(mrb_vm *vm, mrb_value *v, int argc)
   SET_INT_RETURN(rand());
 }
 
-#define MEMORY_SIZE (1024*200)
+int autoreload_state; /* from msc_disk.h */
 
-static uint8_t memory_pool[MEMORY_SIZE];
-
-void
-mrbc_load_model(const uint8_t *mrb)
-{
-  mrbc_vm *vm = mrbc_vm_open(NULL);
-  if( vm == 0 ) {
-    console_printf("Error: Can't open VM.\n");
-    return;
-  }
-  if( mrbc_load_mrb(vm, mrb) != 0 ) {
-    console_printf("Error: Illegal bytecode.\n");
-    return;
-  }
-  mrbc_vm_begin(vm);
-  mrbc_vm_run(vm);
-  mrbc_raw_free(vm);
-}
+#ifndef PRK_NO_MSC
 
 #ifndef NODE_BOX_SIZE
 #define NODE_BOX_SIZE 50
@@ -114,13 +99,7 @@ create_keymap_task(mrbc_tcb *tcb)
   return tcb;
 }
 
-
-
 mrbc_tcb *tcb_keymap;
-
-mrbc_tcb *tcb_rgb; /* from ws2812.h */
-
-int autoreload_state; /* from msc_disk.h */
 
 void
 c_suspend_keymap(mrb_vm *vm, mrb_value *v, int argc)
@@ -144,24 +123,48 @@ c_autoreload_ready_q(mrb_vm *vm, mrb_value *v, int argc)
   }
 }
 
+#endif /* PRK_NO_MSC */
+
+
+#define MEMORY_SIZE (1024*200)
+
+static uint8_t memory_pool[MEMORY_SIZE];
+
+void
+mrbc_load_model(const uint8_t *mrb)
+{
+  mrbc_vm *vm = mrbc_vm_open(NULL);
+  if( vm == 0 ) {
+    console_printf("Error: Can't open VM.\n");
+    return;
+  }
+  if( mrbc_load_mrb(vm, mrb) != 0 ) {
+    console_printf("Error: Illegal bytecode.\n");
+    return;
+  }
+  mrbc_vm_begin(vm);
+  mrbc_vm_run(vm);
+  mrbc_raw_free(vm);
+}
+
+mrbc_tcb *tcb_rgb; /* from ws2812.h */
+
 int loglevel;
 
 int main() {
   loglevel = LOGLEVEL_WARN;
 
-  autoreload_state = AUTORELOAD_READY;
 
   stdio_init_all();
   board_init();
   tusb_init();
-  msc_init();
   mrbc_init(memory_pool, MEMORY_SIZE);
   mrbc_define_method(0, mrbc_class_object, "board_millis", c_board_millis);
   mrbc_define_method(0, mrbc_class_object, "rand",         c_rand);
-  mrbc_define_method(0, mrbc_class_object, "autoreload_ready?", c_autoreload_ready_q);
-  mrbc_define_method(0, mrbc_class_object, "reload_keymap",     c_reload_keymap);
-  mrbc_define_method(0, mrbc_class_object, "suspend_keymap",    c_suspend_keymap);
-  MSC_INIT();
+#ifndef PRK_NO_MSC
+  msc_init();
+#endif
+  CDC_INIT();
   GPIO_INIT();
   TUD_INIT();
   UART_INIT();
@@ -176,7 +179,15 @@ int main() {
   mrbc_create_task(tud, 0);
   tcb_rgb = mrbc_create_task(rgb_task, 0);
   create_sandbox();
+#ifdef PRK_NO_MSC
+  mrbc_create_task(keymap, 0);
+#else
+  mrbc_define_method(0, mrbc_class_object, "autoreload_ready?", c_autoreload_ready_q);
+  mrbc_define_method(0, mrbc_class_object, "reload_keymap",     c_reload_keymap);
+  mrbc_define_method(0, mrbc_class_object, "suspend_keymap",    c_suspend_keymap);
+  autoreload_state = AUTORELOAD_READY;
   tcb_keymap = create_keymap_task(NULL);
+#endif
   mrbc_run();
   return 0;
 }

@@ -29,7 +29,7 @@ _(left: Raspberry Pi Pico / right: Sparkfun Pro Micro RP2040)_
   - [ ] Asymmetrical type. eg) ???
   - [x] UART communication between left and right
   - [ ] I2C communication between left and right
-- [ ] Macros
+- [x] Macros
 - [ ] Media keys
 - [x] RGBLED. An example on [picoruby/prk_crkbd](https://github.com/picoruby/prk_crkbd/blob/main/keymap.rb#L61-L76)
 - [ ] OLED display
@@ -46,7 +46,7 @@ There are two ways to install PRK Fiwmware:
 Anyhow, you should:
 
 - Be knowledgeable how to install a UF2 file into Raspi Pico on [https://www.raspberrypi.org/documentation/rp2040/getting-started/#getting-started-with-c](https://www.raspberrypi.org/documentation/rp2040/getting-started/#getting-started-with-c)
-  - [https://learn.sparkfun.com/tutorials/pro-micro-rp2040-hookup-guide](https://learn.sparkfun.com/tutorials/pro-micro-rp2040-hookup-guide) will also help you if you use Sparkfun Pro Micro RP2040
+  - [https://learn.sparkfun.com/tutorials/pro-micro-rp2040-hookup-guide](https://learn.sparkfun.com/tutorials/pro-micro-rp2040-hookup-guide) will also be helpful if you use Sparkfun Pro Micro RP2040
 
 #### Using a release binary
 
@@ -58,7 +58,11 @@ Anyhow, you should:
 
   ![](doc/images/drag_and_drop_1.png)
 
-- 
+- `PRKFirmware` mass storage drive should be mounted, then drag and drop your `keymap.rb`
+
+  ![](doc/images/drag_and_drop_2.png)
+
+Your keyboard will automatically reboot. Enjoy!
 
 #### Building a binary by yourself
 
@@ -98,13 +102,25 @@ You may not want PRK Firmware to be a mass storage device in case that your empl
     
     (Defining PRK_NO_MSC macro will avoid implementing mass storage feature)
 
-    Now you should have `prk_firmware-[version]-[date]-[revision].uf2` file in `prk_firmware/keyboards/prk_meishi2/build/` directory which includes your keymap in code.
+    Now you should have `prk_firmware-[version]-[date]-no_msc.uf2` file in `prk_firmware/keyboards/prk_meishi2/build/` directory which includes your keymap in code.
 
-- Install .uf2 into RP2040
+- Install that `.uf2` file into RP2040
+
+### What if split type keyboard?
+
+- Make sure installing your setup on both side
 
 ### Contributing
 
-Fork, clone, patch and send a pull request.
+#### Building uf2 of excluding-keymap-version
+
+```
+cd prk_firmware/build
+cmake -DCMAKE_BUILD_TYPE=Debug ..
+make
+```
+
+Then patch and send a pull request.
 
 #### For those who are willing to contribute to PRK or write your own keymaps:
 
