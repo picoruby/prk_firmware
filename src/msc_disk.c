@@ -335,7 +335,7 @@ void
 tud_msc_write10_complete_cb(uint8_t lun)
 {
   (void)lun;
-//  autoreload_state = AUTORELOAD_READY;
+  autoreload_state = AUTORELOAD_READY;
 }
 
 //--------------------------------------------------------------------+

@@ -12,15 +12,18 @@ while true
   if $encoders && !$encoders.empty?
     $encoders.each { |encoder| encoder.read }
   end
-#  if autoreload_ready?
-#    if autoreload_tick == 0
-#      puts "Autoreload is ready ..."
-#      autoreload_tick = 500
-#    elsif autoreload_tick == 1
-#      puts "Autoreload!"
-#      autoreload!
-#      autoreload_tick = 0
-#    end
-#    autoreload_tick -= 1
-#  end
+  if autoreload_ready?
+    if autoreload_tick == 0
+      puts "Autoreload is ready ..."
+      autoreload_tick = 500
+    elsif autoreload_tick == 1
+      puts "Suspending keymap ..."
+      suspend_keymap
+      sleep_ms 100
+      puts "Reloading keymap ..."
+      reload_keymap
+      puts "Reloaded keymap"
+    end
+    autoreload_tick -= 1
+  end
 end

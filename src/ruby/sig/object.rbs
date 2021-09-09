@@ -8,7 +8,8 @@ class Object
   def compile_ruby: (String) -> bool
   def invoke_ruby: () -> bool
   def autoreload_ready?: () -> bool
-  def autoreload!: () -> void
+  def suspend_keymap: () -> void
+  def reload_keymap: () -> void
 
   # Raspi
   def board_millis : -> Integer
