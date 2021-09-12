@@ -1,5 +1,11 @@
 # Change log
 
+## 2021/09/12
+### Small improvement
+- Sparkfun Pro Micro RP2040 will reboot to BOOTSEL mode if you double-press RESET button without detaching USB cable!
+
+![](doc/images/RP2040_boards.jpg)
+
 ## 2021/09/10
 ### BIG BIG IMPROVEMENT 🍣
 - You no longer need any compiler toolchain!!!
