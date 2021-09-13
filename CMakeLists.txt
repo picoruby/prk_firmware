@@ -127,6 +127,6 @@ pico_add_extra_outputs(${PROJECT})
 add_custom_command(
   TARGET ${PROJECT}
   POST_BUILD
-  COMMAND gzip -k ${PROJECT}.uf2
+  COMMAND gzip -kf ${PROJECT}.uf2
   COMMAND zip -r ${PROJECT}.uf2.zip ${PROJECT}.uf2
 )
