@@ -807,6 +807,7 @@ class Keyboard
           @buffer.put(c) if c
           #(1..5).each { |i| @keycodes[i] = "\000" }
           report_hid(@modifier, @keycodes.join)
+          print(c) if c.is_a?(String)
         else
           report_hid(@modifier, @keycodes.join)
         end
@@ -874,7 +875,7 @@ class Keyboard
   end
 
   def macro(text, opts = [:ENTER])
-    puts "macro: #{text}"
+    print text.to_s
     prev_c = ""
     text.to_s.each_char do |c|
       index = LETTER.index(c)
@@ -893,6 +894,7 @@ class Keyboard
       case opt
       when :ENTER
         @macro_keycodes << LETTER.index("\n")
+        puts
       when :TAB
         @macro_keycodes << LETTER.index("\t")
       else
@@ -923,18 +925,23 @@ class Keyboard
   def ruby
     if @ruby_mode
       @macro_keycodes << LETTER.index("\n")
+      puts
       macro "=> ", []
       eval @buffer.dump
       @buffer.clear
       @ruby_mode = false
-      $rgb.effect = @prev_rgb_effect || :rainbow if $rgb
-      $rgb.restore
+      if $rgb
+        $rgb.effect = @prev_rgb_effect || :rainbow
+        $rgb.restore
+      end
     else
       @ruby_mode = true
       @ruby_mode_stop = false
-      @prev_rgb_effect = $rgb.effect
-      $rgb.save
-      $rgb.effect = :ruby if $rgb
+      if $rgb
+        @prev_rgb_effect = $rgb.effect
+        $rgb.save
+        $rgb.effect = :ruby
+      end
     end
   end
 
