@@ -161,6 +161,7 @@ int main() {
   mrbc_init(memory_pool, MEMORY_SIZE);
   mrbc_define_method(0, mrbc_class_object, "board_millis", c_board_millis);
   mrbc_define_method(0, mrbc_class_object, "rand",         c_rand);
+  mrbc_define_method(0, mrbc_class_object, "srand",        c_srand);
 #ifndef PRK_NO_MSC
   msc_init();
 #endif
