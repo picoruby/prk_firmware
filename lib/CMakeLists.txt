@@ -64,6 +64,13 @@ target_include_directories(picoruby INTERFACE
   ./picoruby/src/mrubyc/src
   ./picoruby/src/mrubyc/src/hal_rp2040
 )
+
+# For hal.c
+include_directories(
+  ${PICO_SDK_PATH}/lib/tinyusb/src
+  ../include
+)
+
 set_target_properties(picoruby
   PROPERTIES
   VERSION ${PROJECT_VERSION}
