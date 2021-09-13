@@ -361,8 +361,8 @@ c_cdc_task(mrb_vm *vm, mrb_value *v, int argc)
       // Note: Skip echo by commenting out write() and write_flush()
       // for throughput test e.g
       //    $ dd if=/dev/zero of=/dev/ttyACM0 count=10000
-      tud_cdc_write(buf, count);
-      tud_cdc_write_flush();
+      //tud_cdc_write(buf, count);
+      //tud_cdc_write_flush();
     }
   }
 }
