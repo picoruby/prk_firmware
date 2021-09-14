@@ -25,5 +25,6 @@ while true
       puts "Reloaded keymap"
     end
     autoreload_tick -= 1
+    sleep_ms 1
   end
 end

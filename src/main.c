@@ -113,6 +113,8 @@ c_reload_keymap(mrb_vm *vm, mrb_value *v, int argc)
   tcb_keymap = create_keymap_task(tcb_keymap);
 }
 
+#endif /* PRK_NO_MSC */
+
 void
 c_autoreload_ready_q(mrb_vm *vm, mrb_value *v, int argc)
 {
@@ -122,8 +124,6 @@ c_autoreload_ready_q(mrb_vm *vm, mrb_value *v, int argc)
     SET_FALSE_RETURN();
   }
 }
-
-#endif /* PRK_NO_MSC */
 
 
 #define MEMORY_SIZE (1024*200)
@@ -180,14 +180,15 @@ int main() {
   mrbc_create_task(tud, 0);
   tcb_rgb = mrbc_create_task(rgb_task, 0);
   create_sandbox();
+  mrbc_define_method(0, mrbc_class_object, "autoreload_ready?", c_autoreload_ready_q);
 #ifdef PRK_NO_MSC
   mrbc_create_task(keymap, 0);
+  autoreload_state = AUTORELOAD_WAIT;
 #else
-  mrbc_define_method(0, mrbc_class_object, "autoreload_ready?", c_autoreload_ready_q);
   mrbc_define_method(0, mrbc_class_object, "reload_keymap",     c_reload_keymap);
   mrbc_define_method(0, mrbc_class_object, "suspend_keymap",    c_suspend_keymap);
-  autoreload_state = AUTORELOAD_READY;
   tcb_keymap = create_keymap_task(NULL);
+  autoreload_state = AUTORELOAD_READY;
 #endif
   mrbc_run();
   return 0;
