@@ -90,12 +90,12 @@ You may not want PRK Firmware to be a mass storage device in case that your empl
     git clone https://github.com/picoruby/prk_meishi2.git
     ```
 
-- Edit `prk_meishi2/keymap.rb` as you wish
+- (Option) Edit `prk_meishi2/keymap.rb` as you wish
 
 - Build with `cmake` and `make`
 
     ```
-    cd prk_meishi2/build
+    cd [path]/[to]/prk_meishi2/build
     cmake -DPRK_NO_MSC=1 ../../..
     make
     ```
@@ -103,6 +103,10 @@ You may not want PRK Firmware to be a mass storage device in case that your empl
     (Defining PRK_NO_MSC macro will avoid implementing mass storage feature)
 
     Now you should have `prk_firmware-[version]-[date]-no_msc.uf2` file in `prk_firmware/keyboards/prk_meishi2/build/` directory which includes your keymap in code.
+
+- (Troubleshooting) If you got an error on `cmake -DPRK_NO_MSC=1 ../../..`
+  - Try [this procedure](#building-uf2-of-excluding-keymap-version) once
+  - Then, redo `cmake` again
 
 - Install that `.uf2` file into RP2040
 
@@ -115,8 +119,9 @@ You may not want PRK Firmware to be a mass storage device in case that your empl
 #### Building uf2 of excluding-keymap-version
 
 ```
-cd prk_firmware/build
-cmake -DCMAKE_BUILD_TYPE=Debug ..
+# in the top directory of prk_firmware
+./setup.sh
+cd build
 make
 ```
 
