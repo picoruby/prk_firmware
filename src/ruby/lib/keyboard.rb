@@ -566,8 +566,8 @@ class Keyboard
         @keycodes << (mode_key * -1).chr
       end
     when Array
-      # @type var mode_key: Array[Integer]
       0 # `steep check` will fail if you remove this line 🤔
+      # @type var mode_key: Array[Integer]
       mode_key.each do |key|
         if key < -255
           @keycodes << ((key + 0x100) * -1).chr
@@ -670,6 +670,7 @@ class Keyboard
                        end
             @switches << [row, col_data]
           end
+          # @type break: nil
           break if @switches.size >= @cols.size
         end
         gpio_put(row_pin, HI)
