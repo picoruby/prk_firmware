@@ -6,6 +6,12 @@ project(picoruby
   LANGUAGES C
 )
 
+execute_process (
+  COMMAND ln -sf ../../../../../../lib/hal/hal.c
+  COMMAND ln -sf ../../../../../../lib/hal/hal.h
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/picoruby/src/mrubyc/src/hal_user_reserved
+)
+
 add_library(picoruby STATIC
   ./picoruby/src/mrubyc/src/alloc.c
   ./picoruby/src/mrubyc/src/c_array.c
@@ -26,7 +32,7 @@ add_library(picoruby STATIC
   ./picoruby/src/mrubyc/src/symbol.c
   ./picoruby/src/mrubyc/src/value.c
   ./picoruby/src/mrubyc/src/vm.c
-  ./picoruby/src/mrubyc/src/hal_rp2040/hal.c
+  ./picoruby/src/mrubyc/src/hal_user_reserved/hal.c
 
   ./picoruby/src/common.c
   ./picoruby/src/compiler.c
@@ -42,10 +48,13 @@ add_library(picoruby STATIC
 )
 
 add_custom_target(picorbc
-  COMMAND make host_production_libc
-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/picoruby
+  COMMAND make picorbc DIR=host-production/alloc_libc LIBS=-lpicorbc CFLAGS=-DMRBC_USE_HAL_POSIX LDFLAGS=-L${CMAKE_CURRENT_SOURCE_DIR}/picoruby/build/lib/host-production/alloc_libc
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/picoruby/cli
 )
-
+add_custom_target(mrblib
+  COMMAND make MRBC=${CMAKE_CURRENT_SOURCE_DIR}/picoruby/build/bin/host-production/alloc_libc/picorbc
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/picoruby/src/mrubyc/mrblib
+)
 add_custom_target(ptr_size
   COMMAND make
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/picoruby/src/include
@@ -54,7 +63,8 @@ add_custom_target(tokenizer_helper
   COMMAND make tokenizer_helper.h
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/picoruby/src
 )
-add_dependencies(picoruby picorbc ptr_size tokenizer_helper)
+add_dependencies(picoruby mrblib)
+add_dependencies(mrblib picorbc ptr_size tokenizer_helper)
 
 target_link_libraries(picoruby pico_stdlib)
 target_compile_features(picoruby PRIVATE)
