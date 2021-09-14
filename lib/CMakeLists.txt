@@ -66,7 +66,7 @@ target_include_directories(picoruby INTERFACE
 )
 
 # For hal.c
-include_directories(
+target_include_directories(picoruby PUBLIC
   ${PICO_SDK_PATH}/lib/tinyusb/src
   ../include
 )
