@@ -902,8 +902,8 @@ class Keyboard
   end
 
   def eval(script)
-    if compile_ruby(script)
-      if invoke_ruby
+    if sandbox_picorbc(script)
+      if sandbox_resume
         n = 0
         while sandbox_state != 0 do # 0: TASKSTATE_DORMANT == finished(?)
           sleep_ms 50
