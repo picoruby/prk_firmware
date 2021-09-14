@@ -6,10 +6,11 @@ class RGB
     @pixel_size = underglow_size + backlight_size
     ws2812_init(pin, @pixel_size, is_rgbw)
     @delay = 100
+    @status = :null
   end
 
   attr_reader :pixel_size
-  attr_accessor :delay, :effect, :action
+  attr_accessor :delay, :effect, :action, :status
 
   def fill(val)
     ws2812_fill(val)

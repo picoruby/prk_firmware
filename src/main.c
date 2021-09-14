@@ -147,13 +147,10 @@ mrbc_load_model(const uint8_t *mrb)
   mrbc_raw_free(vm);
 }
 
-mrbc_tcb *tcb_rgb; /* from ws2812.h */
-
 int loglevel;
 
 int main() {
   loglevel = LOGLEVEL_WARN;
-
 
   stdio_init_all();
   board_init();
@@ -178,18 +175,17 @@ int main() {
   mrbc_load_model(rotary_encoder);
   mrbc_load_model(keyboard);
   mrbc_create_task(tud, 0);
-  tcb_rgb = mrbc_create_task(rgb_task, 0);
+  mrbc_create_task(rgb_task, 0);
   create_sandbox();
   mrbc_define_method(0, mrbc_class_object, "autoreload_ready?", c_autoreload_ready_q);
 #ifdef PRK_NO_MSC
   mrbc_create_task(keymap, 0);
-  autoreload_state = AUTORELOAD_WAIT;
 #else
   mrbc_define_method(0, mrbc_class_object, "reload_keymap",     c_reload_keymap);
   mrbc_define_method(0, mrbc_class_object, "suspend_keymap",    c_suspend_keymap);
   tcb_keymap = create_keymap_task(NULL);
-  autoreload_state = AUTORELOAD_READY;
 #endif
+  autoreload_state = AUTORELOAD_WAIT;
   mrbc_run();
   return 0;
 }

@@ -253,10 +253,10 @@ class Keyboard
     '8',
     '9',
     '0',
-    "\n",
+    :ENTER,
     :ESCAPE,
     :BSPACE,
-    "\t",
+    :TAB,
     ' ',
     '-',
     '=',
@@ -391,10 +391,6 @@ class Keyboard
         $encoders << feature
       end
     end
-  end
-
-  def start_features
-    $rgb.ws2812_resume if $rgb
   end
 
   # val should be treated as `:left` if it's anything other than `:right`
@@ -627,7 +623,6 @@ class Keyboard
   def start!
     puts "Starting keyboard task ..."
 
-    start_features
     @keycodes = Array.new
     # To avoid unintentional report on startup
     # which happens only on Sparkfun Pro Micro RP2040
@@ -805,13 +800,12 @@ class Keyboard
             end
             @ruby_mode_stop = true
           end
-          @buffer.put(c) if c
-          #(1..5).each { |i| @keycodes[i] = "\000" }
-          report_hid(@modifier, @keycodes.join)
-          print(c) if c.is_a?(String)
-        else
-          report_hid(@modifier, @keycodes.join)
+          if c
+            @buffer.put(c)
+            @buffer.refresh_screen
+          end
         end
+        report_hid(@modifier, @keycodes.join)
 
         if @switches.empty? && @locked_layer.nil?
           @layer = :default
@@ -892,15 +886,8 @@ class Keyboard
     end
     opts.each do |opt|
       @macro_keycodes << 0
-      case opt
-      when :ENTER
-        @macro_keycodes << LETTER.index("\n")
-        puts
-      when :TAB
-        @macro_keycodes << LETTER.index("\t")
-      else
-        @macro_keycodes << LETTER.index(opt)
-      end
+      @macro_keycodes << LETTER.index(opt)
+      puts if opt == :ENTER
     end
   end
 
@@ -916,7 +903,7 @@ class Keyboard
             break;
           end
         end
-        macro(sandbox_result.inspect)
+        macro("=> #{sandbox_result.inspect}")
       end
     else
       macro("Error: Compile failed")
@@ -925,9 +912,8 @@ class Keyboard
 
   def ruby
     if @ruby_mode
-      @macro_keycodes << LETTER.index("\n")
+      @macro_keycodes << LETTER.index(:ENTER)
       puts
-      macro "=> ", []
       eval @buffer.dump
       @buffer.clear
       @ruby_mode = false
@@ -936,6 +922,7 @@ class Keyboard
         $rgb.restore
       end
     else
+      @buffer.refresh_screen
       @ruby_mode = true
       @ruby_mode_stop = false
       if $rgb
