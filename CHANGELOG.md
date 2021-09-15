@@ -1,6 +1,6 @@
 # Change log
 
-## 2021/09/15
+## 0.9.2 in 2021/09/15
 ### Useful feature 🎉
 - You can see debug print on a USB serial port that will be helpful if your `keymap.rb` doesn't work well
   - Configuration:
@@ -15,13 +15,13 @@
 
   ![](doc/images/serial_port.png)
 
-## 2021/09/12
+## 0.9.1 in 2021/09/12
 ### Small improvement
 - Sparkfun Pro Micro RP2040 will reboot to BOOTSEL mode if you double-press RESET button without detaching USB cable!
 
   ![](doc/images/RP2040_boards.jpg)
 
-## 2021/09/10
+## 0.9.0 in 2021/09/10 (First release🎊)
 ### BIG BIG IMPROVEMENT 🍣
 - You no longer need any compiler toolchain!!!
 - No longer detaching USB cable every time amending your keymap, too!!!
