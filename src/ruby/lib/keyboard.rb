@@ -253,10 +253,10 @@ class Keyboard
     '8',
     '9',
     '0',
-    "\n",
+    :ENTER,
     :ESCAPE,
     :BSPACE,
-    "\t",
+    :TAB,
     ' ',
     '-',
     '=',
@@ -391,10 +391,6 @@ class Keyboard
         $encoders << feature
       end
     end
-  end
-
-  def start_features
-    $rgb.ws2812_resume if $rgb
   end
 
   # val should be treated as `:left` if it's anything other than `:right`
@@ -566,8 +562,8 @@ class Keyboard
         @keycodes << (mode_key * -1).chr
       end
     when Array
-      # @type var mode_key: Array[Integer]
       0 # `steep check` will fail if you remove this line 🤔
+      # @type var mode_key: Array[Integer]
       mode_key.each do |key|
         if key < -255
           @keycodes << ((key + 0x100) * -1).chr
@@ -627,7 +623,6 @@ class Keyboard
   def start!
     puts "Starting keyboard task ..."
 
-    start_features
     @keycodes = Array.new
     # To avoid unintentional report on startup
     # which happens only on Sparkfun Pro Micro RP2040
@@ -670,6 +665,7 @@ class Keyboard
                        end
             @switches << [row, col_data]
           end
+          # @type break: nil
           break if @switches.size >= @cols.size
         end
         gpio_put(row_pin, HI)
@@ -804,12 +800,12 @@ class Keyboard
             end
             @ruby_mode_stop = true
           end
-          @buffer.put(c) if c
-          #(1..5).each { |i| @keycodes[i] = "\000" }
-          report_hid(@modifier, @keycodes.join)
-        else
-          report_hid(@modifier, @keycodes.join)
+          if c
+            @buffer.put(c)
+            @buffer.refresh_screen
+          end
         end
+        report_hid(@modifier, @keycodes.join)
 
         if @switches.empty? && @locked_layer.nil?
           @layer = :default
@@ -874,7 +870,7 @@ class Keyboard
   end
 
   def macro(text, opts = [:ENTER])
-    puts "macro: #{text}"
+    print text.to_s
     prev_c = ""
     text.to_s.each_char do |c|
       index = LETTER.index(c)
@@ -890,14 +886,8 @@ class Keyboard
     end
     opts.each do |opt|
       @macro_keycodes << 0
-      case opt
-      when :ENTER
-        @macro_keycodes << LETTER.index("\n")
-      when :TAB
-        @macro_keycodes << LETTER.index("\t")
-      else
-        @macro_keycodes << LETTER.index(opt)
-      end
+      @macro_keycodes << LETTER.index(opt)
+      puts if opt == :ENTER
     end
   end
 
@@ -913,7 +903,7 @@ class Keyboard
             break;
           end
         end
-        macro(sandbox_result.inspect)
+        macro("=> #{sandbox_result.inspect}")
       end
     else
       macro("Error: Compile failed")
@@ -922,19 +912,24 @@ class Keyboard
 
   def ruby
     if @ruby_mode
-      @macro_keycodes << LETTER.index("\n")
-      macro "=> ", []
+      @macro_keycodes << LETTER.index(:ENTER)
+      puts
       eval @buffer.dump
       @buffer.clear
       @ruby_mode = false
-      $rgb.effect = @prev_rgb_effect || :rainbow if $rgb
-      $rgb.restore
+      if $rgb
+        $rgb.effect = @prev_rgb_effect || :rainbow
+        $rgb.restore
+      end
     else
+      @buffer.refresh_screen
       @ruby_mode = true
       @ruby_mode_stop = false
-      @prev_rgb_effect = $rgb.effect
-      $rgb.save
-      $rgb.effect = :ruby if $rgb
+      if $rgb
+        @prev_rgb_effect = $rgb.effect
+        $rgb.save
+        $rgb.effect = :ruby
+      end
     end
   end
 

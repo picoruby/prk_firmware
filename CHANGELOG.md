@@ -1,10 +1,25 @@
 # Change log
 
+## 2021/09/15
+### Useful feature 🎉
+- You can see debug print on a USB serial port that will be helpful if your `keymap.rb` doesn't work well
+  - Configuration:
+      
+      ```
+      Baud: 115200
+      Data bits: 8
+      Parity: None
+      Stop bits: 1
+      Flow control: None
+      ```
+
+  ![](doc/images/serial_port.png)
+
 ## 2021/09/12
 ### Small improvement
 - Sparkfun Pro Micro RP2040 will reboot to BOOTSEL mode if you double-press RESET button without detaching USB cable!
 
-![](doc/images/RP2040_boards.jpg)
+  ![](doc/images/RP2040_boards.jpg)
 
 ## 2021/09/10
 ### BIG BIG IMPROVEMENT 🍣

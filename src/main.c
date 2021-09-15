@@ -113,6 +113,8 @@ c_reload_keymap(mrb_vm *vm, mrb_value *v, int argc)
   tcb_keymap = create_keymap_task(tcb_keymap);
 }
 
+#endif /* PRK_NO_MSC */
+
 void
 c_autoreload_ready_q(mrb_vm *vm, mrb_value *v, int argc)
 {
@@ -122,8 +124,6 @@ c_autoreload_ready_q(mrb_vm *vm, mrb_value *v, int argc)
     SET_FALSE_RETURN();
   }
 }
-
-#endif /* PRK_NO_MSC */
 
 
 #define MEMORY_SIZE (1024*200)
@@ -147,13 +147,10 @@ mrbc_load_model(const uint8_t *mrb)
   mrbc_raw_free(vm);
 }
 
-mrbc_tcb *tcb_rgb; /* from ws2812.h */
-
 int loglevel;
 
 int main() {
   loglevel = LOGLEVEL_WARN;
-
 
   stdio_init_all();
   board_init();
@@ -178,17 +175,17 @@ int main() {
   mrbc_load_model(rotary_encoder);
   mrbc_load_model(keyboard);
   mrbc_create_task(tud, 0);
-  tcb_rgb = mrbc_create_task(rgb_task, 0);
+  mrbc_create_task(rgb_task, 0);
   create_sandbox();
+  mrbc_define_method(0, mrbc_class_object, "autoreload_ready?", c_autoreload_ready_q);
 #ifdef PRK_NO_MSC
   mrbc_create_task(keymap, 0);
 #else
-  mrbc_define_method(0, mrbc_class_object, "autoreload_ready?", c_autoreload_ready_q);
   mrbc_define_method(0, mrbc_class_object, "reload_keymap",     c_reload_keymap);
   mrbc_define_method(0, mrbc_class_object, "suspend_keymap",    c_suspend_keymap);
-  autoreload_state = AUTORELOAD_READY;
   tcb_keymap = create_keymap_task(NULL);
 #endif
+  autoreload_state = AUTORELOAD_WAIT;
   mrbc_run();
   return 0;
 }

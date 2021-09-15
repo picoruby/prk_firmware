@@ -8,7 +8,7 @@ project(prk_firmware)
 
 add_definitions(
   -DNDEBUG
-  -DMRBC_USE_HAL_RP2040
+  -DMRBC_USE_HAL_USER_RESERVED
   -DMRBC_REQUIRE_32BIT_ALIGNMENT
   -DMAX_REGS_SIZE=256
   -DMAX_SYMBOLS_COUNT=500
@@ -26,7 +26,7 @@ pico_sdk_init()
 
 execute_process (COMMAND date +%Y%m%d OUTPUT_VARIABLE CMAKE_BUILDDATE OUTPUT_STRIP_TRAILING_WHITESPACE)
 execute_process (COMMAND git rev-parse --short HEAD OUTPUT_VARIABLE CMAKE_REVISION OUTPUT_STRIP_TRAILING_WHITESPACE)
-set (PRK_VERSION   0.9.1)
+set (PRK_VERSION   0.9.2)
 set (PRK_BUILDDATE ${CMAKE_BUILDDATE})
 set (PRK_REVISION  ${CMAKE_REVISION})
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/src/version.h.in" "${CMAKE_CURRENT_SOURCE_DIR}/src/version.h")
@@ -127,6 +127,6 @@ pico_add_extra_outputs(${PROJECT})
 add_custom_command(
   TARGET ${PROJECT}
   POST_BUILD
-  COMMAND gzip -k ${PROJECT}.uf2
+  COMMAND gzip -kf ${PROJECT}.uf2
   COMMAND zip -r ${PROJECT}.uf2.zip ${PROJECT}.uf2
 )

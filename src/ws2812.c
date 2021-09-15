@@ -82,13 +82,6 @@ c_ws2812_rotate(mrb_vm *vm, mrb_value *v, int argc)
 }
 
 void
-c_ws2812_resume(mrb_vm *vm, mrb_value *v, int argc)
-{
-  if (tcb_rgb == NULL) return;
-  mrbc_resume_task(tcb_rgb);
-}
-
-void
 c_ws2812_off(mrb_vm *vm, mrb_value *v, int argc)
 {
   int i = 0;

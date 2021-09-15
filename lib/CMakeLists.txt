@@ -6,6 +6,12 @@ project(picoruby
   LANGUAGES C
 )
 
+#execute_process (
+#  COMMAND ln -sf ../../../../../../lib/hal/hal.c
+#  COMMAND ln -sf ../../../../../../lib/hal/hal.h
+#  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/picoruby/src/mrubyc/src/hal_user_reserved
+#)
+
 add_library(picoruby STATIC
   ./picoruby/src/mrubyc/src/alloc.c
   ./picoruby/src/mrubyc/src/c_array.c
@@ -26,7 +32,7 @@ add_library(picoruby STATIC
   ./picoruby/src/mrubyc/src/symbol.c
   ./picoruby/src/mrubyc/src/value.c
   ./picoruby/src/mrubyc/src/vm.c
-  ./picoruby/src/mrubyc/src/hal_rp2040/hal.c
+  ./picoruby/src/mrubyc/src/hal_user_reserved/hal.c
 
   ./picoruby/src/common.c
   ./picoruby/src/compiler.c
@@ -42,19 +48,21 @@ add_library(picoruby STATIC
 )
 
 add_custom_target(picorbc
-  COMMAND make host_production_libc
+  COMMAND make
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/picoruby
 )
-
-add_custom_target(ptr_size
-  COMMAND make
-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/picoruby/src/include
+add_custom_target(hal_posix
+  COMMAND ln -sf ../../../../cli/picoshell_lib/hal_posix/hal.c
+  COMMAND ln -sf ../../../../cli/picoshell_lib/hal_posix/hal.h
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/picoruby/src/mrubyc/src/hal_user_reserved
 )
-add_custom_target(tokenizer_helper
-  COMMAND make tokenizer_helper.h
-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/picoruby/src
+add_custom_target(hal_user_reserved
+  COMMAND ln -sf ../../../../../../lib/hal/hal.c
+  COMMAND ln -sf ../../../../../../lib/hal/hal.h
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/picoruby/src/mrubyc/src/hal_user_reserved
 )
-add_dependencies(picoruby picorbc ptr_size tokenizer_helper)
+add_dependencies(picoruby hal_user_reserved picorbc)
+add_dependencies(picorbc hal_posix)
 
 target_link_libraries(picoruby pico_stdlib)
 target_compile_features(picoruby PRIVATE)
@@ -64,6 +72,13 @@ target_include_directories(picoruby INTERFACE
   ./picoruby/src/mrubyc/src
   ./picoruby/src/mrubyc/src/hal_rp2040
 )
+
+# For hal.c
+target_include_directories(picoruby PUBLIC
+  ${PICO_SDK_PATH}/lib/tinyusb/src
+  ../include
+)
+
 set_target_properties(picoruby
   PROPERTIES
   VERSION ${PROJECT_VERSION}

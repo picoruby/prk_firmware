@@ -33,8 +33,9 @@ _(left: Raspberry Pi Pico / right: Sparkfun Pro Micro RP2040)_
 - [ ] Media keys
 - [x] RGBLED. An example on [picoruby/prk_crkbd](https://github.com/picoruby/prk_crkbd/blob/main/keymap.rb#L61-L76)
 - [ ] OLED display
-- [x] Rotary encoder *new!* An example on [prk_helix_rev3/keymap.rb](https://github.com/picoruby/prk_helix_rev3/blob/master/keymap.rb#L79-L100)
+- [x] Rotary encoder. An example on [prk_helix_rev3/keymap.rb](https://github.com/picoruby/prk_helix_rev3/blob/master/keymap.rb#L79-L100)
 - [ ] Mouse / Trackball
+- [x] Debugging over a serial port
 
 ### Getting started
 
@@ -90,12 +91,12 @@ You may not want PRK Firmware to be a mass storage device in case that your empl
     git clone https://github.com/picoruby/prk_meishi2.git
     ```
 
-- Edit `prk_meishi2/keymap.rb` as you wish
+- (Option) Edit `prk_meishi2/keymap.rb` as you wish
 
 - Build with `cmake` and `make`
 
     ```
-    cd prk_meishi2/build
+    cd [path]/[to]/prk_meishi2/build
     cmake -DPRK_NO_MSC=1 ../../..
     make
     ```
@@ -104,19 +105,38 @@ You may not want PRK Firmware to be a mass storage device in case that your empl
 
     Now you should have `prk_firmware-[version]-[date]-no_msc.uf2` file in `prk_firmware/keyboards/prk_meishi2/build/` directory which includes your keymap in code.
 
+- (Troubleshooting) If you got an error on `cmake -DPRK_NO_MSC=1 ../../..`
+  - Try [this procedure](#building-uf2-of-excluding-keymap-version) once
+  - Then, redo `cmake` again
+
 - Install that `.uf2` file into RP2040
 
 ### What if split type keyboard?
 
 - Make sure installing your setup on both side
 
+### Tips
+
+- You can see debug print on a "USB Serial Port" (so-called "COM Port" in Windows) that will be helpful if your `keymap.rb` doesn't work well
+    
+    ```
+    Baud: 115200
+    Data bits: 8
+    Parity: None
+    Stop bits: 1
+    Flow control: None
+    ```
+
+  ![](doc/images/serial_port.png)
+
 ### Contributing
 
 #### Building uf2 of excluding-keymap-version
 
 ```
-cd prk_firmware/build
-cmake -DCMAKE_BUILD_TYPE=Debug ..
+# in the top directory of prk_firmware
+./setup.sh
+cd build
 make
 ```
 
