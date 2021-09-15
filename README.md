@@ -33,8 +33,9 @@ _(left: Raspberry Pi Pico / right: Sparkfun Pro Micro RP2040)_
 - [ ] Media keys
 - [x] RGBLED. An example on [picoruby/prk_crkbd](https://github.com/picoruby/prk_crkbd/blob/main/keymap.rb#L61-L76)
 - [ ] OLED display
-- [x] Rotary encoder *new!* An example on [prk_helix_rev3/keymap.rb](https://github.com/picoruby/prk_helix_rev3/blob/master/keymap.rb#L79-L100)
+- [x] Rotary encoder. An example on [prk_helix_rev3/keymap.rb](https://github.com/picoruby/prk_helix_rev3/blob/master/keymap.rb#L79-L100)
 - [ ] Mouse / Trackball
+- [x] Debugging over a serial port
 
 ### Getting started
 
@@ -113,6 +114,20 @@ You may not want PRK Firmware to be a mass storage device in case that your empl
 ### What if split type keyboard?
 
 - Make sure installing your setup on both side
+
+### Tips
+
+- You can see debug print on a "USB Serial Port" (so-called "COM Port" in Windows) that will be helpful if your `keymap.rb` doesn't work well
+    
+    ```
+    Baud: 115200
+    Data bits: 8
+    Parity: None
+    Stop bits: 1
+    Flow control: None
+    ```
+
+  ![](doc/images/serial_port.png)
 
 ### Contributing
 
