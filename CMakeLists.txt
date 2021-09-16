@@ -13,6 +13,7 @@ add_definitions(
   -DMAX_REGS_SIZE=256
   -DMAX_SYMBOLS_COUNT=500
   -DMAX_VM_COUNT=10
+  -DMRBC_CONVERT_CRLF
 )
 if(PRK_NO_MSC)
   add_definitions(-DPRK_NO_MSC)
