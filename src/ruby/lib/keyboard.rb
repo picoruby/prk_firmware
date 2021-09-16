@@ -546,11 +546,12 @@ class Keyboard
             on_release_action = case on_release.class
             when Symbol
               # @type var on_release: Symbol
-              keycode_index = KEYCODE.index(on_release)
+              key = KC_ALIASES[on_release] ? KC_ALIASES[on_release] : on_release
+              keycode_index = KEYCODE.index(key)
               if keycode_index
                 keycode_index * -1
-              elsif KEYCODE_SFT[on_release]
-                (KEYCODE_SFT[on_release] + 0x100) * -1
+              elsif KEYCODE_SFT[key]
+                (KEYCODE_SFT[key] + 0x100) * -1
               end
             when Array
               # @type var on_release: Array[Symbol]
