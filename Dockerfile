@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
   gcc \
   make \
   g++ \
+  zip \
   python3 \
   ruby
 
@@ -27,6 +28,9 @@ RUN git clone https://github.com/raspberrypi/pico-sdk.git
 ENV PICO_SDK_PATH "${PRK_HOME}/pico-sdk"
 WORKDIR "${PICO_SDK_PATH}"
 RUN git submodule update --init
+
+WORKDIR "${PRK_HOME}/lib/picoruby"
+RUN make
 
 WORKDIR "${PRK_HOME}"
 ARG KEYBOARD
