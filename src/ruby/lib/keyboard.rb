@@ -518,11 +518,12 @@ class Keyboard
     new_map = Array.new(@rows.size)
     row_index = 0
     col_index = 0
-    cols_size = @split ? @cols.size * 2 : @cols.size
+    @cols_size = @split ? @cols.size * 2 : @cols.size
     map.each do |key|
       new_map[row_index] = Array.new(@cols.size) if col_index == 0
-      new_map[row_index][col_index] = find_keycode_index(key)
-      if col_index == cols_size - 1
+      col_position = calculate_col_position(col_index)
+      new_map[row_index][col_position] = find_keycode_index(key)
+      if col_index == @cols_size - 1
         col_index = 0
         row_index += 1
       else
@@ -531,6 +532,21 @@ class Keyboard
     end
     @keymaps[name] = new_map
     @layer_names << name
+  end
+
+  def calculate_col_position(col_index)
+    return col_index unless @split
+
+    case @split_style
+    when STANDARD_SPLIT
+      col_index
+    when RIGHT_SIDE_FLIPPED_SPLIT
+      if col_index < @cols.size
+        col_index
+      else
+        @cols_size - (col_index - @cols.size) - 1
+      end
+    end
   end
 
   def find_keycode_index(key)
