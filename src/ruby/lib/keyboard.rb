@@ -521,17 +521,7 @@ class Keyboard
     cols_size = @split ? @cols.size * 2 : @cols.size
     map.each do |key|
       new_map[row_index] = Array.new(@cols.size) if col_index == 0
-      key = KC_ALIASES[key] ? KC_ALIASES[key] : key
-      keycode_index = KEYCODE.index(key)
-      new_map[row_index][col_index] = if keycode_index
-        keycode_index * -1
-      elsif KEYCODE_SFT[key]
-        (KEYCODE_SFT[key] + 0x100) * -1
-      elsif MOD_KEYCODE[key]
-        MOD_KEYCODE[key]
-      else
-        key
-      end
+      new_map[row_index][col_index] = find_keycode_index(key)
       if col_index == cols_size - 1
         col_index = 0
         row_index += 1
@@ -541,6 +531,21 @@ class Keyboard
     end
     @keymaps[name] = new_map
     @layer_names << name
+  end
+
+  def find_keycode_index(key)
+    key = KC_ALIASES[key] ? KC_ALIASES[key] : key
+    keycode_index = KEYCODE.index(key)
+
+    if keycode_index
+      keycode_index * -1
+    elsif KEYCODE_SFT[key]
+      (KEYCODE_SFT[key] + 0x100) * -1
+    elsif MOD_KEYCODE[key]
+      MOD_KEYCODE[key]
+    else
+      key
+    end
   end
 
   # param[0] :on_release
