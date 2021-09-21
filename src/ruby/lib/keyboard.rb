@@ -404,6 +404,9 @@ class Keyboard
   }
   letter = nil
 
+  STANDARD_SPLIT = :standard_split
+  RIGHT_SIDE_FLIPPED_SPLIT = :right_side_flipped_split
+
   def initialize
     puts "Initializing Keyboard ..."
     # mruby/c VM doesn't work with a CONSTANT to make another CONSTANT
@@ -419,6 +422,7 @@ class Keyboard
     @layer_names = Array.new
     @layer = :default
     @split = false
+    @split_style = STANDARD_SPLIT
     @anchor = true
     @anchor_left = true # so-called "master left"
     @uart_pin = 1
@@ -430,7 +434,7 @@ class Keyboard
   end
 
   attr_accessor :split, :uart_pin
-  attr_reader :layer
+  attr_reader :layer, :split_style
 
   # TODO: OLED, SDCard
   def append(feature)
@@ -466,6 +470,16 @@ class Keyboard
   # val should be treated as `:left` if it's anything other than `:right`
   def set_anchor(val)
     @anchor_left = false if val == :right
+  end
+
+  def split_style=(style)
+    case style
+    when STANDARD_SPLIT, RIGHT_SIDE_FLIPPED_SPLIT
+      @split_style = style
+    else
+      # NOTE: fall back
+      @split_style = STANDARD_SPLIT
+    end
   end
 
   def init_pins(rows, cols)
