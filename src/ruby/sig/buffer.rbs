@@ -2,6 +2,7 @@ class Buffer
   @cursor: Hash[Symbol, Integer]
   @lines: Array[String]
 
+  def initialize: (String prompt) -> void
   def cursor: () -> Hash[Symbol, Integer]
   def clear: () -> void
   def dump: () -> void

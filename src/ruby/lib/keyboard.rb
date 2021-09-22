@@ -426,7 +426,7 @@ class Keyboard
     $encoders = Array.new
     @partner_encoders = Array.new
     @macro_keycodes = Array.new
-    @buffer = Buffer.new
+    @buffer = Buffer.new("picoirb")
   end
 
   attr_accessor :split, :uart_pin
@@ -985,7 +985,7 @@ class Keyboard
   def ruby
     if @ruby_mode
       @macro_keycodes << LETTER.index(:ENTER)
-      puts
+      @buffer.adjust_screen
       eval @buffer.dump
       @buffer.clear
       @ruby_mode = false
