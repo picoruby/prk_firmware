@@ -39,7 +39,7 @@ _(left: Raspberry Pi Pico / right: Sparkfun Pro Micro RP2040)_
 
 ### Getting started
 
-There are two ways to install PRK Fiwmware:
+There are two ways to install PRK Firmware:
 
 1. [Using a release binary (recommended)](#Using-a-release-binary)
 2. [Building a binary by yourself](Building-a-binary-by-yourself)
