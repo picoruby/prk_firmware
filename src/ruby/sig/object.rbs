@@ -21,4 +21,7 @@ class Object
   def gpio_pull_up : (Integer) -> void
   def gpio_put : (Integer, Integer) -> void
   def gpio_get : (Integer) -> Integer
+  def i2c_init : -> void
+  def i2c_write : (Integer, Integer, Integer, Integer) -> void
+  def i2c_read : -> void
 end
