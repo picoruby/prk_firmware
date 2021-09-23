@@ -404,6 +404,9 @@ class Keyboard
   }
   letter = nil
 
+  STANDARD_SPLIT = :standard_split
+  RIGHT_SIDE_FLIPPED_SPLIT = :right_side_flipped_split
+
   def initialize
     puts "Initializing Keyboard ..."
     # mruby/c VM doesn't work with a CONSTANT to make another CONSTANT
@@ -419,6 +422,7 @@ class Keyboard
     @layer_names = Array.new
     @layer = :default
     @split = false
+    @split_style = STANDARD_SPLIT
     @anchor = true
     @anchor_left = true # so-called "master left"
     @uart_pin = 1
@@ -430,7 +434,7 @@ class Keyboard
   end
 
   attr_accessor :split, :uart_pin
-  attr_reader :layer
+  attr_reader :layer, :split_style
 
   # TODO: OLED, SDCard
   def append(feature)
@@ -466,6 +470,16 @@ class Keyboard
   # val should be treated as `:left` if it's anything other than `:right`
   def set_anchor(val)
     @anchor_left = false if val == :right
+  end
+
+  def split_style=(style)
+    case style
+    when STANDARD_SPLIT, RIGHT_SIDE_FLIPPED_SPLIT
+      @split_style = style
+    else
+      # NOTE: fall back
+      @split_style = STANDARD_SPLIT
+    end
   end
 
   def init_pins(rows, cols)
@@ -504,21 +518,12 @@ class Keyboard
     new_map = Array.new(@rows.size)
     row_index = 0
     col_index = 0
-    cols_size = @split ? @cols.size * 2 : @cols.size
+    @entire_cols_size = @split ? @cols.size * 2 : @cols.size
     map.each do |key|
       new_map[row_index] = Array.new(@cols.size) if col_index == 0
-      key = KC_ALIASES[key] ? KC_ALIASES[key] : key
-      keycode_index = KEYCODE.index(key)
-      new_map[row_index][col_index] = if keycode_index
-        keycode_index * -1
-      elsif KEYCODE_SFT[key]
-        (KEYCODE_SFT[key] + 0x100) * -1
-      elsif MOD_KEYCODE[key]
-        MOD_KEYCODE[key]
-      else
-        key
-      end
-      if col_index == cols_size - 1
+      col_position = calculate_col_position(col_index)
+      new_map[row_index][col_position] = find_keycode_index(key)
+      if col_index == @entire_cols_size - 1
         col_index = 0
         row_index += 1
       else
@@ -527,6 +532,36 @@ class Keyboard
     end
     @keymaps[name] = new_map
     @layer_names << name
+  end
+
+  def calculate_col_position(col_index)
+    return col_index unless @split
+
+    case @split_style
+    when STANDARD_SPLIT
+      col_index
+    when RIGHT_SIDE_FLIPPED_SPLIT
+      if col_index < @cols.size
+        col_index
+      else
+        @entire_cols_size - (col_index - @cols.size) - 1
+      end
+    end
+  end
+
+  def find_keycode_index(key)
+    key = KC_ALIASES[key] ? KC_ALIASES[key] : key
+    keycode_index = KEYCODE.index(key)
+
+    if keycode_index
+      keycode_index * -1
+    elsif KEYCODE_SFT[key]
+      (KEYCODE_SFT[key] + 0x100) * -1
+    elsif MOD_KEYCODE[key]
+      MOD_KEYCODE[key]
+    else
+      key
+    end
   end
 
   # param[0] :on_release
