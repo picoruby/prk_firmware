@@ -11,5 +11,7 @@ jobs:
       with:
         ruby-version: 3.0.1
         bundler-cache: true # runs 'bundle install' and caches installed gems automatically
-    - run: BUNDLE_GEMFILE=Gemfile bundle exec steep check
+    - run: |
+        BUNDLE_GEMFILE=Gemfile bundle exec steep check
+        BUNDLE_GEMFILE=Gemfile bundle exec mrubyc-test
       working-directory: src/ruby
