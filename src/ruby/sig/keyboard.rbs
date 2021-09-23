@@ -14,6 +14,8 @@ class Keyboard
   KEYCODE_SFT: Hash[Symbol, Integer]
   LETTER: Array[String | Symbol | nil]
   KC_ALIASES: Hash[Symbol, Symbol]
+  STANDARD_SPLIT: Symbol
+  RIGHT_SIDE_FLIPPED_SPLIT: Symbol
 
   @SHIFT_LETTER_OFFSET_A: Integer
   @SHIFT_LETTER_OFFSET_UNDS: Integer
@@ -48,6 +50,7 @@ class Keyboard
   @macro_keys: Array[Integer]
   @macro_key_numbers: Array[Integer | nil]
   @modifier: Integer
+  @split_style: Symbol
 
   attr_accessor split: bool
   attr_accessor uart_pin: Integer
@@ -62,8 +65,11 @@ class Keyboard
   def initialize: -> void
   def layer: () -> Symbol
   def set_anchor: (Symbol val) -> void
+  def split_style=: (Symbol style) -> void
   def init_pins: (Array[Integer] rows, Array[Integer] cols) -> void
   def add_layer: (Symbol name, Array[Symbol] map) -> void
+  def calculate_col_position: (Integer col_index) -> Integer
+  def find_keycode_index: (Symbol key) -> (Integer | Symbol)
   def define_mode_key: (Symbol key_name, [Symbol | Array[Symbol] | Proc | nil, Symbol | Proc, Integer?, Integer?] param) -> void
   def invert_sft: -> void
   def before_report: () { () -> void } -> void
