@@ -518,12 +518,12 @@ class Keyboard
     new_map = Array.new(@rows.size)
     row_index = 0
     col_index = 0
-    @cols_size = @split ? @cols.size * 2 : @cols.size
+    @entire_cols_size = @split ? @cols.size * 2 : @cols.size
     map.each do |key|
       new_map[row_index] = Array.new(@cols.size) if col_index == 0
       col_position = calculate_col_position(col_index)
       new_map[row_index][col_position] = find_keycode_index(key)
-      if col_index == @cols_size - 1
+      if col_index == @entire_cols_size - 1
         col_index = 0
         row_index += 1
       else
@@ -544,7 +544,7 @@ class Keyboard
       if col_index < @cols.size
         col_index
       else
-        @cols_size - (col_index - @cols.size) - 1
+        @entire_cols_size - (col_index - @cols.size) - 1
       end
     end
   end
