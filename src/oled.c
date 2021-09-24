@@ -124,3 +124,35 @@ c_oled_puts_txt(mrb_vm *vm, mrb_value *v, int argc)
   }
   i2c_write_blocking(I2C_PORT, OLED_ADDR, datas, txt_size*6+1, false);
 }
+
+void
+c_oled_clear(mrb_vm *vm, mrb_value *v, int argc)
+{
+  unsigned char datas[9];
+  int i = 0;
+  int j = 0;
+  while(i<8){
+    datas[0] = 0x00;
+    datas[1] = 0xB0 + i;
+    i2c_write_blocking(I2C_PORT, OLED_ADDR, datas, 2, false);
+    j = 0;
+    datas[0] = 0x40;
+    datas[1] = datas[2] = datas[3] = datas[4] = datas[5] = datas[6] = datas[7] = datas[8] = 0x00; 
+    while(j<16){
+      i2c_write_blocking(I2C_PORT, OLED_ADDR, datas, 9, false);
+      j = j+1;
+    }
+    i = i+1;
+  }
+}
+
+void
+c_oled_clear_line(mrb_vm *vm, mrb_value *v, int argc)
+{
+  unsigned char datas[21*6+1];
+  datas[0] = 0x40;
+  memset(&datas[1], 0, 21*6);
+  uint8_t line = GET_INT_ARG(1);
+  move_line(line);
+  i2c_write_blocking(I2C_PORT, OLED_ADDR, datas, 21*6+1, false);
+}

@@ -27,4 +27,6 @@ class Object
   def oled_init : -> void
   def oled_send : -> void
   def oled_puts_txt : (String) -> void
+  def oled_clear : -> void
+  def oled_clear_line : (Integer) -> void
 end
