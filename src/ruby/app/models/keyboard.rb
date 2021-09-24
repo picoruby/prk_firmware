@@ -403,6 +403,14 @@ class Keyboard
     XXXXXXX: :KC_NO,
   }
   letter = nil
+end
+
+#
+# Keyboard class have to be defined twice to avoid "too big operand" error of mrbc
+# It seems `b` operand of OP_LOADSYM will be more than 0xFFFF if the class is united
+#
+
+class Keyboard
 
   STANDARD_SPLIT = :standard_split
   RIGHT_SIDE_FLIPPED_SPLIT = :right_side_flipped_split

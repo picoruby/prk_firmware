@@ -12,3 +12,7 @@ namespace :steep do
     exec %q(bundle exec steep watch lib sig)
   end
 end
+
+task :test do
+  exec %q(CFLAGS=-DMAX_SYMBOLS_COUNT=600 bundle exec mrubyc-test)
+end

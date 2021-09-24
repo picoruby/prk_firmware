@@ -4,6 +4,9 @@
 $mutex: bool
 
 # Classes
+class Object
+end
+
 class Keyboard
   GPIO_OUT: Integer
   GPIO_IN: Integer
@@ -14,6 +17,7 @@ class Keyboard
   KEYCODE_SFT: Hash[Symbol, Integer]
   LETTER: Array[String | Symbol | nil]
   KC_ALIASES: Hash[Symbol, Symbol]
+
   STANDARD_SPLIT: Symbol
   RIGHT_SIDE_FLIPPED_SPLIT: Symbol
 
