@@ -2,7 +2,7 @@
 
 ## 0.9.4 in 2021/09/24
 ### Improvement
-- Nou you can use "Right side flipped split" keyboard (eg. [Zinc](https://www.sho-k.co.uk/tech/735.html)). See [pull/22](https://github.com/picoruby/prk_firmware/pull/22)
+- Now you can use "Right side flipped split" keyboard (eg. [Zinc](https://www.sho-k.co.uk/tech/735.html)). See [pull/22](https://github.com/picoruby/prk_firmware/pull/22)
 
 ## 0.9.3 in 2021/09/17
 ### Improvement
