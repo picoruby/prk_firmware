@@ -47,6 +47,8 @@ add_executable(${PROJECT}
   src/gpio.c
   src/uart.c
   src/i2c.c
+  src/glcdfont.c
+  src/oled.c
   src/ws2812.c
   src/rotary_encoder.c
   lib/picoruby/cli/sandbox.c

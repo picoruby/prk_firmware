@@ -24,4 +24,7 @@ class Object
   def i2c_init : -> void
   def i2c_write : (Integer, Integer, Integer, Integer) -> void
   def i2c_read : -> void
+  def oled_init : -> void
+  def oled_send : -> void
+  def oled_puts_txt : (String) -> void
 end
