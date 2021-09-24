@@ -25,8 +25,8 @@ class Object
   def i2c_write : (Integer, Array[Integer]) -> void
   def i2c_read : (Integer, Integer, Integer)-> Array[Integer]
   def oled_init : -> void
-  def oled_send : -> void
-  def oled_puts_txt : (String) -> void
+  def oled_puts_logo : -> void
+  def oled_puts_txt : (Integer, String) -> void
   def oled_clear : -> void
   def oled_clear_line : (Integer) -> void
 end
