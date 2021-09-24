@@ -19,16 +19,16 @@
 
 /* ruby */
 /* models */
-#include "ruby/lib/core.c"
-#include "ruby/lib/keyboard.c"
-#include "ruby/lib/rotary_encoder.c"
-#include "ruby/lib/rgb.c"
-#include "../lib/picoruby/cli/ruby/buffer.c"
+#include "ruby/app/models/core.c"
+#include "ruby/app/models/keyboard.c"
+#include "ruby/app/models/rotary_encoder.c"
+#include "ruby/app/models/rgb.c"
+#include "ruby/app/models/buffer.c"
 /* tasks */
-#include "ruby/lib/tud.c"
-#include "ruby/lib/rgb_task.c"
+#include "ruby/app/tasks/usb_task.c"
+#include "ruby/app/tasks/rgb_task.c"
 #ifdef PRK_NO_MSC
-#include "ruby/lib/keymap.c"
+#include "ruby/app/keymap.c"
 #endif
 
 void
@@ -164,7 +164,7 @@ int main() {
 #endif
   CDC_INIT();
   GPIO_INIT();
-  TUD_INIT();
+  USB_INIT();
   UART_INIT();
   WS2812_INIT();
   ROTARY_ENCODER_INIT();
@@ -174,7 +174,7 @@ int main() {
   mrbc_load_model(buffer);
   mrbc_load_model(rotary_encoder);
   mrbc_load_model(keyboard);
-  mrbc_create_task(tud, 0);
+  mrbc_create_task(usb_task, 0);
   mrbc_create_task(rgb_task, 0);
   create_sandbox();
   mrbc_define_method(0, mrbc_class_object, "autoreload_ready?", c_autoreload_ready_q);

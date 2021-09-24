@@ -2,5 +2,5 @@
 test_dir: test
 test_tmp_dir: test/tmp
 mrubyc_src_dir: ../../lib/picoruby/src/mrubyc/src
-mruby_lib_dir: lib
+mruby_lib_dir: app
 mrbc_path: ../../../../lib/picoruby/build/bin/host-production/alloc_libc/picorbc # Relative path from test/tmp/

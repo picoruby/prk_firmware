@@ -14,5 +14,5 @@ namespace :steep do
 end
 
 task :test do
-  exec %q(bundle exec mrubyc-test)
+  exec %q(CFLAGS=-DMAX_SYMBOLS_COUNT=600 bundle exec mrubyc-test)
 end

@@ -59,13 +59,13 @@ set(RBC ${CMAKE_CURRENT_SOURCE_DIR}/lib/picoruby/build/bin/host-production/alloc
 
 add_custom_target(steep
   COMMAND bundle exec steep -h || bundle install
-  COMMAND ${CMAKE_COMMAND} -E env PROJECT_BINARY_DIR=${PROJECT_BINARY_DIR} bundle exec steep check
+  COMMAND ${CMAKE_COMMAND} -E env PROJECT_BINARY_DIR=${PROJECT_BINARY_DIR} rake steep
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src/ruby
 )
 
 add_custom_target(mrubyc-test
-  COMMAND bundle exec mrubyc-test -h || bundle install
-  COMMAND ${CMAKE_COMMAND} -E env PROJECT_BINARY_DIR=${PROJECT_BINARY_DIR} bundle exec mrubyc-test -p ${RBC}
+  COMMAND bundle exec mrubyc-test version || bundle install
+  COMMAND ${CMAKE_COMMAND} -E env PROJECT_BINARY_DIR=${PROJECT_BINARY_DIR} rake test
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src/ruby
 )
 
@@ -73,36 +73,45 @@ if(PRK_NO_MSC)
   add_custom_target(keymap
     COMMAND ${RBC} -Bkeymap         ${PROJECT_BINARY_DIR}/../keymap.rb
     COMMAND mv ${PROJECT_BINARY_DIR}/../keymap.c ./
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src/ruby/lib
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src/ruby/app/
   )
 else()
   add_custom_target(keymap)
 endif()
 
-add_custom_target(ruby
+add_custom_target(models
   COMMAND ${RBC} -Bcore           core.rb
   COMMAND ${RBC} -Bkeyboard       keyboard.rb
   COMMAND ${RBC} -Brgb            rgb.rb
   COMMAND ${RBC} -Brotary_encoder rotary_encoder.rb
-  COMMAND ${RBC} -Btud            tud.rb
-  COMMAND ${RBC} -Brgb_task       rgb_task.rb
-  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src/ruby/lib
+  COMMAND ${RBC} -Bbuffer         buffer.rb
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src/ruby/app/models
 )
 
-add_custom_target(sandbox
-  COMMAND ${RBC} -Bbuffer         buffer.rb
-  COMMAND ${RBC} -Bsandbox        sandbox.rb
-  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/lib/picoruby/cli/ruby
+add_custom_target(tasks
+  COMMAND ${RBC} -Busb_task       usb_task.rb
+  COMMAND ${RBC} -Brgb_task       rgb_task.rb
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src/ruby/app/tasks
 )
+
+add_custom_target(ruby
+)
+
+#add_custom_target(sandbox
+#  COMMAND ${RBC} -Bsandbox        sandbox.rb
+#  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/lib/picoruby/cli/ruby
+#)
 
 add_dependencies(ruby
+  models
+  tasks
   steep
   mrubyc-test
 )
 add_dependencies(${PROJECT}
   picoruby
   ruby
-  sandbox
+  #  sandbox
 )
 if(PRK_NO_MSC)
   add_dependencies(${PROJECT}

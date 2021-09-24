@@ -7,11 +7,20 @@ jobs:
       BUNDLE_GEMFILE: ./src/ruby/Gemfile
     steps:
     - uses: actions/checkout@v2
+      with:
+        submodules: recursive
     - uses: ruby/setup-ruby@v1
       with:
         ruby-version: 3.0.1
         bundler-cache: true # runs 'bundle install' and caches installed gems automatically
-    - run: |
-        BUNDLE_GEMFILE=Gemfile bundle exec steep check
-        BUNDLE_GEMFILE=Gemfile bundle exec mrubyc-test
+    - id: steep
+      run: BUNDLE_GEMFILE=Gemfile bundle exec steep check
+      working-directory: src/ruby
+      #- name: Setup tmate session
+      #  uses: mxschmitt/action-tmate@v3
+    - id: picorbc
+      run: make host_production_libc
+      working-directory: lib/picoruby
+    - id: test
+      run: BUNDLE_GEMFILE=Gemfile CFLAGS=-DMAX_SYMBOLS_COUNT=600 bundle exec mrubyc-test
       working-directory: src/ruby

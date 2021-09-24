@@ -1,5 +1,9 @@
 # Change log
 
+## 0.9.4 in 2021/09/24
+### Improvement
+- Nou you can use "Right side flipped split" keyboard (eg. [Zinc](https://www.sho-k.co.uk/tech/735.html)). See [pull/22](https://github.com/picoruby/prk_firmware/pull/22)
+
 ## 0.9.3 in 2021/09/17
 ### Improvement
 - Abbreviated keynames things like `KC_ENT` for `KC_ENTER` can be used in `keymap.rb`. See [bc23e52](https://github.com/picoruby/prk_firmware/commit/bc23e52f51c2899ce5309643f0ab89606a9b469d)
