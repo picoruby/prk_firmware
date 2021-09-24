@@ -22,8 +22,8 @@ class Object
   def gpio_put : (Integer, Integer) -> void
   def gpio_get : (Integer) -> Integer
   def i2c_init : -> void
-  def i2c_write : (Integer, Integer, Integer, Integer) -> void
-  def i2c_read : -> void
+  def i2c_write : (Integer, Array[Integer]) -> void
+  def i2c_read : (Integer, Integer, Integer)-> Array[Integer]
   def oled_init : -> void
   def oled_send : -> void
   def oled_puts_txt : (String) -> void
