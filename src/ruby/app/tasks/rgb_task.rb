@@ -17,12 +17,7 @@ while true
       puts "Starting rgb task ..."
     when :initializing
       case $rgb.effect
-      when :rainbow
-        step = 360.0 / $rgb.pixel_size
-        $rgb.pixel_size.times do |i|
-          $rgb.set_pixel_at(i, hsv2rgb(i * step, 100, 12.5))
-        end
-      when :breathing
+      when :rainbow, :breathing
         hue = 0
       end
       $rgb.status = :initialized
@@ -35,7 +30,11 @@ while true
       end
       case $rgb.effect
       when :rainbow
-        $rgb.rotate
+        step = 360 / $rgb.pixel_size
+        $rgb.pixel_size.times do |i|
+          $rgb.set_pixel_at(i, hsv2rgb((hue + (i * step))%360, 100, 12.5))
+        end
+        hue >= 360 ? hue = 0 : hue += 5
       when :breathing
         $rgb.fill(hsv2rgb(hue, 100, 12.5))
         hue >= 360 ? hue = 0 : hue += 10
