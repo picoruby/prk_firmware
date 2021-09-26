@@ -15,7 +15,7 @@ PRK Firmware is a framework for DIY-keyboards written and configured in [PicoRub
 The following boards have been confirmed to work as of now:
 
 - Raspberry Pi Pico
-- Sparkfun Pro Micro RP2040 (DEV-17177)
+- Sparkfun Pro Micro RP2040 (~~DEV-17177~~ now it's DEV-18288)
 
 ![](doc/images/RP2040_boards.jpg)
 
