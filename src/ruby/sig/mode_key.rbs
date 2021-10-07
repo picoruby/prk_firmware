@@ -1,0 +1,12 @@
+class ModeKey
+  def initialize: (Symbol, Integer | Array[Integer] | Proc | nil, Integer | Symbol | Proc, Integer, Integer, Integer, Integer) -> void
+  attr_reader layer: Symbol
+  attr_reader on_release: Integer | Array[Integer] | Proc | nil
+  attr_reader on_hold: Integer | Symbol | Proc
+  attr_reader release_threshold: Integer
+  attr_reader repush_threshold: Integer
+  attr_reader switch: [Integer, Integer]
+  attr_accessor prev_state: Symbol
+  attr_accessor pushed_at: Integer
+  attr_accessor released_at: Integer
+end
