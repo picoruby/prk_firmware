@@ -82,7 +82,6 @@ endif()
 add_custom_target(models
   COMMAND ${RBC} -Bcore           core.rb
   COMMAND ${RBC} -Bkeycode        keycode.rb
-  COMMAND ${RBC} -Bkeyevent       keyevent.rb
   COMMAND ${RBC} -Bkeyboard       keyboard.rb
   COMMAND ${RBC} -Brgb            rgb.rb
   COMMAND ${RBC} -Brotary_encoder rotary_encoder.rb
