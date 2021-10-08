@@ -175,34 +175,34 @@ class Keyboard
           if key_name == key_symbol
             # @type var on_release_action: Integer | Array[Integer] | Proc | nil
             on_release_action = case on_release.class
-              when Symbol
-                # @type var on_release: Symbol
-                key = KC_ALIASES[on_release] ? KC_ALIASES[on_release] : on_release
-                keycode_index = KEYCODE.index(key)
-                if keycode_index
-                   keycode_index * -1
-                elsif KEYCODE_SFT[key]
-                  (KEYCODE_SFT[key] + 0x100) * -1
-                end
-              when Array
-                # @type var on_release: Array[Symbol]
-                # @type var ary: Array[Integer]
-                ary = Array.new
-                on_release.each do |sym|
-                  keycode_index = KEYCODE.index(sym)
-                  ary << if keycode_index
-                    keycode_index * -1
-                  elsif KEYCODE_SFT[sym]
-                    (KEYCODE_SFT[sym] + 0x100) * -1
-                  else # Should be a modifier
-                    MOD_KEYCODE[sym]
-                  end
-                end
-                ary
-              when Proc
-                # @type var on_release: Proc
-                on_release
+            when Symbol
+              # @type var on_release: Symbol
+              key = KC_ALIASES[on_release] ? KC_ALIASES[on_release] : on_release
+              keycode_index = KEYCODE.index(key)
+              if keycode_index
+                keycode_index * -1
+              elsif KEYCODE_SFT[key]
+                (KEYCODE_SFT[key] + 0x100) * -1
               end
+            when Array
+              # @type var on_release: Array[Symbol]
+              # @type var ary: Array[Integer]
+              ary = Array.new
+              on_release.each do |sym|
+                keycode_index = KEYCODE.index(sym)
+                ary << if keycode_index
+                  keycode_index * -1
+                elsif KEYCODE_SFT[sym]
+                  (KEYCODE_SFT[sym] + 0x100) * -1
+                else # Should be a modifier
+                  MOD_KEYCODE[sym]
+                end
+              end
+              ary
+            when Proc
+              # @type var on_release: Proc
+              on_release
+            end
             on_hold_action = if on_hold.is_a?(Symbol)
               # @type var on_hold: Symbol
               MOD_KEYCODE[on_hold] ? MOD_KEYCODE[on_hold] : on_hold
@@ -225,39 +225,6 @@ class Keyboard
         end
       end
     end
-  end
-
-  def action_on_hold(mode_key)
-    case mode_key.class
-    when Integer
-      # @type var mode_key: Integer
-      @modifier |= mode_key
-    when Symbol
-      # @type var mode_key: Symbol
-      @layer = mode_key
-    when Proc
-      # @type var mode_key: Proc
-      mode_key.call
-    end
-  end
-
-  def send_key(symbol)
-    keycode = KEYCODE.index(symbol)
-    if keycode
-      modifier = 0
-      c = keycode.chr
-    else
-      keycode = KEYCODE_SFT[symbol]
-      if keycode
-        modifier = 0b00100000
-        c = keycode.chr
-      else
-        return
-      end
-    end
-    report_hid(modifier, "#{c}\000\000\000\000\000")
-    sleep_ms 5
-    report_hid(0, "\000\000\000\000\000\000")
   end
 
   # MOD_KEYCODE = {
@@ -314,6 +281,39 @@ class Keyboard
       # @type var mode_key: Proc
       mode_key.call
     end
+  end
+
+  def action_on_hold(mode_key)
+    case mode_key.class
+    when Integer
+      # @type var mode_key: Integer
+      @modifier |= mode_key
+    when Symbol
+      # @type var mode_key: Symbol
+      @layer = mode_key
+    when Proc
+      # @type var mode_key: Proc
+      mode_key.call
+    end
+  end
+
+  def send_key(symbol)
+    keycode = KEYCODE.index(symbol)
+    if keycode
+      modifier = 0
+      c = keycode.chr
+    else
+      keycode = KEYCODE_SFT[symbol]
+      if keycode
+        modifier = 0b00100000
+        c = keycode.chr
+      else
+        return
+      end
+    end
+    report_hid(modifier, "#{c}\000\000\000\000\000")
+    sleep_ms 5
+    report_hid(0, "\000\000\000\000\000\000")
   end
 
   # **************************************************************
