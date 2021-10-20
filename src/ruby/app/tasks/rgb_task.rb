@@ -17,13 +17,17 @@ while true
       puts "Starting rgb task ..."
     when :initializing
       case $rgb.effect
-      when :rainbow
+      when :swirl
         step = 360.0 / $rgb.pixel_size
         $rgb.pixel_size.times do |i|
           $rgb.set_pixel_at(i, hsv2rgb(i * step, 100, 12.5))
         end
-      when :breathing
+      when :rainbow_mood
         hue = 0
+      when :rainbow
+        puts "[WARN] :rainbow is deprecated. Use :swirl instead"
+      when :breatheng
+        puts "[WARN] :breathing is deprecated. Use :rainbow_mood instead"
       end
       $rgb.status = :initialized
     when :initialized
@@ -34,9 +38,9 @@ while true
         end
       end
       case $rgb.effect
-      when :rainbow
+      when :swirl
         $rgb.rotate
-      when :breathing
+      when :rainbow_mood
         $rgb.fill(hsv2rgb(hue, 100, 12.5))
         hue >= 360 ? hue = 0 : hue += 10
       when :ruby
