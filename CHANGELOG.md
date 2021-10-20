@@ -1,5 +1,11 @@
 # Change log
 
+## 0.9.5 in 2021/xx/xx [TBR]
+### Breaking Change 🌈
+- Amend names of RGB.effect
+  - from `:rainbow` to `:swirl`
+  - from `:breathing` to `rainbow_mood`
+
 ## 0.9.4 in 2021/09/24
 ### Improvement
 - Now you can use "Right side flipped split" keyboard (eg. [Zinc](https://www.sho-k.co.uk/tech/735.html)). See [pull/22](https://github.com/picoruby/prk_firmware/pull/22)
