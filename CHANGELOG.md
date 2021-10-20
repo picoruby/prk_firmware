@@ -5,6 +5,7 @@
 - Amend names of RGB.effect
   - from `:rainbow` to `:swirl`
   - from `:breathing` to `rainbow_mood`
+- Some keycodes for Japanese keyboard added. See [pull/31](https://github.com/picoruby/prk_firmware/pull/31)
 
 ## 0.9.4 in 2021/09/24
 ### Improvement
