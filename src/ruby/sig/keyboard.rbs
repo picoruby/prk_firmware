@@ -62,9 +62,13 @@ class Keyboard
   def append: (RGB | RotaryEncoder feature) -> void
   def start_features: -> void
   def uart_putc_raw : (Integer) -> void
-  def uart_getc : -> Integer
+  def uart_getc : () -> Integer
   def uart_rx_init : (Integer) -> void
   def uart_tx_init : (Integer) -> void
+  def bi_uart_putc_raw : (Integer) -> void
+  def bi_uart_getc : () -> Integer
+  def bi_uart_rx_init : (Integer) -> void
+  def bi_uart_tx_init : (Integer) -> void
   def report_hid : (Integer, String) -> void
   def initialize: -> void
   def layer: () -> Symbol

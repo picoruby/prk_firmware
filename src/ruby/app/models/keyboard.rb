@@ -494,13 +494,14 @@ class Keyboard
   end
 
   def init_pins(rows, cols)
+    puts "Initializing GPIO ..."
     if @split
       sleep 2 # Wait until USB ready
       @anchor = tud_mounted?
       if @anchor
-        uart_rx_init(@uart_pin)
+        bi_uart_rx_init(@uart_pin)
       else
-        uart_tx_init(@uart_pin)
+        bi_uart_tx_init(@uart_pin)
       end
     end
     @rows = rows
@@ -747,8 +748,8 @@ class Keyboard
     if @split
       sleep_ms 100
       while true
-        data = uart_getc
-        break if data.nil?
+        data = bi_uart_getc
+        break unless data
       end
     end
     default_sleep = 10
@@ -796,7 +797,7 @@ class Keyboard
       if @split && @anchor
         sleep_ms 5
         while true
-          data = uart_getc
+          data = bi_uart_getc
           break unless data
           # @type var data: Integer
           if data > 246
@@ -934,13 +935,13 @@ class Keyboard
       else
         $encoders.each do |encoder|
           data = encoder.consume_rotation_partner
-          uart_putc_raw(data) if data && data > 0
+          bi_uart_putc_raw(data) if data && data > 0
         end
         @switches.each do |switch|
           # 0b11111111
           #   ^^^      row number (0 to 7)
           #      ^^^^^ col number (0 to 31)
-          uart_putc_raw((switch[0] << 5) + switch[1])
+          bi_uart_putc_raw((switch[0] << 5) + switch[1])
         end
       end
 
