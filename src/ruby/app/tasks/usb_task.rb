@@ -18,12 +18,12 @@ while true
   end
   if autoreload_ready?
     if autoreload_tick == 0
-      puts "\r\n\r\nAutoreload is ready ..."
+      puts "\nAutoreload is ready ..."
       $rgb.status = :null if $rgb
       $encoders = Array.new
       autoreload_tick = 500
     elsif autoreload_tick == 1
-      puts "\r\nSuspending keymap ..."
+      puts "\nSuspending keymap ..."
       suspend_keymap
       sleep_ms 100
       puts "Reloading keymap ..."
@@ -31,6 +31,6 @@ while true
       puts "Reloaded keymap"
     end
     autoreload_tick -= 1
-    sleep_ms 1
+    sleep_ms 2
   end
 end

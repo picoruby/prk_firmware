@@ -5,6 +5,7 @@
 #include "hardware/irq.h"
 #include "hardware/pio.h"
 #include "uart_tx.pio.h"
+#include "pico/multicore.h"
 
 #define UART_ID uart0
 #define BAUD_RATE 115200
@@ -40,10 +41,11 @@ c_uart_getc(mrb_vm *vm, mrb_value *v, int argc)
  */
 static PIO pio = pio0;
 static uint sm = 0;
+static uint offset;
 void
 c_uart_tx_init(mrb_vm *vm, mrb_value *v, int argc)
 {
-  uint offset = pio_add_program(pio, &uart_tx_program);
+  offset = pio_add_program(pio, &uart_tx_program);
   uart_tx_program_init(pio, sm, offset, GET_INT_ARG(1), BAUD_RATE);
 }
 
@@ -51,4 +53,195 @@ void
 c_uart_putc_raw(mrb_vm *vm, mrb_value *v, int argc)
 {
   pio_sm_put_blocking(pio, sm, GET_INT_ARG(1));
+}
+
+/*
+ * Bidirectional UART
+ */
+#define SAMPLING_INTERVAL 10
+#define SAMPLING_COUNT     8
+/*
+ * (eg) 1-bit interval of 9600 bps is about 104 microseconds
+ */
+#define BIT_INTERVAL      (SAMPLING_INTERVAL * SAMPLING_COUNT)
+#define SLEEP_MS           1
+#define NIL              255
+static int uart_pin;
+
+void
+core1_tx_entry()
+{
+  uint8_t data, i;
+  sleep_ms(3000);
+  multicore_fifo_drain();
+  for (;;) {
+    { /* TX */
+      { /* 2-bit long of stop-bit */
+        gpio_set_dir(uart_pin, GPIO_OUT);
+        gpio_put(uart_pin, 1);
+        sleep_us(BIT_INTERVAL * 2);
+        /*
+        * `if (i < BIT_INTERVAL * 1.5) continue;`
+        * in core1_rx_entry() should catch this.
+        */
+      }
+      { /* Start-bit */
+        gpio_put(uart_pin, 0);
+        sleep_us(BIT_INTERVAL);
+      }
+      { /* Send data */
+        if (!multicore_fifo_rvalid()) {
+          data = NIL;
+        } else {
+          data = (uint8_t)multicore_fifo_pop_blocking();
+        }
+        for (i = 0; i < DATA_BITS; i++) {
+          gpio_put(uart_pin, (data >> i)&1);
+          sleep_us(BIT_INTERVAL);
+        }
+      }
+      { /* Stop-bit */
+        gpio_put(uart_pin, 1);
+        sleep_us(BIT_INTERVAL);
+      }
+    }
+    gpio_put(uart_pin, 0);
+    sleep_ms(SLEEP_MS);
+    { /* RX without parity check */
+      { /* Wait until finding a stop-bit */
+        gpio_set_dir(uart_pin, GPIO_IN);
+        gpio_pull_up(uart_pin);
+        while (gpio_get(uart_pin));
+        /* You found a possible start-bit */
+        /* But skip checking the start-bit */
+        sleep_us(BIT_INTERVAL);
+      }
+      { /* Receive a data */
+        data = 0;
+        for (i = 0; i < DATA_BITS; i++) {
+          sleep_us(BIT_INTERVAL / 2);
+          if (gpio_get(uart_pin)) {
+            data &= (1 << i); // Big endian
+          }
+          sleep_us(BIT_INTERVAL / 2);
+        }
+      }
+      { /* Check the stop-bit */
+        sleep_us(BIT_INTERVAL / 2);
+        if (gpio_get(uart_pin) == 0) data = NIL; // Something's wrong
+        sleep_us(BIT_INTERVAL / 2);
+      }
+      if (data != NIL) {
+        if (!multicore_fifo_wready()) multicore_fifo_drain();
+        multicore_fifo_push_blocking(data);
+      }
+    }
+    sleep_ms(SLEEP_MS);
+  }
+}
+
+void
+core1_rx_entry()
+{
+  uint8_t data, i;
+  gpio_set_dir(uart_pin, GPIO_IN);
+  gpio_pull_up(uart_pin);
+  for (;;) {
+    { /* RX */
+      { /* Wait until finding a stop-bit long enough */
+        i = 0;
+        while (gpio_get(uart_pin)) {
+          sleep_us(SAMPLING_INTERVAL);
+          if (i < 255) i++;
+        }
+        if (i < SAMPLING_COUNT * 1.5) continue;
+        /* You found a possible start-bit */
+        /* Confirm the start-bit */
+        sleep_us(BIT_INTERVAL / 2);
+        if (gpio_get(uart_pin)) continue;
+        sleep_us(BIT_INTERVAL / 2);
+      }
+      { /* Receive a data */
+        data = 0;
+        for (i = 0; i < DATA_BITS; i++) {
+          sleep_us(BIT_INTERVAL / 2);
+          if (gpio_get(uart_pin)) {
+            data &= (1 << i); // Big endian
+          }
+          sleep_us(BIT_INTERVAL / 2);
+        }
+      }
+      { /* Check stop-bit */
+        sleep_us(BIT_INTERVAL / 2);
+        if (gpio_get(uart_pin) == 0) continue; // Something's wrong
+        sleep_us(BIT_INTERVAL / 2);
+      }
+      if (data != NIL) {
+        if (!multicore_fifo_wready()) multicore_fifo_drain();
+        multicore_fifo_push_blocking(data);
+      }
+    }
+    sleep_ms(SLEEP_MS);
+    { /* TX */
+      gpio_set_dir(uart_pin, GPIO_OUT);
+      gpio_put(uart_pin, 1); // Stop-bit
+      sleep_us(BIT_INTERVAL);
+      gpio_put(uart_pin, 0); // Start-bit
+      sleep_us(BIT_INTERVAL);
+      if (multicore_fifo_rvalid()) {
+        data = (uint8_t)multicore_fifo_pop_blocking();
+      } else {
+        data = NIL;
+      }
+      for (i = 0; i < DATA_BITS; i++) {
+        gpio_put(uart_pin, (data >> i)&1);
+        sleep_us(BIT_INTERVAL);
+      }
+      gpio_put(uart_pin, 1);
+      sleep_us(BIT_INTERVAL);
+    }
+    /* RX again */
+    gpio_set_dir(uart_pin, GPIO_IN);
+    gpio_pull_up(uart_pin);
+    sleep_ms(SLEEP_MS);
+  }
+}
+
+/*
+ * `anchor` half should use this
+ */
+void
+c_bi_uart_rx_init(mrb_vm *vm, mrb_value *v, int argc)
+{
+  uart_pin = GET_INT_ARG(1);
+  gpio_init(uart_pin);
+  multicore_launch_core1(core1_tx_entry);
+}
+
+/*
+ * `partner` half should use this
+ */
+void
+c_bi_uart_tx_init(mrb_vm *vm, mrb_value *v, int argc)
+{
+  uart_pin = GET_INT_ARG(1);
+  gpio_init(uart_pin);
+  multicore_launch_core1(core1_rx_entry);
+}
+
+void
+c_bi_uart_putc_raw(mrb_vm *vm, mrb_value *v, int argc)
+{
+  if (!multicore_fifo_wready()) multicore_fifo_drain();
+  multicore_fifo_push_blocking(GET_INT_ARG(1));
+}
+
+void
+c_bi_uart_getc(mrb_vm *vm, mrb_value *v, int argc)
+{
+  if (multicore_fifo_rvalid()) {
+    SET_INT_RETURN(multicore_fifo_pop_blocking());
+  } else {
+    SET_NIL_RETURN();
+  }
 }
