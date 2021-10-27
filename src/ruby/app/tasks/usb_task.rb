@@ -17,6 +17,7 @@ while true
     $encoders.each { |encoder| encoder.read }
   end
   if autoreload_ready?
+    $mutex = false
     if autoreload_tick == 0
       puts "\nAutoreload is ready ..."
       $rgb.status = :null if $rgb
@@ -29,6 +30,7 @@ while true
       puts "Reloading keymap ..."
       reload_keymap
       puts "Reloaded keymap"
+      $mutex = true
     end
     autoreload_tick -= 1
     sleep_ms 2

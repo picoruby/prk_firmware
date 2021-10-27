@@ -746,14 +746,14 @@ class Keyboard
     # To avoid unintentional report on startup
     # which happens only on Sparkfun Pro Micro RP2040
     if @split
-      sleep_ms 100
-      while true
-        data = bi_uart_getc
-        break unless data
-      end
+      sleep_ms 1000
+      #while true
+      #  data = bi_uart_getc
+      #  break unless data
+      #end
     end
-    default_sleep = 10
     while true
+      cycle_time = 20
       now = board_millis
       @keycodes.clear
 
@@ -885,9 +885,7 @@ class Keyboard
           else
             @keycodes << macro_keycode.chr
           end
-          default_sleep = 40 # To avoid accidental skip
-        else
-          default_sleep = 10
+          cycle_time = 40 # To avoid accidental skip
         end
 
         (6 - @keycodes.size).times do
@@ -945,7 +943,7 @@ class Keyboard
         end
       end
 
-      time = default_sleep - (board_millis - now)
+      time = cycle_time - (board_millis - now)
       sleep_ms(time) if time > 0
     end
 
