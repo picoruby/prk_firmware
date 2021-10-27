@@ -1,13 +1,10 @@
-1000.times do
+4000.times do
   tud_task
+  cdc_task
   sleep_ms 1
 end
-print "\e[2J"   # clear all
-print "\e[1;1H" # home
-puts "Welcome to PRK Firmware"
-puts
-puts "Starting tud task ..."
-
+print "\e[2J\e[1;1H" # clear all & home
+puts "Welcome to PRK Firmware!\n\nTUD task started.\n"
 autoreload_tick = 0
 
 while true
@@ -18,17 +15,21 @@ while true
   end
   if autoreload_ready?
     if autoreload_tick == 0
-      puts "\r\n\r\nAutoreload is ready ..."
+      puts "Autoreload is ready."
+      puts "Suspending keymap."
+      suspend_keymap
       $rgb.status = :null if $rgb
       $encoders = Array.new
-      autoreload_tick = 500
+      autoreload_tick = 1000
     elsif autoreload_tick == 1
-      puts "\r\nSuspending keymap ..."
-      suspend_keymap
-      sleep_ms 100
-      puts "Reloading keymap ..."
+      puts "Trying to reload keymap."
       reload_keymap
-      puts "Reloaded keymap"
+      3000.times do
+        tud_task
+        cdc_task
+        sleep_ms 1
+      end
+      resume_keymap
     end
     autoreload_tick -= 1
     sleep_ms 1
