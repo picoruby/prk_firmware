@@ -17,6 +17,11 @@ while true
       puts "Starting rgb task ..."
     when :initializing
       case $rgb.effect
+      when :off
+        off = hsv2rgb(0, 0, 0)
+        $rgb.pixel_size.times do |i|
+          $rgb.set_pixel_at(i, off)
+        end
       when :swirl
         step = 360.0 / $rgb.pixel_size
         $rgb.pixel_size.times do |i|

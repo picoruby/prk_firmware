@@ -18,7 +18,10 @@ while true
       puts "Autoreload is ready."
       puts "Suspending keymap."
       suspend_keymap
-      $rgb.status = :null if $rgb
+      if $rgb
+        $rgb.effect = :off
+        $rgb.status = :null
+      end
       $encoders = Array.new
       autoreload_tick = 1000
     elsif autoreload_tick == 1
