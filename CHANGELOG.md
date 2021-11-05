@@ -1,11 +1,13 @@
 # Change log
 
-## 0.9.5 in 2021/xx/xx [TBR]
+## 0.9.5 in 2021/10/27
 ### Breaking Change 🌈
 - Amend names of RGB.effect
   - from `:rainbow` to `:swirl`
   - from `:breathing` to `rainbow_mood`
+### Improvements
 - Some keycodes for Japanese keyboard added. See [pull/31](https://github.com/picoruby/prk_firmware/pull/31)
+- Improved startup stability. The startup time is increased, but be patient!
 
 ## 0.9.4 in 2021/09/24
 ### Improvement

@@ -57,7 +57,9 @@ int autoreload_state; /* from msc_disk.h */
 #define NODE_BOX_SIZE 50
 #endif
 
-mrbc_tcb *
+mrbc_tcb *tcb_keymap;
+
+void
 create_keymap_task(mrbc_tcb *tcb)
 {
   hal_disable_irq();
@@ -97,11 +99,14 @@ create_keymap_task(mrbc_tcb *tcb)
   StreamInterface_free(si);
   autoreload_state = AUTORELOAD_WAIT;
   hal_enable_irq();
-  mrbc_resume_task(tcb);
-  return tcb;
+  tcb_keymap = tcb;
 }
 
-mrbc_tcb *tcb_keymap;
+void
+c_resume_keymap(mrb_vm *vm, mrb_value *v, int argc)
+{
+  mrbc_resume_task(tcb_keymap);
+}
 
 void
 c_suspend_keymap(mrb_vm *vm, mrb_value *v, int argc)
@@ -112,7 +117,7 @@ c_suspend_keymap(mrb_vm *vm, mrb_value *v, int argc)
 void
 c_reload_keymap(mrb_vm *vm, mrb_value *v, int argc)
 {
-  tcb_keymap = create_keymap_task(tcb_keymap);
+  create_keymap_task(tcb_keymap);
 }
 
 #endif /* PRK_NO_MSC */
@@ -185,9 +190,9 @@ int main() {
 #else
   mrbc_define_method(0, mrbc_class_object, "reload_keymap",     c_reload_keymap);
   mrbc_define_method(0, mrbc_class_object, "suspend_keymap",    c_suspend_keymap);
-  tcb_keymap = create_keymap_task(NULL);
+  mrbc_define_method(0, mrbc_class_object, "resume_keymap",     c_resume_keymap);
 #endif
-  autoreload_state = AUTORELOAD_WAIT;
+  autoreload_state = AUTORELOAD_READY;
   mrbc_run();
   return 0;
 }

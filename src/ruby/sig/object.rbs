@@ -9,6 +9,7 @@ class Object
   def sandbox_resume: () -> bool
   def autoreload_ready?: () -> bool
   def suspend_keymap: () -> void
+  def resume_keymap: () -> void
   def reload_keymap: () -> void
 
   # Raspi
