@@ -235,7 +235,7 @@ void
 c_bi_uart_partner(mrb_vm *vm, mrb_value *v, int argc)
 {
   for (int i = 3; buffer_index < i; i--) {
-    buffer &= (0xFF << (i * 8))
+    buffer &= (0xFF << (i * 8));
   }
   uint8_t data = put24_get8_blocking(buffer);
   SET_INT_RETURN(data);
