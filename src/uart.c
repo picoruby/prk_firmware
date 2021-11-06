@@ -61,34 +61,29 @@ c_uart_putc_raw(mrb_vm *vm, mrb_value *v, int argc)
 #define SAMPLING_INTERVAL 10
 #define SAMPLING_COUNT     8
 /*
- * (eg) 1-bit interval of 9600 bps is about 104 microseconds
+ * (eg) 1-bit interval of 9600 bps is about 104 microseconds (usec)
  */
 #define BIT_INTERVAL      (SAMPLING_INTERVAL * SAMPLING_COUNT)
-#define SLEEP_MS         100
 #define NIL              255
+#define LONG_STOP_BITS     9
+#define SHORT_STOP_BITS    2
 static int uart_pin;
 
 //void
-//core1_anchor_entry()
-//{
-uint8_t
-anchor_getc()
+uint32_t
+put8_get24_nonblocking(uint8_t data)
 {
-  uint8_t data, i;
+  uint8_t i;
   { /* TX */
-    { /* at least 2-bit long of stop-bit */
-    //  sleep_us(BIT_INTERVAL * 2);
-      /*
-      * `if (i < BIT_INTERVAL * 1.5) continue;`
-      * in core1_partner_entry() should catch this.
-      */
+    { /* Stop-bit */
+      gpio_put(uart_pin, 1);
+      sleep_us(BIT_INTERVAL * LONG_STOP_BITS);
     }
     { /* Start-bit */
       gpio_put(uart_pin, 0);
       sleep_us(BIT_INTERVAL);
     }
     { /* Send data */
-      data = NIL;
       for (i = 0; i < DATA_BITS; i++) {
         gpio_put(uart_pin, (data >> i)&1);
         sleep_us(BIT_INTERVAL);
@@ -96,14 +91,15 @@ anchor_getc()
     }
     { /* Stop-bit */
       gpio_put(uart_pin, 1);
-      sleep_us(BIT_INTERVAL);
+      sleep_us(BIT_INTERVAL * SHORT_STOP_BITS);
     }
   }
   bool error = false;
+  uint32_t data24;
   { /* RX */
+    gpio_set_dir(uart_pin, GPIO_IN);
+    gpio_pull_up(uart_pin);
     { /* Wait until finding a stop-bit */
-      gpio_set_dir(uart_pin, GPIO_IN);
-      gpio_pull_up(uart_pin);
       //while (gpio_get(uart_pin));
       /* You are on a possible start-bit */
       sleep_us(BIT_INTERVAL / 2);
@@ -111,45 +107,45 @@ anchor_getc()
       sleep_us(BIT_INTERVAL / 2);
     }
     { /* Receive a data */
-      data = 0;
-      for (i = 0; i < DATA_BITS; i++) {
+      data24 = 0;
+      for (i = 0; i < DATA_BITS * 3; i++) {
         sleep_us(BIT_INTERVAL / 2);
         if (gpio_get(uart_pin)) {
-          data &= (1 << i); // Big endian
+          data24 &= (1 << i); // Big endian
         }
         sleep_us(BIT_INTERVAL / 2);
       }
     }
     { /* Check the stop-bit */
       sleep_us(BIT_INTERVAL / 2);
-      if (gpio_get(uart_pin) == 0) data = NIL; // Something's wrong
+      if (gpio_get(uart_pin) == 0) data24 = NIL; // Something's wrong
       sleep_us(BIT_INTERVAL / 2);
     }
   }
   gpio_set_dir(uart_pin, GPIO_OUT);
-  gpio_put(uart_pin, 1);
+  gpio_put(uart_pin, 0); // Idling
   if (error) return NIL;
-  return data;
+  return data24;
 }
 
-//void
-//core1_partner_entry()
-//{
-void
-partner_putc(uint8_t put_data)
+uint8_t
+put24_get8_blocking(uint8_t put_data)
 {
   uint8_t data, i;
-  gpio_set_dir(uart_pin, GPIO_IN);
-  gpio_pull_up(uart_pin);
   for (;;) {
     { /* RX */
-      { /* Wait until finding a stop-bit long enough */
+      { /* Wait until stop-bit appears */
+        if (gpio_get(uart_pin)) continue;
+        while (gpio_get(uart_pin) == 0);
         i = 0;
         while (gpio_get(uart_pin)) {
-          sleep_us(SAMPLING_INTERVAL);
-          if (i < 255) i++;
+          sleep_us(BIT_INTERVAL / 2);
+          i++;
+          sleep_us(BIT_INTERVAL / 2);
+          if (i > LONG_STOP_BITS) break;
         }
-        if (i < SAMPLING_COUNT * 9) continue;
+        /* The length of stop-bit should exactly be LONG_STOP_BITS */
+        if (i != LONG_STOP_BITS) continue;
         /* You found a possible start-bit */
         /* Confirm the start-bit */
         sleep_us(BIT_INTERVAL / 2);
@@ -167,9 +163,11 @@ partner_putc(uint8_t put_data)
         }
       }
       { /* Check stop-bit */
-        sleep_us(BIT_INTERVAL / 2);
-        if (gpio_get(uart_pin) == 0) continue; // Something's wrong
-        sleep_us(BIT_INTERVAL / 2);
+        for (i = 0; i < SHORT_STOP_BITS; i++) {
+          sleep_us(BIT_INTERVAL / 2);
+          if (gpio_get(uart_pin) == 0) continue; // Something's wrong
+          sleep_us(BIT_INTERVAL / 2);
+        }
       }
     }
     { /* TX */
@@ -187,58 +185,61 @@ partner_putc(uint8_t put_data)
     }
     break;
   }
-    /* RX again */
-//    gpio_set_dir(uart_pin, GPIO_IN);
-//    gpio_pull_up(uart_pin);
-//    sleep_ms(SLEEP_MS);
+  gpio_set_dir(uart_pin, GPIO_IN);
+  gpio_pull_up(uart_pin);
 }
 
 /*
  * `anchor` half should use this
  */
 void
-c_bi_uart_rx_init(mrb_vm *vm, mrb_value *v, int argc)
+c_bi_uart_anchor_init(mrb_vm *vm, mrb_value *v, int argc)
 {
   uart_pin = GET_INT_ARG(1);
   gpio_init(uart_pin);
   gpio_set_dir(uart_pin, GPIO_OUT);
-  gpio_put(uart_pin, 1);
+  gpio_put(uart_pin, 0);
+}
+
+void
+c_bi_uart_anchor(mrb_vm *vm, mrb_value *v, int argc)
+{
+  uint32_t data = put8_get24_nonblocking(GET_INT_ARG(1));
+  SET_INT_RETURN(data);
 }
 
 /*
  * `partner` half should use this
  */
 void
-c_bi_uart_tx_init(mrb_vm *vm, mrb_value *v, int argc)
+c_bi_uart_partner_init(mrb_vm *vm, mrb_value *v, int argc)
 {
   uart_pin = GET_INT_ARG(1);
   gpio_init(uart_pin);
-//  multicore_launch_core1(core1_partner_entry);
+  gpio_set_dir(uart_pin, GPIO_IN);
+  gpio_pull_up(uart_pin);
+}
+
+static uint32_t buffer = 0;
+static int      buffer_index = 0;
+
+void
+c_bi_uart_partner_push(mrb_vm *vm, mrb_value *v, int argc)
+{
+  if (buffer_index == 3) return;
+  buffer &= GET_INT_ARG(1) << (buffer_index * 8);
+  buffer_index++;
 }
 
 void
-c_bi_uart_putc_raw(mrb_vm *vm, mrb_value *v, int argc)
+c_bi_uart_partner(mrb_vm *vm, mrb_value *v, int argc)
 {
-  //if (!multicore_fifo_wready()) multicore_fifo_drain();
-  //multicore_fifo_push_blocking(GET_INT_ARG(1));
-  //multicore_launch_core1(core1_partner_entry);
-  partner_putc(GET_INT_ARG(1));
-}
-
-void
-c_bi_uart_getc(mrb_vm *vm, mrb_value *v, int argc)
-{
-  //multicore_reset_core1();
-  //multicore_launch_core1(core1_anchor_entry);
-  //if (multicore_fifo_rvalid()) {
-  //  SET_INT_RETURN(multicore_fifo_pop_blocking());
-  //} else {
-  //  SET_NIL_RETURN();
-  //}
-  uint8_t data = anchor_getc();
-  if (data == NIL) {
-    SET_NIL_RETURN();
-  } else {
-    SET_INT_RETURN(data);
+  for (int i = 3; buffer_index < i; i--) {
+    buffer &= (0xFF << (i * 8))
   }
+  uint8_t data = put24_get8_blocking(buffer);
+  SET_INT_RETURN(data);
+  buffer = 0;
+  buffer_index = 0;
 }
+

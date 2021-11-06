@@ -65,10 +65,11 @@ class Keyboard
   def uart_getc : () -> Integer
   def uart_rx_init : (Integer) -> void
   def uart_tx_init : (Integer) -> void
-  def bi_uart_putc_raw : (Integer) -> void
-  def bi_uart_getc : () -> Integer
-  def bi_uart_rx_init : (Integer) -> void
-  def bi_uart_tx_init : (Integer) -> void
+  def bi_uart_partner_push : (Integer) -> void
+  def bi_uart_partner : () -> Integer
+  def bi_uart_anchor : (Integer) -> Integer
+  def bi_uart_anchor_init : (Integer) -> void
+  def bi_uart_partner_init : (Integer) -> void
   def report_hid : (Integer, String) -> void
   def initialize: -> void
   def layer: () -> Symbol

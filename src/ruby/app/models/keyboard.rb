@@ -499,9 +499,9 @@ class Keyboard
       sleep 2 # Wait until USB ready
       @anchor = tud_mounted?
       if @anchor
-        bi_uart_rx_init(@uart_pin)
+        bi_uart_anchor_init(@uart_pin)
       else
-        bi_uart_tx_init(@uart_pin)
+        bi_uart_partner_init(@uart_pin)
       end
     end
     @rows = rows
@@ -793,14 +793,14 @@ class Keyboard
       # TODO: more features
       $rgb.fifo_push(true) if $rgb && !@switches.empty?
 
-      # Receive switches from partner
+      # Receive max 3 switches from partner
       if @split && @anchor
         sleep_ms 5
-        while true
-          data = bi_uart_getc
-          break unless data
-          # @type var data: Integer
-          if data > 246
+        data24 = bi_uart_anchor(0xFF)
+        [data24 & 0xFF, (data24 >> 8) & 0xFF, data24 >> 16].each do |data|
+          if data == 0xFF
+            # do nothing
+          elsif data > 246
             @partner_encoders.each { |encoder| encoder.call_proc_if(data) }
           else
             switch = [data >> 5, data & 0b00011111]
@@ -933,14 +933,15 @@ class Keyboard
       else
         $encoders.each do |encoder|
           data = encoder.consume_rotation_partner
-          bi_uart_putc_raw(data) if data && data > 0
+          bi_uart_partner_push(data) if data && data > 0
         end
         @switches.each do |switch|
           # 0b11111111
           #   ^^^      row number (0 to 7)
           #      ^^^^^ col number (0 to 31)
-          bi_uart_putc_raw((switch[0] << 5) + switch[1])
+          bi_uart_partner_push((switch[0] << 5) + switch[1])
         end
+        bi_uart_partner
       end
 
       time = cycle_time - (board_millis - now)
