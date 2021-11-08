@@ -60,92 +60,137 @@ c_uart_putc_raw(mrb_vm *vm, mrb_value *v, int argc)
  */
 #define SAMPLING_INTERVAL 10
 #define SAMPLING_COUNT     8
-/*
- * (eg) 1-bit interval of 9600 bps is about 104 microseconds (usec)
- */
+/* (eg) 1-bit interval of 9600 bps is about 104 microseconds (usec) */
 #define BIT_INTERVAL      (SAMPLING_INTERVAL * SAMPLING_COUNT)
-#define NIL              255
-#define LONG_STOP_BITS     9
+#define LONG_STOP_BITS     8
 #define SHORT_STOP_BITS    2
 static int uart_pin;
+#define NIL         0xFFFFFF
 
-//void
+/*
+ * Anchor
+ * */
 uint32_t
 put8_get24_nonblocking(uint8_t data)
 {
   uint8_t i;
   { /* TX */
-    { /* Stop-bit */
+    { /* Stop-bit (length: LONG_STOP_BITS) */
       gpio_put(uart_pin, 1);
       sleep_us(BIT_INTERVAL * LONG_STOP_BITS);
     }
-    { /* Start-bit */
+    { /* Start-bit (length: 1) */
       gpio_put(uart_pin, 0);
       sleep_us(BIT_INTERVAL);
     }
     { /* Send data */
       for (i = 0; i < DATA_BITS; i++) {
-        gpio_put(uart_pin, (data >> i)&1);
+        if (i == 3) {
+          /* 4th bit has to be 0 to make LONG_STOP_BITS one && only */
+          gpio_put(uart_pin, 0); 
+        } else {
+          gpio_put(uart_pin, (data >> i)&1);
+        }
         sleep_us(BIT_INTERVAL);
       }
     }
-    { /* Stop-bit */
+    { /* Stop-bit (length: SHORT_STOP_BITS) */
       gpio_put(uart_pin, 1);
       sleep_us(BIT_INTERVAL * SHORT_STOP_BITS);
     }
-  }
-  bool error = false;
-  uint32_t data24;
-  { /* RX */
-    gpio_set_dir(uart_pin, GPIO_IN);
-    gpio_pull_up(uart_pin);
-    { /* Wait until finding a stop-bit */
-      //while (gpio_get(uart_pin));
-      /* You are on a possible start-bit */
-      sleep_us(BIT_INTERVAL / 2);
-      if (gpio_get(uart_pin)) error = true;
-      sleep_us(BIT_INTERVAL / 2);
+    { /* Extra-bit (length: 1) */
+      gpio_put(uart_pin, 0);
+      sleep_us(BIT_INTERVAL);
     }
-    { /* Receive a data */
-      data24 = 0;
+  }
+  /* Switch to RX */
+  gpio_set_dir(uart_pin, GPIO_IN);
+  gpio_pull_up(uart_pin);
+  /* DMZ (length: 1) */
+  sleep_us(BIT_INTERVAL);
+  bool error = false;
+  uint32_t data24 = 0;
+  { /* RX */
+    { /* Start-bit (length: 1) */
+      for (i = 0; i < SAMPLING_COUNT; i++) {
+        sleep_us(SAMPLING_INTERVAL);
+        if (gpio_get(uart_pin)) break;
+      }
+      if (i + 1 < SAMPLING_COUNT        ) { error = true; console_printf("error 1 i: %d\n", i); }
+      if (        SAMPLING_COUNT < i - 1) { error = true; console_printf("error 2 i: %d\n", i); }
+      if (!error) console_printf("clear i: %d\n", i);
+    }
+//sleep_us(BIT_INTERVAL);
+    { /* Receive a data of 24 bits (==8*3) */
+      sleep_us(BIT_INTERVAL / 2);
       for (i = 0; i < DATA_BITS * 3; i++) {
-        sleep_us(BIT_INTERVAL / 2);
         if (gpio_get(uart_pin)) {
-          data24 &= (1 << i); // Big endian
+          data24 |= (1 << i); // Big endian
         }
-        sleep_us(BIT_INTERVAL / 2);
+        sleep_us(BIT_INTERVAL);
       }
     }
     { /* Check the stop-bit */
-      sleep_us(BIT_INTERVAL / 2);
-      if (gpio_get(uart_pin) == 0) data24 = NIL; // Something's wrong
-      sleep_us(BIT_INTERVAL / 2);
+      if (gpio_get(uart_pin) == 0) {
+        error = true;
+        console_printf("error 3\n");
+      }
     }
   }
   gpio_set_dir(uart_pin, GPIO_OUT);
   gpio_put(uart_pin, 0); // Idling
-  if (error) return NIL;
+  if (error || data24 == 0) return NIL;
   return data24;
 }
-
+/*
+ * Data sent from anchor to partner
+ *----------------------------------------------
+ *              data      length
+ *-----------------------------------------------
+ *   Stop-bit : 11111111 LONG_STOP_BITS
+ *   Start-bit: 0        1
+ *   Data     : 87654321 DATA_BITS
+ *   Stop-bit : 11       SHORT_STOP_BITS
+ *   Extra-bit: 0        1
+ *----------------------------------------------
+ * Demilitarized zone (both are RX)
+ *   DMZ      : N/A      1
+ * Exchanging the role
+ * Data sent from partner to anchor
+ *----------------------------------------------
+ *              data     length
+ *-----------------------------------------------
+ *   Start-bit: 0        1
+ *   Data1    : 87654321 DATA_BITS
+ *   Data2    : 87654321 DATA_BITS
+ *   Data3    : 87654321 DATA_BITS
+ *   Stop-bit : 1        1
+ * Exchanging the role
+ * Data sent from anchor to partner
+ *----------------------------------------------
+ *              data      length
+ *-----------------------------------------------
+ *   Idling   : 0        Until invoked
+ */
+/*
+ * Partner
+ * */
 uint8_t
-put24_get8_blocking(uint8_t put_data)
+get8_put24_blocking(uint32_t data24)
 {
   uint8_t data, i;
   for (;;) {
     { /* RX */
       { /* Wait until stop-bit appears */
-        if (gpio_get(uart_pin)) continue;
         while (gpio_get(uart_pin) == 0);
         i = 0;
         while (gpio_get(uart_pin)) {
-          sleep_us(BIT_INTERVAL / 2);
           i++;
-          sleep_us(BIT_INTERVAL / 2);
-          if (i > LONG_STOP_BITS) break;
+          sleep_us(SAMPLING_INTERVAL);
         }
-        /* The length of stop-bit should exactly be LONG_STOP_BITS */
-        if (i != LONG_STOP_BITS) continue;
+        /* The length of the stop-bit should roughly eq to LONG_STOP_BITS */
+        if (i + 3 < SAMPLING_COUNT * LONG_STOP_BITS        ) continue;
+        if (        SAMPLING_COUNT * LONG_STOP_BITS < i - 3) continue;
         /* You found a possible start-bit */
         /* Confirm the start-bit */
         sleep_us(BIT_INTERVAL / 2);
@@ -156,28 +201,31 @@ put24_get8_blocking(uint8_t put_data)
         data = 0;
         for (i = 0; i < DATA_BITS; i++) {
           sleep_us(BIT_INTERVAL / 2);
-          if (gpio_get(uart_pin)) {
-            data &= (1 << i); // Big endian
-          }
+          if (gpio_get(uart_pin)) data |= (1 << i); // Big endian
           sleep_us(BIT_INTERVAL / 2);
         }
       }
-      { /* Check stop-bit */
-        for (i = 0; i < SHORT_STOP_BITS; i++) {
-          sleep_us(BIT_INTERVAL / 2);
-          if (gpio_get(uart_pin) == 0) continue; // Something's wrong
-          sleep_us(BIT_INTERVAL / 2);
+      { /* Check stop-bit (length: SHORT_STOP_BITS) */
+        i = 0;
+        while (gpio_get(uart_pin)) {
+          i++;
+          sleep_us(SAMPLING_INTERVAL);
         }
+        /* The length of the stop-bit should roughly eq to LONG_STOP_BITS */
+        if (i + 2 < SAMPLING_COUNT * SHORT_STOP_BITS        ) continue;
+        if (        SAMPLING_COUNT * SHORT_STOP_BITS < i - 2) continue;
       }
     }
-    { /* TX */
+    /* Extra-bit */
+    sleep_us(BIT_INTERVAL);
+    /* DMZ */
+    sleep_us(BIT_INTERVAL);
+    { /* TX (without Stop-bit before Start-bit) */
       gpio_set_dir(uart_pin, GPIO_OUT);
-      gpio_put(uart_pin, 1); // Stop-bit
-      sleep_us(BIT_INTERVAL);
       gpio_put(uart_pin, 0); // Start-bit
       sleep_us(BIT_INTERVAL);
-      for (i = 0; i < DATA_BITS; i++) {
-        gpio_put(uart_pin, (put_data >> i)&1);
+      for (i = 0; i < DATA_BITS * 3; i++) {
+        gpio_put(uart_pin, (data24 >> i)&1);
         sleep_us(BIT_INTERVAL);
       }
       gpio_put(uart_pin, 1); // Stop-bit
@@ -187,7 +235,9 @@ put24_get8_blocking(uint8_t put_data)
   }
   gpio_set_dir(uart_pin, GPIO_IN);
   gpio_pull_up(uart_pin);
+  return data;
 }
+
 
 /*
  * `anchor` half should use this
@@ -205,6 +255,7 @@ void
 c_bi_uart_anchor(mrb_vm *vm, mrb_value *v, int argc)
 {
   uint32_t data = put8_get24_nonblocking(GET_INT_ARG(1));
+  console_printf("c_bi_uart_anchor %x\n", data);
   SET_INT_RETURN(data);
 }
 
@@ -226,18 +277,23 @@ static int      buffer_index = 0;
 void
 c_bi_uart_partner_push(mrb_vm *vm, mrb_value *v, int argc)
 {
-  if (buffer_index == 3) return;
-  buffer &= GET_INT_ARG(1) << (buffer_index * 8);
+  //console_printf("c_bi_uart_partner_push %x\n", GET_INT_ARG(1));
+  if (buffer_index > 2) return;
+  buffer |= GET_INT_ARG(1) << (buffer_index * 8);
   buffer_index++;
 }
 
 void
 c_bi_uart_partner(mrb_vm *vm, mrb_value *v, int argc)
 {
-  for (int i = 3; buffer_index < i; i--) {
-    buffer &= (0xFF << (i * 8));
+  switch (buffer_index) {
+    case 0: buffer  = 0xFFFFFF; break;
+    case 1: buffer |= 0xFFFF00; break;
+    case 2: buffer |= 0xFF0000; break;
   }
-  uint8_t data = put24_get8_blocking(buffer);
+  //console_printf("c_bi_uart_partner %x\n", buffer);
+  uint8_t data = get8_put24_blocking(buffer);
+  //console_printf("c_bi_uart_partner data %x\n", data);
   SET_INT_RETURN(data);
   buffer = 0;
   buffer_index = 0;

@@ -496,7 +496,6 @@ class Keyboard
   def init_pins(rows, cols)
     puts "Initializing GPIO ..."
     if @split
-      sleep 2 # Wait until USB ready
       @anchor = tud_mounted?
       if @anchor
         bi_uart_anchor_init(@uart_pin)
@@ -752,6 +751,7 @@ class Keyboard
       #  break unless data
       #end
     end
+ccc = 0
     while true
       cycle_time = 20
       now = board_millis
@@ -795,8 +795,8 @@ class Keyboard
 
       # Receive max 3 switches from partner
       if @split && @anchor
-        sleep_ms 5
-        data24 = bi_uart_anchor(0xFF)
+#        sleep_ms 5
+        data24 = bi_uart_anchor(ccc)
         [data24 & 0xFF, (data24 >> 8) & 0xFF, data24 >> 16].each do |data|
           if data == 0xFF
             # do nothing
