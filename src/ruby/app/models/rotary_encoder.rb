@@ -14,7 +14,8 @@ class RotaryEncoder
   end
 
   def create_keycodes(encoders_size)
-    @partner_keycode_cw = 0b11111111 - encoders_size * 2
+    #                     0b11111111 is reserved
+    @partner_keycode_cw = 0b11111110 - encoders_size * 2
     @partner_keycode_ccw = @partner_keycode_cw - 1
   end
 

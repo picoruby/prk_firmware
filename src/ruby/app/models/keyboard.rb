@@ -496,13 +496,17 @@ class Keyboard
   def init_pins(rows, cols)
     puts "Initializing GPIO ..."
     if @split
+      print "Configured as a split-type"
       @anchor = tud_mounted?
       if @anchor
         bi_uart_anchor_init(@uart_pin)
+        puts " Anchor"
       else
         bi_uart_partner_init(@uart_pin)
+        puts " Partner"
       end
     end
+    sleep_ms 500
     @rows = rows
     @cols = cols
     @rows.each do |pin|
@@ -795,8 +799,9 @@ ccc = 0
 
       # Receive max 3 switches from partner
       if @split && @anchor
-#        sleep_ms 5
+        sleep_ms 5
         data24 = bi_uart_anchor(ccc)
+        ccc += 1
         [data24 & 0xFF, (data24 >> 8) & 0xFF, data24 >> 16].each do |data|
           if data == 0xFF
             # do nothing
