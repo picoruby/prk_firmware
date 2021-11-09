@@ -119,8 +119,14 @@ put8_get24_nonblocking(uint8_t data)
         sleep_us(SAMPLING_INTERVAL);
         if (gpio_get(uart_pin)) break;
       }
-      if (i < SAMPLING_COUNT * (IDLE_BITS - 2)) { error = true; console_printf("error 1 i: %d\n", i); }
-      if (    SAMPLING_COUNT * (IDLE_BITS) < i) { error = true; console_printf("error 2 i: %d\n", i); }
+      if (i < SAMPLING_COUNT * (IDLE_BITS - 2)) {
+        error = true;
+        //console_printf("error 1 i: %d\n", i); ignorable...?
+      }
+      if (    SAMPLING_COUNT * (IDLE_BITS) < i) {
+        error = true;
+        console_printf("error 2 i: %d\n", i);
+      }
     }
     { /* Stop-bit (length: 1) */
       sleep_us(BIT_INTERVAL / 2);
