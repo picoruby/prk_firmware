@@ -72,7 +72,7 @@ static int uart_pin;
  * Anchor
  * */
 uint32_t
-put8_get24_nonblocking(uint8_t data)
+put8_get24_nonblocking(uint8_t message)
 {
   uint8_t i;
   { /* TX */
@@ -84,13 +84,19 @@ put8_get24_nonblocking(uint8_t data)
       gpio_put(uart_pin, 0);
       sleep_us(BIT_INTERVAL);
     }
-    { /* Send data */
+    { /* Send message */
+      /*
+       * message: 0x11101111
+       *               ^
+       *               has to be 0 to make LONG_STOP_BITS one && only
+       *          message >> 5    : reserved
+       *          message & 0b1111: RGB method
+       */
       for (i = 0; i < DATA_BITS; i++) {
-        if (i == 3) {
-          /* 4th bit has to be 0 to make LONG_STOP_BITS one && only */
-          gpio_put(uart_pin, 0);
+        if (i == 4) {
+          gpio_put(uart_pin, 0); // 5th bit is always 0
         } else {
-          gpio_put(uart_pin, (data >> i)&1);
+          gpio_put(uart_pin, (message >> i)&1);
         }
         sleep_us(BIT_INTERVAL);
       }

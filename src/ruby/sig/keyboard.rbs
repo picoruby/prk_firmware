@@ -15,6 +15,7 @@ class Keyboard
   MOD_KEYCODE: Hash[Symbol, Integer]
   KEYCODE: Array[Symbol]
   KEYCODE_SFT: Hash[Symbol, Integer]
+  KEYCODE_RGB: Hash[Symbol, Integer]
   LETTER: Array[String | Symbol | nil]
   KC_ALIASES: Hash[Symbol, Symbol]
 
@@ -55,6 +56,7 @@ class Keyboard
   @macro_key_numbers: Array[Integer | nil]
   @modifier: Integer
   @split_style: Symbol
+  @message: Integer
 
   attr_accessor split: bool
   attr_accessor uart_pin: Integer

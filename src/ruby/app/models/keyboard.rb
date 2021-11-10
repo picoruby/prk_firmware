@@ -215,6 +215,21 @@ class Keyboard
     KC_QUES:           0x38,
   }
 
+  KEYCODE_RGB = {
+    RGB_MODE_FORWARD: 0x101,
+    RGB_MOD:          0x102,
+    RGB_MODE_REVERSE: 0x103,
+    RGB_RMOD:         0x104,
+    RGB_HUI:          0x105,
+    RGB_HUD:          0x106,
+    RGB_SAI:          0x107,
+    RGB_SAD:          0x108,
+    RGB_VAI:          0x109,
+    RGB_VAD:          0x10a,
+    RGB_SPI:          0x10b,
+    RGB_SPD:          0x10c
+  }
+
   letter = [
     nil,nil,nil,nil,
     'a', # 0x04
@@ -574,6 +589,8 @@ class Keyboard
       (KEYCODE_SFT[key] + 0x100) * -1
     elsif MOD_KEYCODE[key]
       MOD_KEYCODE[key]
+    elsif KEYCODE_RGB[key]
+      KEYCODE_RGB[key]
     else
       key
     end
@@ -755,7 +772,6 @@ class Keyboard
       #  break unless data
       #end
     end
-ccc = 0
     while true
       cycle_time = 20
       now = board_millis
@@ -763,6 +779,7 @@ ccc = 0
 
       @switches.clear
       @modifier = 0
+      @message = 0
 
       # detect physical switches that are pushed
       @rows.each_with_index do |row_pin, row|
@@ -800,8 +817,7 @@ ccc = 0
       # Receive max 3 switches from partner
       if @split && @anchor
         sleep_ms 5
-        data24 = bi_uart_anchor(ccc)
-        ccc += 1
+        data24 = bi_uart_anchor(@message)
         [data24 & 0xFF, (data24 >> 8) & 0xFF, data24 >> 16].each do |data|
           if data == 0xFF
             # do nothing
@@ -876,6 +892,9 @@ ccc = 0
             @modifier |= 0b00100000
           elsif keycode < 0 # Normal keys
             @keycodes << (keycode * -1).chr
+          elsif keycode > 0x100
+            $rgb.invoke KEYCODE_RGB.key(keycode)
+            @message = keycode - 0x100 # 0b0001..0b1100 (4 bit)
           else # Modifier keys
             @modifier |= keycode
           end
@@ -946,7 +965,8 @@ ccc = 0
           #      ^^^^^ col number (0 to 31)
           bi_uart_partner_push((switch[0] << 5) + switch[1])
         end
-        bi_uart_partner
+        message = bi_uart_partner
+        $rgb.invoke KEYCODE_RGB.key(message & 0b1111)
       end
 
       time = cycle_time - (board_millis - now)

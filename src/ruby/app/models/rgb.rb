@@ -12,6 +12,30 @@ class RGB
   attr_reader :pixel_size
   attr_accessor :delay, :effect, :action, :status
 
+  def invoke(key)
+    print "RGB: invoked #{key} / "
+    case key
+    when nil
+      # do nothing
+    when :RGB_TOG
+    when :RGB_MODE_FORWARD, :RGB_MOD
+    when :RGB_MODE_REVERSE, :RGB_RMOD
+    when :RGB_HUI
+    when :RGB_HUD
+    when :RGB_SAI
+    when :RGB_SAD
+    when :RGB_VAI
+    when :RGB_VAD
+    when :RGB_SPI
+      @delay -= 10 if 20 < @delay
+      puts "delay: #{@delay}"
+    when :RGB_SPD
+      @delay += 10 if @delay < 200
+      puts "delay: #{@delay}"
+    end
+    sleep 0.5 # preventing continuous invoke
+  end
+
   def fill(val)
     ws2812_fill(val)
   end
