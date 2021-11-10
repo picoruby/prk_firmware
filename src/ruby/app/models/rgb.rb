@@ -12,28 +12,48 @@ class RGB
   attr_reader :pixel_size
   attr_accessor :delay, :effect, :action, :status
 
-  def invoke(key)
+  def invoke_anchor(key)
     print "RGB: invoked #{key} / "
+    message = 0
     case key
     when nil
-      # do nothing
+      return 0 # do nothing
     when :RGB_TOG
-    when :RGB_MODE_FORWARD, :RGB_MOD
-    when :RGB_MODE_REVERSE, :RGB_RMOD
-    when :RGB_HUI
-    when :RGB_HUD
-    when :RGB_SAI
-    when :RGB_SAD
-    when :RGB_VAI
-    when :RGB_VAD
-    when :RGB_SPI
-      @delay -= 10 if 20 < @delay
+      message = 0b00100000 # 1 << 5
+    when :RGB_MODE_FORWARD, :RGB_MOD, :RGB_MODE_REVERSE, :RGB_RMOD
+      message = 0b01000000 # 2 << 5
+    when :RGB_HUI, :RGB_HUD
+      message = 0b01100000 # 3 << 5
+    when :RGB_SAI, :RGB_SAD
+      message = 0b10000000 # 4 << 5
+    when :RGB_VAI, :RGB_VAD
+      message = 0b10100000 # 5 << 5
+    when :RGB_SPI, :RGB_SPD
+      message = 0b11000000 # 6 << 5
+      @delay = if key == :RGB_SPI
+        10 < @delay  ? @delay - 10 : @delay
+      else
+        @delay < 300 ? @delay + 10 : @delay
+      end
       puts "delay: #{@delay}"
-    when :RGB_SPD
-      @delay += 10 if @delay < 200
-      puts "delay: #{@delay}"
+      message |= (@delay / 10)
     end
-    sleep 0.5 # preventing continuous invoke
+    sleep 0.2 # preventing continuous invoke
+    return message
+  end
+  #            ...      method
+  # message: 0b11111111
+  #               ^^^^^ value
+  def invoke_partner(message)
+    case message >> 5
+    when 1
+    when 2
+    when 3
+    when 4
+    when 5
+    when 6 # SPI, SPD
+      @delay = (message & 0b00011111) * 10
+    end
   end
 
   def fill(val)

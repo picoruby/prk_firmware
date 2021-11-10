@@ -772,6 +772,7 @@ class Keyboard
       #  break unless data
       #end
     end
+    rgb_message = 0
     while true
       cycle_time = 20
       now = board_millis
@@ -779,7 +780,6 @@ class Keyboard
 
       @switches.clear
       @modifier = 0
-      @message = 0
 
       # detect physical switches that are pushed
       @rows.each_with_index do |row_pin, row|
@@ -814,24 +814,25 @@ class Keyboard
       # TODO: more features
       $rgb.fifo_push(true) if $rgb && !@switches.empty?
 
-      # Receive max 3 switches from partner
-      if @split && @anchor
-        sleep_ms 5
-        data24 = bi_uart_anchor(@message)
-        [data24 & 0xFF, (data24 >> 8) & 0xFF, data24 >> 16].each do |data|
-          if data == 0xFF
-            # do nothing
-          elsif data > 246
-            @partner_encoders.each { |encoder| encoder.call_proc_if(data) }
-          else
-            switch = [data >> 5, data & 0b00011111]
-            # To avoid chattering
-            @switches << switch unless @switches.include?(switch)
+      if @anchor
+        # Receive max 3 switches from partner
+        if @split
+          sleep_ms 5
+          data24 = bi_uart_anchor(rgb_message)
+          rgb_message = 0
+          [data24 & 0xFF, (data24 >> 8) & 0xFF, data24 >> 16].each do |data|
+            if data == 0xFF
+              # do nothing
+            elsif data > 246
+              @partner_encoders.each { |encoder| encoder.call_proc_if(data) }
+            else
+              switch = [data >> 5, data & 0b00011111]
+              # To avoid chattering
+              @switches << switch unless @switches.include?(switch)
+            end
           end
         end
-      end
 
-      if @anchor
         desired_layer = @layer
         @mode_keys.each do |mode_key|
           next if mode_key[:layer] != @layer
@@ -893,8 +894,7 @@ class Keyboard
           elsif keycode < 0 # Normal keys
             @keycodes << (keycode * -1).chr
           elsif keycode > 0x100
-            $rgb.invoke KEYCODE_RGB.key(keycode)
-            @message = keycode - 0x100 # 0b0001..0b1100 (4 bit)
+            rgb_message = $rgb.invoke_anchor KEYCODE_RGB.key(keycode)
           else # Modifier keys
             @modifier |= keycode
           end
@@ -965,8 +965,8 @@ class Keyboard
           #      ^^^^^ col number (0 to 31)
           bi_uart_partner_push((switch[0] << 5) + switch[1])
         end
-        message = bi_uart_partner
-        $rgb.invoke KEYCODE_RGB.key(message & 0b1111)
+        rgb_message = bi_uart_partner
+        $rgb.invoke_partner rgb_message if 0 < rgb_message
       end
 
       time = cycle_time - (board_millis - now)

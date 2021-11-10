@@ -28,7 +28,8 @@ class RGB
   attr_accessor effect: Symbol
   attr_accessor action: Symbol
   attr_accessor status: Symbol
-  def invoke: (Symbol | nil) -> void
+  def invoke_anchor: (Symbol | nil) -> Integer
+  def invoke_partner: (Integer) -> void
   def fill: (Integer val) -> void
   def set_pixel_at: (Integer i, Integer val) -> void
   def rotate: -> void
