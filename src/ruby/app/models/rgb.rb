@@ -113,6 +113,7 @@ class RGB
     when :RGB_TOG
       message = 0b00100000 # 1 << 5
       toggle
+      message += 1 unless @offed
     when :RGB_MODE_FORWARD, :RGB_MOD, :RGB_MODE_REVERSE, :RGB_RMOD
       message = 0b01000000 # 2 << 5
       puts "Not implemented"
@@ -159,6 +160,7 @@ class RGB
   def invoke_partner(message)
     case message >> 5
     when 1
+      @offed = ( (message & 1) == 1 )
       toggle
     when 2
     when 3
