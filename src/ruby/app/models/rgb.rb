@@ -87,8 +87,13 @@ class RGB
   end
 
   def invoke_anchor(key)
-    print "RGB: invoked #{key} / "
     message = 0
+    if @last_key == key # preventing double invoke
+      @last_key = nil
+      return message
+    end
+    @last_key = key
+    print "RGB: invoked #{key} / "
     case key
     when nil
       return 0 # do nothing
@@ -124,7 +129,6 @@ class RGB
     else
       puts "unknown method"
     end
-    sleep 0.2 # preventing continuous invoke
     return message
   end
   #            ...      method
