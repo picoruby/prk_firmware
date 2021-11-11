@@ -4,11 +4,6 @@
 $rgb: RGB
 
 # Classes
-class Object
-  private
-  def hsv2rgb: (Float | Integer h, Integer s, Float | Integer v) -> Integer
-end
-
 class RGB
   def ws2812_init: (Integer, Integer, bool) -> void
   def ws2812_off: () -> void
@@ -20,11 +15,18 @@ class RGB
   def ws2812_save: () -> void
   def ws2812_restore: () -> void
 
+  MAX_VALUE: Float
+
   @fifo: Array[true]
   @effect: Symbol
   @action: Symbol
   @delay: Integer
   @pixel_size: Integer
+  @value: Float
+  @max_value: Float
+  @hue: Integer
+
+  def hsv2rgb: (Float | Integer h, Integer s, Float | Integer v) -> Integer
 
   def initialize: (Integer pin, Integer underglow_size, Integer backlight_size, bool is_rgbw) -> void
   attr_reader pixel_size: Integer
@@ -32,6 +34,7 @@ class RGB
   attr_reader effect: Symbol
   attr_accessor action: Symbol
   def effect=: (Symbol) -> void
+  def reset_pixel: () -> void
   def invoke_anchor: (Symbol | nil) -> Integer
   def invoke_partner: (Integer) -> void
   def show: -> void

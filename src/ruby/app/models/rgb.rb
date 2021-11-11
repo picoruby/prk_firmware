@@ -1,4 +1,6 @@
 class RGB
+  MAX_VALUE = 15.5
+
  def initialize(pin, underglow_size, backlight_size, is_rgbw)
     puts "Initializing RGB ..."
     @fifo = Array.new
@@ -6,8 +8,9 @@ class RGB
     @pixel_size = underglow_size + backlight_size
     ws2812_init(pin, @pixel_size, is_rgbw)
     @delay = 100
-    @hue = 0
-    @value = 0
+    @hue = 100
+    @value = 0.0
+    @max_value = 13.0 # default
   end
 
   attr_reader :effect, :delay, :pixel_size
@@ -39,16 +42,20 @@ class RGB
 
   def effect=(name)
     @effect = name
-    case name
+    reset_pixel
+  end
+
+  def reset_pixel
+    case @effect
     when :off
       off = hsv2rgb(0, 0, 0)
       @pixel_size.times do |i|
         ws2812_set_pixel_at(i, off)
       end
     when :swirl
-      step = 360.0 / pixel_size
+      step = 360.0 / @pixel_size
       @pixel_size.times do |i|
-        ws2812_set_pixel_at(i, hsv2rgb(i * step, 100, 12.5))
+        ws2812_set_pixel_at(i, hsv2rgb(i * step, 100, @max_value))
       end
     when :rainbow_mood
       @hue = 0
@@ -70,11 +77,11 @@ class RGB
     when :swirl
       ws2812_rotate
     when :rainbow_mood
-      ws2812_fill(hsv2rgb(@hue, 100, 12.5))
+      ws2812_fill(hsv2rgb(@hue, 100, @max_value))
       @hue >= 360 ? @hue = 0 : @hue += 10
     when :ruby
       ws2812_fill(hsv2rgb(0, 100, @value))
-      @value >= 13 ? @value = 0 : @value += 1
+      @value >= @max_value ? @value = 0.0 : @value += 0.5
     end
     ws2812_show
   end
@@ -91,19 +98,31 @@ class RGB
       message = 0b01000000 # 2 << 5
     when :RGB_HUI, :RGB_HUD
       message = 0b01100000 # 3 << 5
+      puts
     when :RGB_SAI, :RGB_SAD
       message = 0b10000000 # 4 << 5
+      puts
     when :RGB_VAI, :RGB_VAD
       message = 0b10100000 # 5 << 5
+      if key == :RGB_VAI
+        @max_value += 0.5 if @max_value < MAX_VALUE
+      else
+        @max_value -= 0.5 if 0 < @max_value
+      end
+      puts "max_value: #{@max_value}"
+      message |= (@max_value * 2).to_i # max 31
+      reset_pixel
     when :RGB_SPI, :RGB_SPD
       message = 0b11000000 # 6 << 5
-      @delay = if key == :RGB_SPI
-        10 < @delay  ? @delay - 10 : @delay
+      if key == :RGB_SPI
+        @delay = @delay - 10 if 10 < @delay
       else
-        @delay < 300 ? @delay + 10 : @delay
+        @delay = @delay + 10 if @delay < 300
       end
       puts "delay: #{@delay}"
       message |= (@delay / 10)
+    else
+      puts "unknown method"
     end
     sleep 0.2 # preventing continuous invoke
     return message
@@ -118,6 +137,8 @@ class RGB
     when 3
     when 4
     when 5
+      @max_value = (message & 0b00011111) / 2.0
+      reset_pixel
     when 6 # SPI, SPD
       @delay = (message & 0b00011111) * 10
     end
