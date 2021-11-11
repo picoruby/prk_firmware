@@ -26,7 +26,7 @@ class RGB
 
   def hsv2rgb: (Float | Integer h, Integer s, Float | Integer v) -> Integer
 
-  def initialize: (Integer pin, Integer underglow_size, Integer backlight_size, bool is_rgbw) -> void
+  def initialize: (Integer pin, Integer underglow_size, Integer backlight_size, ?bool is_rgbw) -> void
   attr_reader pixel_size: Integer
   attr_reader delay: Integer
   attr_reader effect: Symbol
