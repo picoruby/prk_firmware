@@ -9,6 +9,7 @@ class RGB
     ws2812_init(pin, @pixel_size, is_rgbw)
     @delay = 100
     @hue = 100
+    @saturation = 100
     @value = 0.0
     @max_value = 13.0 # default
   end
@@ -55,7 +56,7 @@ class RGB
     when :swirl
       step = 360.0 / @pixel_size
       @pixel_size.times do |i|
-        ws2812_set_pixel_at(i, hsv2rgb(i * step, 100, @max_value))
+        ws2812_set_pixel_at(i, hsv2rgb(i * step, @saturation, @max_value))
       end
     when :rainbow_mood
       @hue = 0
@@ -77,7 +78,7 @@ class RGB
     when :swirl
       ws2812_rotate
     when :rainbow_mood
-      ws2812_fill(hsv2rgb(@hue, 100, @max_value))
+      ws2812_fill(hsv2rgb(@hue, @saturation, @max_value))
       @hue >= 360 ? @hue = 0 : @hue += 10
     when :ruby
       ws2812_fill(hsv2rgb(0, 100, @value))
@@ -106,7 +107,14 @@ class RGB
       puts
     when :RGB_SAI, :RGB_SAD
       message = 0b10000000 # 4 << 5
-      puts
+      if key == :RGB_SAI
+        @saturation += 10 if @saturation < 100
+      else
+        @saturation -= 10 if 0 < @saturation
+      end
+      puts "saturation: #{@saturation}"
+      message |= (@saturation / 10)
+      reset_pixel
     when :RGB_VAI, :RGB_VAD
       message = 0b10100000 # 5 << 5
       if key == :RGB_VAI
@@ -140,6 +148,8 @@ class RGB
     when 2
     when 3
     when 4
+      @saturation = (message & 0b00011111) * 10
+      reset_pixel
     when 5
       @max_value = (message & 0b00011111) / 2.0
       reset_pixel
