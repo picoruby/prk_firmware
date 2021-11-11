@@ -19,7 +19,7 @@
 
 /* ruby */
 /* models */
-#include "ruby/app/models/core.c"
+#include "ruby/app/models/float_ext.c"
 #include "ruby/app/models/keyboard.c"
 #include "ruby/app/models/rotary_encoder.c"
 #include "ruby/app/models/rgb.c"
@@ -176,7 +176,7 @@ int main() {
   WS2812_INIT();
   ROTARY_ENCODER_INIT();
   SANDBOX_INIT();
-  mrbc_load_model(core);
+  mrbc_load_model(float_ext);
   mrbc_load_model(rgb);
   mrbc_load_model(buffer);
   mrbc_load_model(rotary_encoder);

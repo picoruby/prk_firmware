@@ -21,22 +21,20 @@ class RGB
   def ws2812_restore: () -> void
 
   @fifo: Array[true]
+  @effect: Symbol
+  @action: Symbol
+  @delay: Integer
+  @pixel_size: Integer
 
   def initialize: (Integer pin, Integer underglow_size, Integer backlight_size, bool is_rgbw) -> void
   attr_reader pixel_size: Integer
-  attr_accessor delay: Integer
-  attr_accessor effect: Symbol
+  attr_reader delay: Integer
+  attr_reader effect: Symbol
   attr_accessor action: Symbol
-  attr_accessor status: Symbol
+  def effect=: (Symbol) -> void
   def invoke_anchor: (Symbol | nil) -> Integer
   def invoke_partner: (Integer) -> void
-  def fill: (Integer val) -> void
-  def set_pixel_at: (Integer i, Integer val) -> void
-  def rotate: -> void
-  def save: -> void
-  def restore: -> void
   def show: -> void
   def fifo_push: (true data) -> void
   def thunder: -> void
-  def key?: -> bool
 end
