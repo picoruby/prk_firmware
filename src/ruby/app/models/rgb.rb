@@ -1,5 +1,5 @@
 class RGB
- def initialize(pin, underglow_size, backlight_size, is_rgbw)
+ def initialize(pin, underglow_size, backlight_size, is_rgbw = false)
     puts "Initializing RGB ..."
     @fifo = Array.new
     # TODO: @underglow_size, @backlight_size
@@ -46,26 +46,30 @@ class RGB
 
   def reset_pixel
     case @effect
-    when :off
-      off = hsv2rgb(0, 0, 0)
-      @pixel_size.times do |i|
-        ws2812_set_pixel_at(i, off)
-      end
     when :swirl
       step = 360.0 / @pixel_size
       @pixel_size.times do |i|
         ws2812_set_pixel_at(i, hsv2rgb(i * step, @saturation, @max_value))
       end
     when :rainbow_mood
-      @hue = 0
     when :rainbow
       puts "[WARN] :rainbow is deprecated. Use :swirl instead"
     when :breatheng
       puts "[WARN] :breathing is deprecated. Use :rainbow_mood instead"
     end
+    @offed = false
+  end
+
+  def turn_off
+    @pixel_size.times do |i|
+      ws2812_set_pixel_at(i, 0)
+    end
+    ws2812_show
+    @offed = true
   end
 
   def show
+    return if @offed
     unless @fifo.empty?
       case @action
       when :thunder
@@ -85,6 +89,16 @@ class RGB
     ws2812_show
   end
 
+  def toggle
+    if @offed
+      reset_pixel
+      puts "On"
+    else
+      turn_off
+      puts "Off"
+    end
+  end
+
   def invoke_anchor(key)
     message = 0
     if @last_key == key # preventing double invoke
@@ -98,7 +112,7 @@ class RGB
       return 0 # do nothing
     when :RGB_TOG
       message = 0b00100000 # 1 << 5
-      puts "Not implemented"
+      toggle
     when :RGB_MODE_FORWARD, :RGB_MOD, :RGB_MODE_REVERSE, :RGB_RMOD
       message = 0b01000000 # 2 << 5
       puts "Not implemented"
@@ -145,6 +159,7 @@ class RGB
   def invoke_partner(message)
     case message >> 5
     when 1
+      toggle
     when 2
     when 3
     when 4

@@ -31,6 +31,8 @@ class RGB
   attr_reader delay: Integer
   attr_reader effect: Symbol
   attr_accessor action: Symbol
+  def turn_off: () -> void
+  def toggle: () -> void
   def effect=: (Symbol) -> void
   def reset_pixel: () -> void
   def invoke_anchor: (Symbol | nil) -> Integer
