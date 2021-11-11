@@ -15,15 +15,13 @@ class RGB
   def ws2812_save: () -> void
   def ws2812_restore: () -> void
 
-  MAX_VALUE: Float
-
   @fifo: Array[true]
   @effect: Symbol
   @action: Symbol
   @delay: Integer
   @pixel_size: Integer
-  @value: Float
-  @max_value: Float
+  @value: Integer
+  @max_value: Integer
   @hue: Integer
 
   def hsv2rgb: (Float | Integer h, Integer s, Float | Integer v) -> Integer

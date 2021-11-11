@@ -1,6 +1,4 @@
 class RGB
-  MAX_VALUE = 15.5
-
  def initialize(pin, underglow_size, backlight_size, is_rgbw)
     puts "Initializing RGB ..."
     @fifo = Array.new
@@ -10,8 +8,8 @@ class RGB
     @delay = 100
     @hue = 100
     @saturation = 100
-    @value = 0.0
-    @max_value = 13.0 # default
+    @value = 0
+    @max_value = 13 # default
   end
 
   attr_reader :effect, :delay, :pixel_size
@@ -82,7 +80,7 @@ class RGB
       @hue >= 360 ? @hue = 0 : @hue += 10
     when :ruby
       ws2812_fill(hsv2rgb(0, 100, @value))
-      @value >= @max_value ? @value = 0.0 : @value += 0.5
+      @value >= @max_value ? @value = 0 : @value += 1
     end
     ws2812_show
   end
@@ -100,11 +98,13 @@ class RGB
       return 0 # do nothing
     when :RGB_TOG
       message = 0b00100000 # 1 << 5
+      puts "Not implemented"
     when :RGB_MODE_FORWARD, :RGB_MOD, :RGB_MODE_REVERSE, :RGB_RMOD
       message = 0b01000000 # 2 << 5
+      puts "Not implemented"
     when :RGB_HUI, :RGB_HUD
       message = 0b01100000 # 3 << 5
-      puts
+      puts "Not implemented"
     when :RGB_SAI, :RGB_SAD
       message = 0b10000000 # 4 << 5
       if key == :RGB_SAI
@@ -118,12 +118,12 @@ class RGB
     when :RGB_VAI, :RGB_VAD
       message = 0b10100000 # 5 << 5
       if key == :RGB_VAI
-        @max_value += 0.5 if @max_value < MAX_VALUE
+        @max_value += 1 if @max_value < 31
       else
-        @max_value -= 0.5 if 0 < @max_value
+        @max_value -= 1 if 0 < @max_value
       end
       puts "max_value: #{@max_value}"
-      message |= (@max_value * 2).to_i # max 31
+      message |= @max_value
       reset_pixel
     when :RGB_SPI, :RGB_SPD
       message = 0b11000000 # 6 << 5
@@ -151,7 +151,7 @@ class RGB
       @saturation = (message & 0b00011111) * 10
       reset_pixel
     when 5
-      @max_value = (message & 0b00011111) / 2.0
+      @max_value = (message & 0b00011111)
       reset_pixel
     when 6 # SPI, SPD
       @delay = (message & 0b00011111) * 10
