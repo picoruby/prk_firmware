@@ -469,6 +469,7 @@ class Keyboard
     when RGB
       # @type var feature: RGB
       $rgb = feature
+      $rgb.anchor = @anchor
     when RotaryEncoder
       # @type var feature: RotaryEncoder
       if @split
@@ -819,8 +820,12 @@ class Keyboard
         # Receive max 3 switches from partner
         if @split
           sleep_ms 5
-          data24 = bi_uart_anchor(rgb_message)
-          rgb_message = 0
+          data24 = if rgb_message > 0
+            bi_uart_anchor(rgb_message)
+            rgb_message = 0
+          else
+            bi_uart_anchor($rgb.ping) # adjusts RGB time
+          end
           [data24 & 0xFF, (data24 >> 8) & 0xFF, data24 >> 16].each do |data|
             if data == 0xFF
               # do nothing
@@ -967,7 +972,7 @@ class Keyboard
           bi_uart_partner_push((switch[0] << 5) + switch[1])
         end
         rgb_message = bi_uart_partner
-        $rgb.invoke_partner rgb_message if 0 < rgb_message
+        $rgb.invoke_partner rgb_message if $rgb
       end
 
       time = cycle_time - (board_millis - now)

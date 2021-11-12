@@ -5,15 +5,19 @@ class RGB
     # TODO: @underglow_size, @backlight_size
     @pixel_size = underglow_size + backlight_size
     ws2812_init(pin, @pixel_size, is_rgbw)
-    @delay = 100
-    @hue = 100
-    @saturation = 100
-    @value = 0
     @max_value = 13 # default
+    init_values
   end
 
-  attr_reader :effect, :delay, :pixel_size
-  attr_accessor :action
+  attr_reader :effect, :pixel_size
+  attr_accessor :action, :anchor
+
+  def init_values
+    self.speed = 22
+    @hue = 0
+    @saturation = 100
+    @value = 0.0
+  end
 
   def hsv2rgb(h, s, v)
     s /= 100.0
@@ -39,8 +43,11 @@ class RGB
       ((rgb[2] + m) * 255).ceil_to_i
   end
 
+  EFFECTS = %i|swirl rainbow_mood breath nokogiri|
+
   def effect=(name)
     @effect = name
+    init_values
     reset_pixel
   end
 
@@ -51,7 +58,6 @@ class RGB
       @pixel_size.times do |i|
         ws2812_set_pixel_at(i, hsv2rgb(i * step, @saturation, @max_value))
       end
-    when :rainbow_mood
     when :rainbow
       puts "[WARN] :rainbow is deprecated. Use :swirl instead"
     when :breatheng
@@ -80,13 +86,34 @@ class RGB
     when :swirl
       ws2812_rotate
     when :rainbow_mood
+      360 <= @hue ? @hue = 0 : @hue += 6
       ws2812_fill(hsv2rgb(@hue, @saturation, @max_value))
-      @hue >= 360 ? @hue = 0 : @hue += 10
-    when :ruby
-      ws2812_fill(hsv2rgb(0, 100, @value))
-      @value >= @max_value ? @value = 0 : @value += 1
+    when :breath
+      if @ascent
+        @value < @max_value ? @value += (@max_value / 31.0) : @ascent = false
+      else
+        0 <= @value ? @value -= (@max_value / 31.0) : @ascent = true
+      end
+      ws2812_fill(hsv2rgb(@hue, @saturation, @value))
+    when :ruby, :nokogiri
+      @max_value <= @value ? @value = 0.0 : @value += (@max_value / 31.0)
+      ws2812_fill(hsv2rgb(@hue, @saturation, @value))
     end
     ws2812_show
+    sleep_ms @delay
+  end
+
+  def ping
+    case @effect
+    when :rainbow_mood
+      @hue <= 0 ? 0b11100000 : 0
+    when :breath
+      @value <= 0 ? 0b11100000 : 0
+    when :nokogiri
+      @max_value <= @value ? 0b11100000 : 0
+    else
+      0
+    end
   end
 
   def toggle
@@ -99,6 +126,39 @@ class RGB
     end
   end
 
+  def hue=(val)
+    @hue = val
+    @hue = 0 if @hue < 0
+    @hue = 348 if 348 < @hue
+    reset_pixel
+  end
+
+  def saturation=(val)
+    @saturation = val
+    @saturation = 0 if @saturation < 0
+    @saturation = 100 if 100 < @saturation
+    reset_pixel
+  end
+
+  def max_value=(val)
+    @max_value = val
+    @max_value = 0 if @max_value < 0
+    @max_value = 31 if 31 < @max_value
+    @value = [@value, @max_value].min.to_f
+    reset_pixel
+  end
+
+  def speed=(val)
+    @speed = val
+    @speed = 0 if @speed < 0
+    @speed = 31 if 31 < @speed
+    @delay = (33 - @speed) * 10
+    unless @anchor
+      # speed tuning (partner is slower due to blocking UART)
+      @delay = (@delay * 0.9).ceil_to_i
+    end
+  end
+
   def invoke_anchor(key)
     message = 0
     if @last_key == key # preventing double invoke
@@ -106,72 +166,81 @@ class RGB
       return message
     end
     @last_key = key
-    print "RGB: invoked #{key} / "
+    print "#{key} / "
     case key
     when nil
       return 0 # do nothing
-    when :RGB_TOG
+    when :RGB_TOG, :RGB_MODE_FORWARD, :RGB_MOD, :RGB_MODE_REVERSE, :RGB_RMOD
       message = 0b00100000 # 1 << 5
-      toggle
-      message += 1 unless @offed
-    when :RGB_MODE_FORWARD, :RGB_MOD, :RGB_MODE_REVERSE, :RGB_RMOD
-      message = 0b01000000 # 2 << 5
-      puts "Not implemented"
+      if key == :RGB_TOG
+        toggle
+        message += 1 unless @offed
+      else
+        effect_index = EFFECTS.index(@effect).to_i
+        name = if key == :RGB_MODE_FORWARD || key == :RGB_MOD
+          EFFECTS[effect_index + 1] || EFFECTS.first
+        else
+          effect_index == 0 ? EFFECTS.last : EFFECTS[effect_index - 1]
+        end
+        self.effect = name || :swirl
+        message += EFFECTS.index(@effect).to_i + 2
+        puts "effect: #{@effect}"
+      end
     when :RGB_HUI, :RGB_HUD
-      message = 0b01100000 # 3 << 5
-      puts "Not implemented"
+      message = 0b01000000 # 2 << 5
+      self.hue = key == :RGB_HUI ? @hue + 12 : @hue - 12
+      puts "hue: #{@hue}"
+      message |= (@hue / 12)
     when :RGB_SAI, :RGB_SAD
-      message = 0b10000000 # 4 << 5
-      if key == :RGB_SAI
-        @saturation += 10 if @saturation < 100
-      else
-        @saturation -= 10 if 0 < @saturation
-      end
+      message = 0b01100000 # 3 << 5
+      self.saturation = key == :RGB_SAI ? @saturation + 5 : @saturation - 5
       puts "saturation: #{@saturation}"
-      message |= (@saturation / 10)
-      reset_pixel
+      message |= (@saturation / 5)
     when :RGB_VAI, :RGB_VAD
-      message = 0b10100000 # 5 << 5
-      if key == :RGB_VAI
-        @max_value += 1 if @max_value < 31
-      else
-        @max_value -= 1 if 0 < @max_value
-      end
-      puts "max_value: #{@max_value}"
+      message = 0b10000000 # 4 << 5
+      self.max_value = key == :RGB_VAI ? @max_value + 1 : @max_value - 1
+      puts "value: #{@max_value}"
       message |= @max_value
-      reset_pixel
     when :RGB_SPI, :RGB_SPD
-      message = 0b11000000 # 6 << 5
-      if key == :RGB_SPI
-        @delay = @delay - 10 if 10 < @delay
-      else
-        @delay = @delay + 10 if @delay < 300
-      end
-      puts "delay: #{@delay}"
-      message |= (@delay / 10)
+      message = 0b10100000 # 5 << 5
+      self.speed = key == :RGB_SPI ? @speed + 1 : @speed - 1
+      puts "speed: #{@speed}"
+      message |= @speed
     else
       puts "unknown method"
     end
+    sleep 0.2
     return message
   end
   #            ...      method
   # message: 0b11111111
   #               ^^^^^ value
   def invoke_partner(message)
+    val = message & 0b00011111
     case message >> 5
     when 1
-      @offed = ( (message & 1) == 1 )
-      toggle
+      if val <= 1
+        @offed = (val == 1)
+        toggle
+      else
+        self.effect = EFFECTS[val - 2]
+      end
     when 2
+      self.hue = val * 12
     when 3
+      self.saturation = val * 5
     when 4
-      @saturation = (message & 0b00011111) * 10
-      reset_pixel
+      self.max_value = val
     when 5
-      @max_value = (message & 0b00011111)
-      reset_pixel
-    when 6 # SPI, SPD
-      @delay = (message & 0b00011111) * 10
+      self.speed = val
+    when 7 # ping
+      case @effect
+      when :rainbow_mood
+        @hue = 0
+      when :breath, :nokogiri
+        @ascent = true
+        @value = 0.0
+      end
     end
   end
 

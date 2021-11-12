@@ -10,6 +10,5 @@ while true
     sleep 1
   else
     $rgb.show
-    sleep_ms $rgb.delay
   end
 end
