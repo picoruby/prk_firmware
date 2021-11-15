@@ -98,7 +98,7 @@ class RGB
       else
         @hue += 6
       end
-      ws2812_fill(hsv2rgb(@hue, @saturation, @max_value))
+      ws2812_fill(hsv2rgb(@hue, @saturation, @max_value), @pixel_size)
     when :breath
       if @ascent
         @value < @max_value ? @value += (@max_value / 31.0) : @ascent = false
@@ -110,7 +110,7 @@ class RGB
           @ascent = true
         end
       end
-      ws2812_fill(hsv2rgb(@hue, @saturation, @value))
+      ws2812_fill(hsv2rgb(@hue, @saturation, @value), @pixel_size)
     when :ruby, :nokogiri
       if @max_value <= @value
         @ping = true
@@ -118,7 +118,7 @@ class RGB
       else
         @value += (@max_value / 31.0)
       end
-      ws2812_fill(hsv2rgb(@hue, @saturation, @value))
+      ws2812_fill(hsv2rgb(@hue, @saturation, @value), @pixel_size)
     end
     ws2812_show
     sleep_ms @delay
@@ -272,8 +272,7 @@ class RGB
     end
     ws2812_save
     4.times do |salt|
-      ws2812_rand_fill(0x202020, (salt+1) * 2)
-      ws2812_show
+      ws2812_rand_show(0x202020, (salt+1) * 2, @pixel_size)
       sleep_ms 3
     end
     @fifo.shift

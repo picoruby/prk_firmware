@@ -8,10 +8,9 @@ class RGB
   EFFECTS: Array[Symbol]
 
   def ws2812_init: (Integer, Integer, bool) -> void
-  def ws2812_off: () -> void
   def ws2812_show: () -> void
-  def ws2812_fill: (Integer) -> void
-  def ws2812_rand_fill: (Integer, Integer) -> void
+  def ws2812_fill: (Integer, Integer) -> void
+  def ws2812_rand_show: (Integer, Integer, Integer) -> void
   def ws2812_set_pixel_at: (Integer, Integer) -> void
   def ws2812_rotate: () -> void
   def ws2812_save: () -> void

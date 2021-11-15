@@ -62,10 +62,8 @@ c_ws2812_set_pixel_at(mrb_vm *vm, mrb_value *v, int argc)
 void
 c_ws2812_fill(mrb_vm *vm, mrb_value *v, int argc)
 {
-  int i = 0;
-  while (pixels[i] >= 0) {
-    set_at(i, GET_INT_ARG(1));
-    i++;
+  for (int i = 0; i < GET_INT_ARG(2); i++) {
+    put_pixel(GET_INT_ARG(1));
   }
 }
 
@@ -79,16 +77,6 @@ c_ws2812_rotate(mrb_vm *vm, mrb_value *v, int argc)
     i++;
   }
   pixels[i-1] = first;
-}
-
-void
-c_ws2812_off(mrb_vm *vm, mrb_value *v, int argc)
-{
-  int i = 0;
-  while (pixels[i] >= 0) {
-    put_pixel(0);
-    i++;
-  }
 }
 
 void
@@ -124,14 +112,13 @@ c_ws2812_restore(mrb_vm *vm, mrb_value *v, int argc)
 }
 
 void
-c_ws2812_rand_fill(mrb_vm *vm, mrb_value *v, int argc)
+c_ws2812_rand_show(mrb_vm *vm, mrb_value *v, int argc)
 {
-  int i = 0;
-  while (pixels[i] >= 0) {
+  for (int i = 0; i < GET_INT_ARG(3); i++) {
     if (rand() % 16 > GET_INT_ARG(2)) {
-      set_at(i, GET_INT_ARG(1));
+      put_pixel(GET_INT_ARG(1));
     } else {
-      set_at(i, 0);
+      put_pixel(0);
     }
     i++;
   }
