@@ -51,7 +51,6 @@ class RGB
     @effect = name
     init_values
     reset_pixel
-    @offed = false
   end
 
   def reset_pixel
@@ -74,11 +73,11 @@ class RGB
 
   def turn_off
     @offed = true
-    ws2812_fill(0, @pixel_size)
   end
 
   def show
     if @offed
+      ws2812_fill(0, @pixel_size)
       sleep 1
       return
     end
