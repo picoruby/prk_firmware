@@ -273,7 +273,6 @@ void
 c_bi_uart_anchor(mrb_vm *vm, mrb_value *v, int argc)
 {
   uint32_t data = put8_get24_nonblocking(GET_INT_ARG(1));
-  //console_printf("c_bi_uart_anchor %x\n", data);
   SET_INT_RETURN(data);
 }
 
@@ -296,7 +295,6 @@ void
 c_bi_uart_partner_push(mrb_vm *vm, mrb_value *v, int argc)
 {
   int keycode = GET_INT_ARG(1);
-  //console_printf("c_bi_uart_partner_push %x\n", keycode);
   if (buffer_index > 2) return;
   buffer |= keycode << (buffer_index * 8);
   buffer_index++;
@@ -305,16 +303,12 @@ c_bi_uart_partner_push(mrb_vm *vm, mrb_value *v, int argc)
 void
 c_bi_uart_partner(mrb_vm *vm, mrb_value *v, int argc)
 {
-  //console_printf("c_bi_uart_partner buffer before %x\n", buffer);
-  //console_printf("c_bi_uart_partner buffer_index  %x\n", buffer_index);
   switch (buffer_index) {
     case 0: buffer  = 0xFFFFFF; break;
     case 1: buffer |= 0xFFFF00; break;
     case 2: buffer |= 0xFF0000; break;
   }
-  //console_printf("c_bi_uart_partner buffer after  %x\n", buffer);
   uint8_t data = get8_put24_blocking(buffer);
-  //console_printf("c_bi_uart_partner data %x\n", data);
   SET_INT_RETURN(data);
   buffer = 0;
   buffer_index = 0;

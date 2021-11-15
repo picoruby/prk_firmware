@@ -767,13 +767,6 @@ class Keyboard
     @keycodes = Array.new
     # To avoid unintentional report on startup
     # which happens only on Sparkfun Pro Micro RP2040
-    if @split
-      sleep_ms 1000
-      #while true
-      #  data = bi_uart_getc
-      #  break unless data
-      #end
-    end
     rgb_message = 0
     while true
       cycle_time = 20
