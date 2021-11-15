@@ -763,10 +763,18 @@ class Keyboard
   # **************************************************************
   def start!
     puts "Starting keyboard task ..."
-
     @keycodes = Array.new
+
     # To avoid unintentional report on startup
     # which happens only on Sparkfun Pro Micro RP2040
+    if @split && @anchor
+      sleep_ms 100
+      while true
+        data = uart_anchor(0)
+        break if data == 0xFFFFFF
+      end
+    end
+
     rgb_message = 0
     while true
       cycle_time = 20

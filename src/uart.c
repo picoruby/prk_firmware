@@ -32,7 +32,7 @@ c_mutual_uart_at_my_own_risk_eq(mrb_vm *vm, mrb_value *v, int argc)
 {
   if (GET_ARG(1).tt == MRBC_TT_TRUE) {
     mutual = true;
-    console_printf("Note: Mutual UART may break your chip.\n");
+    console_printf("Caution: Using mutual UART is at your own risk.\n");
   } else {
     mutual = false;
   }
@@ -324,7 +324,7 @@ void
 c_uart_partner(mrb_vm *vm, mrb_value *v, int argc)
 {
   switch (buffer_index) {
-    case 0: buffer  = 0xFFFFFF; break;
+    case 0: buffer  = NIL; break;
     case 1: buffer |= 0xFFFF00; break;
     case 2: buffer |= 0xFF0000; break;
   }
