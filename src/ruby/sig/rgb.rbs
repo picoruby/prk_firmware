@@ -39,7 +39,7 @@ class RGB
   def effect=: (Symbol) -> void
   def hue=: (Integer) -> void
   def saturation=: (Integer) -> void
-  def max_value=: (Integer) -> void
+  def value=: (Integer) -> void
   def speed=: (Integer) -> void
   def reset_pixel: () -> void
   def invoke_anchor: (Symbol | nil) -> Integer

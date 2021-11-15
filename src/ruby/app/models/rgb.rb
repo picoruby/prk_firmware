@@ -155,7 +155,7 @@ class RGB
     reset_pixel
   end
 
-  def max_value=(val)
+  def value=(val)
     @max_value = val
     @max_value = 0 if @max_value < 0
     @max_value = 31 if 31 < @max_value
@@ -211,7 +211,7 @@ class RGB
       message |= (@saturation / 5)
     when :RGB_VAI, :RGB_VAD
       message = 0b10000000 # 4 << 5
-      self.max_value = key == :RGB_VAI ? @max_value + 1 : @max_value - 1
+      self.value = key == :RGB_VAI ? @max_value + 1 : @max_value - 1
       puts "value: #{@max_value}"
       message |= @max_value
     when :RGB_SPI, :RGB_SPD
@@ -245,7 +245,7 @@ class RGB
     when 3
       self.saturation = val * 5
     when 4
-      self.max_value = val
+      self.value = val
     when 5
       self.speed = val
     when 7 # ping

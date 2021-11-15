@@ -1,5 +1,15 @@
 # Change log
 
+## 0.9.6 in 2021/11/xx
+### Big improvements
+- RGB
+  - See [wiki/RGB-feature](https://github.com/picoruby/prk_firmware/wiki/RGB-feature)
+- Mutual UART communication on a split type keyboard
+  - This feature realizes
+    - Sync RGB blinking between both halves
+    - Keycodes like `:RGB_MOD` work on the partner half
+  - See [wiki/Mutual-UART-communication](https://github.com/picoruby/prk_firmware/wiki/Mutual-UART-communication)
+
 ## 0.9.5 in 2021/10/27
 ### Breaking Change 🌈
 - Amend names of RGB.effect
