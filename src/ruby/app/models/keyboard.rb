@@ -516,10 +516,10 @@ class Keyboard
       print "Configured as a split-type"
       @anchor = tud_mounted?
       if @anchor
-        bi_uart_anchor_init(@uart_pin)
+        uart_anchor_init(@uart_pin)
         puts " Anchor"
       else
-        bi_uart_partner_init(@uart_pin)
+        uart_partner_init(@uart_pin)
         puts " Partner"
       end
     end
@@ -814,12 +814,12 @@ class Keyboard
         if @split
           sleep_ms 3
           if rgb_message > 0
-            data24 = bi_uart_anchor(rgb_message)
+            data24 = uart_anchor(rgb_message)
             rgb_message = 0
           elsif $rgb.ping?
-            data24 = bi_uart_anchor(0b11100000) # adjusts RGB time
+            data24 = uart_anchor(0b11100000) # adjusts RGB time
           else
-            data24 = bi_uart_anchor(0)
+            data24 = uart_anchor(0)
           end
           [data24 & 0xFF, (data24 >> 8) & 0xFF, data24 >> 16].each do |data|
             if data == 0xFF
@@ -959,15 +959,15 @@ class Keyboard
         # Partner
         $encoders.each do |encoder|
           data = encoder.consume_rotation_partner
-          bi_uart_partner_push(data) if data && data > 0
+          uart_partner_push8(data) if data && data > 0
         end
         @switches.each do |switch|
           # 0b11111111
           #   ^^^      row number (0 to 7)
           #      ^^^^^ col number (0 to 31)
-          bi_uart_partner_push((switch[0] << 5) + switch[1])
+          uart_partner_push8((switch[0] << 5) + switch[1])
         end
-        rgb_message = bi_uart_partner
+        rgb_message = uart_partner
         $rgb.invoke_partner rgb_message if $rgb
       end
 

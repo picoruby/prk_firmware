@@ -13,26 +13,47 @@
 #define STOP_BITS 1
 #define PARITY    UART_PARITY_NONE
 
+#define SAMPLING_INTERVAL 10
+#define SAMPLING_COUNT     8
+/* (eg) 1-bit interval of 9600 bps is about 104 microseconds (usec) */
+#define BIT_INTERVAL      (SAMPLING_INTERVAL * SAMPLING_COUNT)
+#define LONG_STOP_BITS     8
+#define SHORT_STOP_BITS    2
+#define IDLE_BITS          8
+#define NIL         0xFFFFFF
+static int uart_pin;
+static bool mutual = false;
+
+/*
+ * Mutual UART on a single line may break your microcontroller.
+ */
 void
-c_uart_rx_init(mrb_vm *vm, mrb_value *v, int argc)
+c_mutual_uart_at_my_own_risk_eq(mrb_vm *vm, mrb_value *v, int argc)
 {
-  // Set up UART with a basic baud rate.
-  uart_init(UART_ID, 2400);
-  gpio_set_function(GET_INT_ARG(1), GPIO_FUNC_UART); // Set the RX pin
-  uart_set_baudrate(UART_ID, BAUD_RATE);
-  uart_set_hw_flow(UART_ID, false, false); // Turn UART flow control off
-  uart_set_format(UART_ID, DATA_BITS, STOP_BITS, PARITY); // Set data format
-  uart_set_fifo_enabled(UART_ID, true); // Turn on FIFO
+  if (GET_ARG(1).tt == MRBC_TT_TRUE) {
+    mutual = true;
+    console_printf("Note: Mutual UART may break your chip.\n");
+  } else {
+    mutual = false;
+  }
 }
 
 void
-c_uart_getc(mrb_vm *vm, mrb_value *v, int argc)
+c_uart_anchor_init(mrb_vm *vm, mrb_value *v, int argc)
 {
-  if (uart_is_readable(UART_ID) == 0) {
-    SET_NIL_RETURN();
-    return;
+  if (mutual) {
+    uart_pin = GET_INT_ARG(1);
+    gpio_init(uart_pin);
+    gpio_set_dir(uart_pin, GPIO_OUT);
+    gpio_put(uart_pin, 0);
+  } else {
+    uart_init(UART_ID, 2400);
+    gpio_set_function(GET_INT_ARG(1), GPIO_FUNC_UART); // Set the RX pin
+    uart_set_baudrate(UART_ID, BAUD_RATE);
+    uart_set_hw_flow(UART_ID, false, false); // Turn UART flow control off
+    uart_set_format(UART_ID, DATA_BITS, STOP_BITS, PARITY); // Set data format
+    uart_set_fifo_enabled(UART_ID, true); // Turn on FIFO
   }
-  SET_INT_RETURN(uart_getc(UART_ID));
 }
 
 /*
@@ -43,36 +64,58 @@ static PIO pio = pio0;
 static uint sm = 0;
 static uint offset;
 void
-c_uart_tx_init(mrb_vm *vm, mrb_value *v, int argc)
+c_uart_partner_init(mrb_vm *vm, mrb_value *v, int argc)
 {
-  offset = pio_add_program(pio, &uart_tx_program);
-  uart_tx_program_init(pio, sm, offset, GET_INT_ARG(1), BAUD_RATE);
+  if (mutual) {
+    uart_pin = GET_INT_ARG(1);
+    gpio_init(uart_pin);
+    gpio_set_dir(uart_pin, GPIO_IN);
+    gpio_pull_up(uart_pin);
+  } else {
+    offset = pio_add_program(pio, &uart_tx_program);
+    uart_tx_program_init(pio, sm, offset, GET_INT_ARG(1), BAUD_RATE);
+  }
+}
+
+/*
+ * mutual == false
+ */
+uint32_t
+oneway_anchor_get24(void)
+{
+  uint32_t data24 = 0;
+  for (int i = 0; i < 24; i += 8) {
+    if (uart_is_readable(UART_ID) == 0) {
+      data24 |= 0xFF << i;
+    } else {
+      data24 |= uart_getc(UART_ID) << i;
+    }
+  }
+  /* Getting rid of surpluses */
+  while (uart_is_readable(UART_ID)) uart_getc(UART_ID);
+  return data24;
 }
 
 void
-c_uart_putc_raw(mrb_vm *vm, mrb_value *v, int argc)
+oneway_partner_put24(uint32_t data24)
 {
-  pio_sm_put_blocking(pio, sm, GET_INT_ARG(1));
+  uint8_t data1 = data24 & 0xFF;;
+  uint8_t data2 = (data24 >> 8) & 0xFF;
+  uint8_t data3 = data24 >> 16;
+  if (data1 != 0xFF)
+    pio_sm_put_blocking(pio, sm, data1);
+  if (data1 != data2)
+    pio_sm_put_blocking(pio, sm, data2);
+  if (data2 != data3 && data1 != data3)
+    pio_sm_put_blocking(pio, sm, data3);
 }
 
 /*
- * Bidirectional UART
+ * mutual == true
  */
-#define SAMPLING_INTERVAL 10
-#define SAMPLING_COUNT     8
-/* (eg) 1-bit interval of 9600 bps is about 104 microseconds (usec) */
-#define BIT_INTERVAL      (SAMPLING_INTERVAL * SAMPLING_COUNT)
-#define LONG_STOP_BITS     8
-#define SHORT_STOP_BITS    2
-#define IDLE_BITS          8
-static int uart_pin;
-#define NIL         0xFFFFFF
 
-/*
- * Anchor
- * */
 uint32_t
-put8_get24_nonblocking(uint8_t data)
+mutual_anchor_put8_get24_nonblocking(uint8_t data)
 {
   uint8_t i;
   { /* TX */
@@ -186,11 +229,8 @@ put8_get24_nonblocking(uint8_t data)
  *-----------------------------------------------
  *   Idling   : 0        Until invoked
  */
-/*
- * Partner
- * */
 uint8_t
-get8_put24_blocking(uint32_t data24)
+mutual_partner_get8_put24_blocking(uint32_t data24)
 {
   uint8_t data, i;
   for (;;) {
@@ -256,43 +296,23 @@ get8_put24_blocking(uint32_t data24)
   return data;
 }
 
-
-/*
- * `anchor` half should use this
- */
 void
-c_bi_uart_anchor_init(mrb_vm *vm, mrb_value *v, int argc)
+c_uart_anchor(mrb_vm *vm, mrb_value *v, int argc)
 {
-  uart_pin = GET_INT_ARG(1);
-  gpio_init(uart_pin);
-  gpio_set_dir(uart_pin, GPIO_OUT);
-  gpio_put(uart_pin, 0);
-}
-
-void
-c_bi_uart_anchor(mrb_vm *vm, mrb_value *v, int argc)
-{
-  uint32_t data = put8_get24_nonblocking(GET_INT_ARG(1));
+  uint32_t data;
+  if (mutual) {
+    data = mutual_anchor_put8_get24_nonblocking(GET_INT_ARG(1));
+  } else {
+    data = oneway_anchor_get24();
+  }
   SET_INT_RETURN(data);
-}
-
-/*
- * `partner` half should use this
- */
-void
-c_bi_uart_partner_init(mrb_vm *vm, mrb_value *v, int argc)
-{
-  uart_pin = GET_INT_ARG(1);
-  gpio_init(uart_pin);
-  gpio_set_dir(uart_pin, GPIO_IN);
-  gpio_pull_up(uart_pin);
 }
 
 static uint32_t buffer = 0;
 static int      buffer_index = 0;
 
 void
-c_bi_uart_partner_push(mrb_vm *vm, mrb_value *v, int argc)
+c_uart_partner_push8(mrb_vm *vm, mrb_value *v, int argc)
 {
   int keycode = GET_INT_ARG(1);
   if (buffer_index > 2) return;
@@ -301,14 +321,20 @@ c_bi_uart_partner_push(mrb_vm *vm, mrb_value *v, int argc)
 }
 
 void
-c_bi_uart_partner(mrb_vm *vm, mrb_value *v, int argc)
+c_uart_partner(mrb_vm *vm, mrb_value *v, int argc)
 {
   switch (buffer_index) {
     case 0: buffer  = 0xFFFFFF; break;
     case 1: buffer |= 0xFFFF00; break;
     case 2: buffer |= 0xFF0000; break;
   }
-  uint8_t data = get8_put24_blocking(buffer);
+  uint8_t data;
+  if (mutual) {
+    data = mutual_partner_get8_put24_blocking(buffer);
+  } else {
+    oneway_partner_put24(buffer);
+    data = 0;
+  }
   SET_INT_RETURN(data);
   buffer = 0;
   buffer_index = 0;

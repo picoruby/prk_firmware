@@ -183,8 +183,6 @@ class RGB
     @last_key = key
     print "#{key} / "
     case key
-    when nil
-      return 0 # do nothing
     when :RGB_TOG, :RGB_MODE_FORWARD, :RGB_MOD, :RGB_MODE_REVERSE, :RGB_RMOD
       message = 0b00100000 # 1 << 5
       if key == :RGB_TOG
@@ -233,6 +231,8 @@ class RGB
   def invoke_partner(message)
     val = message & 0b00011111
     case message >> 5
+    when 0
+      return;
     when 1
       if val <= 1
         @offed = (val == 1)
