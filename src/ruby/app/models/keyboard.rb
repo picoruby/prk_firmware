@@ -1072,7 +1072,6 @@ class Keyboard
       @ruby_mode = false
       if $rgb
         $rgb.effect = @prev_rgb_effect || :rainbow
-        $rgb.restore
       end
     else
       @buffer.refresh_screen
@@ -1080,7 +1079,6 @@ class Keyboard
       @ruby_mode_stop = false
       if $rgb
         @prev_rgb_effect = $rgb.effect
-        $rgb.save
         $rgb.effect = :ruby
       end
     end
