@@ -1,6 +1,7 @@
 class RGB
  def initialize(pin, underglow_size, backlight_size, is_rgbw = false)
-    puts "Initializing RGB ..."
+    puts "Initializing RGB."
+    @offed = true
     @fifo = Array.new
     # TODO: @underglow_size, @backlight_size
     @pixel_size = underglow_size + backlight_size
@@ -13,7 +14,7 @@ class RGB
   attr_accessor :action, :anchor
 
   def init_values
-    self.speed = 22
+    self.speed = @speed || 22
     @hue = 0
     @saturation = 100
     @value = 0.0
@@ -46,9 +47,11 @@ class RGB
   EFFECTS = %i|swirl rainbow_mood breath nokogiri|
 
   def effect=(name)
+    @offed = true
     @effect = name
     init_values
     reset_pixel
+    @offed = false
   end
 
   def reset_pixel
@@ -67,15 +70,18 @@ class RGB
   end
 
   def turn_off
+    @offed = true
     @pixel_size.times do |i|
       ws2812_set_pixel_at(i, 0)
     end
     ws2812_show
-    @offed = true
   end
 
   def show
-    return if @offed
+    if @offed
+      sleep 1
+      return
+    end
     unless @fifo.empty?
       case @action
       when :thunder
@@ -86,33 +92,42 @@ class RGB
     when :swirl
       ws2812_rotate
     when :rainbow_mood
-      360 <= @hue ? @hue = 0 : @hue += 6
+      if 360 <= @hue
+        @ping = true
+        @hue = 0
+      else
+        @hue += 6
+      end
       ws2812_fill(hsv2rgb(@hue, @saturation, @max_value))
     when :breath
       if @ascent
         @value < @max_value ? @value += (@max_value / 31.0) : @ascent = false
       else
-        0 <= @value ? @value -= (@max_value / 31.0) : @ascent = true
+        if 0 <= @value
+          @value -= (@max_value / 31.0)
+        else
+          @ping = true
+          @ascent = true
+        end
       end
       ws2812_fill(hsv2rgb(@hue, @saturation, @value))
     when :ruby, :nokogiri
-      @max_value <= @value ? @value = 0.0 : @value += (@max_value / 31.0)
+      if @max_value <= @value
+        @ping = true
+        @value = 0.0
+      else
+        @value += (@max_value / 31.0)
+      end
       ws2812_fill(hsv2rgb(@hue, @saturation, @value))
     end
     ws2812_show
     sleep_ms @delay
   end
 
-  def ping
-    case @effect
-    when :rainbow_mood
-      @hue <= 0 ? 0b11100000 : 0
-    when :breath
-      @value <= 0 ? 0b11100000 : 0
-    when :nokogiri
-      @max_value <= @value ? 0b11100000 : 0
-    else
-      0
+  def ping?
+    if @ping
+      @ping = false
+      return true
     end
   end
 

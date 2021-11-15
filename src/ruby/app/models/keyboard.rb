@@ -819,12 +819,14 @@ class Keyboard
       if @anchor
         # Receive max 3 switches from partner
         if @split
-          sleep_ms 5
-          data24 = if rgb_message > 0
-            bi_uart_anchor(rgb_message)
+          sleep_ms 3
+          if rgb_message > 0
+            data24 = bi_uart_anchor(rgb_message)
             rgb_message = 0
+          elsif $rgb.ping?
+            data24 = bi_uart_anchor(0b11100000) # adjusts RGB time
           else
-            bi_uart_anchor($rgb.ping) # adjusts RGB time
+            data24 = bi_uart_anchor(0)
           end
           [data24 & 0xFF, (data24 >> 8) & 0xFF, data24 >> 16].each do |data|
             if data == 0xFF
@@ -961,6 +963,7 @@ class Keyboard
           @layer = @locked_layer
         end
       else
+        # Partner
         $encoders.each do |encoder|
           data = encoder.consume_rotation_partner
           bi_uart_partner_push(data) if data && data > 0
