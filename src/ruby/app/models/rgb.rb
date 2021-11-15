@@ -57,10 +57,13 @@ class RGB
   def reset_pixel
     case @effect
     when :swirl
-      step = 360.0 / @pixel_size
-      @pixel_size.times do |i|
+      step = 5
+      i = 0
+      (360 / step).times do
         ws2812_set_pixel_at(i, hsv2rgb(i * step, @saturation, @max_value))
+        i += 1
       end
+      ws2812_set_pixel_at(i, -1)
     when :rainbow
       puts "[WARN] :rainbow is deprecated. Use :swirl instead"
     when :breatheng
@@ -71,10 +74,7 @@ class RGB
 
   def turn_off
     @offed = true
-    @pixel_size.times do |i|
-      ws2812_set_pixel_at(i, 0)
-    end
-    ws2812_show
+    ws2812_fill(0, @pixel_size)
   end
 
   def show
@@ -90,7 +90,7 @@ class RGB
     end
     case @effect
     when :swirl
-      ws2812_rotate
+      @ping = true if ws2812_rotate_swirl(@pixel_size)
     when :rainbow_mood
       if 360 <= @hue
         @ping = true
@@ -103,10 +103,11 @@ class RGB
       if @ascent
         @value < @max_value ? @value += (@max_value / 31.0) : @ascent = false
       else
-        if 0 <= @value
+        if 0 < @value
           @value -= (@max_value / 31.0)
         else
           @ping = true
+          @value = 0.0
           @ascent = true
         end
       end
@@ -120,7 +121,6 @@ class RGB
       end
       ws2812_fill(hsv2rgb(@hue, @saturation, @value), @pixel_size)
     end
-    ws2812_show
     sleep_ms @delay
   end
 
@@ -250,6 +250,8 @@ class RGB
       self.speed = val
     when 7 # ping
       case @effect
+      when :swirl
+        ws2812_reset_swirl_index
       when :rainbow_mood
         @hue = 0
       when :breath, :nokogiri
@@ -270,13 +272,11 @@ class RGB
       srand(board_millis)
       @srand = true
     end
-    ws2812_save
     4.times do |salt|
       ws2812_rand_show(0x202020, (salt+1) * 2, @pixel_size)
       sleep_ms 3
     end
     @fifo.shift
-    ws2812_restore
   end
 
 end

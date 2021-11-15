@@ -12,9 +12,8 @@ class RGB
   def ws2812_fill: (Integer, Integer) -> void
   def ws2812_rand_show: (Integer, Integer, Integer) -> void
   def ws2812_set_pixel_at: (Integer, Integer) -> void
-  def ws2812_rotate: () -> void
-  def ws2812_save: () -> void
-  def ws2812_restore: () -> void
+  def ws2812_rotate_swirl: (Integer) -> bool
+  def ws2812_reset_swirl_index: () -> bool
 
   @fifo: Array[true]
   @effect: Symbol
