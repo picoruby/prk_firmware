@@ -67,6 +67,8 @@ Your keyboard will automatically reboot. Enjoy!
 
 #### Building a binary by yourself
 
+(See also [Contributing](#Contributing))
+
 You may not want PRK Firmware to be a mass storage device in case that your employer doesn't allow you to bring a USB memory 🙈
 
 - Install CRuby (MRI) because "Static type checking" by [Steep](https://github.com/soutaro/steep) will be invoked in build process
@@ -141,6 +143,10 @@ make
 ```
 
 Then patch and send a pull request.
+
+#### Docker
+
+You can use [Dockerfile](https://github.com/picoruby/prk_firmware/blob/master/Dockerfile) to build if you prefer.
 
 #### For those who are willing to contribute to PRK or write your own keymaps:
 
