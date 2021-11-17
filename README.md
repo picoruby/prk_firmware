@@ -111,6 +111,14 @@ You may not want PRK Firmware to be a mass storage device in case that your empl
 
 - Install that `.uf2` file into RP2040
 
+### Build with Docker
+
+- On macOS, you can use docker to build it
+
+```
+docker build -o keyboards --build-arg KEYBOARD=prk_meishi2 .
+```
+
 ### What if split type keyboard?
 
 - Make sure installing your setup on both side
