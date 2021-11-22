@@ -168,7 +168,7 @@ You can use [Dockerfile](https://github.com/picoruby/prk_firmware/blob/master/Do
 - Raspberrypi Pi Pico
   - [PiPi Gherkin](https://github.com/picoruby/prk_pipigherkin)
 
-- Sparkfun Pro Micro RP2040 (DEV-17717)
+- Sparkfun Pro Micro RP2040
   - [meishi2](https://github.com/picoruby/prk_meishi2)
   - [Crkbd](https://github.com/picoruby/prk_crkbd)
   - [Claw44](https://github.com/picoruby/prk_claw44)
