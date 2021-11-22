@@ -31,9 +31,9 @@ _(left: Raspberry Pi Pico / right: Sparkfun Pro Micro RP2040)_
   - [ ] I2C communication between left and right
 - [x] Macros
 - [ ] Media keys
-- [x] RGBLED. An example on [picoruby/prk_crkbd](https://github.com/picoruby/prk_crkbd/blob/main/keymap.rb#L56-L71)
+- [x] RGBLED. An example on [picoruby/prk_crkbd](https://github.com/picoruby/prk_crkbd/blob/main/keymap.rb)
 - [ ] OLED display
-- [x] Rotary encoder. An example on [prk_helix_rev3/keymap.rb](https://github.com/picoruby/prk_helix_rev3/blob/master/keymap.rb#L74-L95)
+- [x] Rotary encoder. An example on [prk_helix_rev3/keymap.rb](https://github.com/picoruby/prk_helix_rev3/blob/master/keymap.rb)
 - [ ] Mouse / Trackball
 - [x] Debugging over a serial port
 
