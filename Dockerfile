@@ -39,7 +39,11 @@ WORKDIR "${PRK_HOME}/keyboards"
 
 WORKDIR "${PRK_HOME}/keyboards/${KEYBOARD}/build"
 
+RUN touch ../../../lib/picoruby/src/mrubyc/src/mrblib.c
+RUN touch ../../../lib/picoruby/src/mrubyc/src/hal_user_reserved/hal.c
 RUN cmake ../../..
+RUN rm ../../../lib/picoruby/src/mrubyc/src/mrblib.c
+RUN rm ../../../lib/picoruby/src/mrubyc/src/hal_user_reserved/hal.c
 RUN make
 
 FROM scratch AS export
