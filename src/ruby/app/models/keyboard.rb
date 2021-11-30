@@ -215,6 +215,22 @@ class Keyboard
     KC_QUES:           0x38,
   }
 
+  KEYCODE_RGB = {
+    RGB_TOG:          0x101,
+    RGB_MODE_FORWARD: 0x102,
+    RGB_MOD:          0x103,
+    RGB_MODE_REVERSE: 0x104,
+    RGB_RMOD:         0x105,
+    RGB_HUI:          0x106,
+    RGB_HUD:          0x107,
+    RGB_SAI:          0x108,
+    RGB_SAD:          0x109,
+    RGB_VAI:          0x10a,
+    RGB_VAD:          0x10b,
+    RGB_SPI:          0x10c,
+    RGB_SPD:          0x10d
+  }
+
   letter = [
     nil,nil,nil,nil,
     'a', # 0x04
@@ -453,6 +469,7 @@ class Keyboard
     when RGB
       # @type var feature: RGB
       $rgb = feature
+      $rgb.anchor = @anchor
     when RotaryEncoder
       # @type var feature: RotaryEncoder
       if @split
@@ -494,15 +511,19 @@ class Keyboard
   end
 
   def init_pins(rows, cols)
+    puts "Initializing GPIO ..."
     if @split
-      sleep 2 # Wait until USB ready
+      print "Configured as a split-type"
       @anchor = tud_mounted?
       if @anchor
-        uart_rx_init(@uart_pin)
+        uart_anchor_init(@uart_pin)
+        puts " Anchor"
       else
-        uart_tx_init(@uart_pin)
+        uart_partner_init(@uart_pin)
+        puts " Partner"
       end
     end
+    sleep_ms 500
     @rows = rows
     @cols = cols
     @rows.each do |pin|
@@ -570,6 +591,8 @@ class Keyboard
       (KEYCODE_SFT[key] + 0x100) * -1
     elsif MOD_KEYCODE[key]
       MOD_KEYCODE[key]
+    elsif KEYCODE_RGB[key]
+      KEYCODE_RGB[key]
     else
       key
     end
@@ -740,19 +763,21 @@ class Keyboard
   # **************************************************************
   def start!
     puts "Starting keyboard task ..."
-
     @keycodes = Array.new
+
     # To avoid unintentional report on startup
     # which happens only on Sparkfun Pro Micro RP2040
-    if @split
+    if @split && @anchor
       sleep_ms 100
       while true
-        data = uart_getc
-        break if data.nil?
+        data = uart_anchor(0)
+        break if data == 0xFFFFFF
       end
     end
-    default_sleep = 10
+
+    rgb_message = 0
     while true
+      cycle_time = 20
       now = board_millis
       @keycodes.clear
 
@@ -792,24 +817,31 @@ class Keyboard
       # TODO: more features
       $rgb.fifo_push(true) if $rgb && !@switches.empty?
 
-      # Receive switches from partner
-      if @split && @anchor
-        sleep_ms 5
-        while true
-          data = uart_getc
-          break unless data
-          # @type var data: Integer
-          if data > 246
-            @partner_encoders.each { |encoder| encoder.call_proc_if(data) }
+      if @anchor
+        # Receive max 3 switches from partner
+        if @split
+          sleep_ms 3
+          if rgb_message > 0
+            data24 = uart_anchor(rgb_message)
+            rgb_message = 0
+          elsif $rgb.ping?
+            data24 = uart_anchor(0b11100000) # adjusts RGB time
           else
-            switch = [data >> 5, data & 0b00011111]
-            # To avoid chattering
-            @switches << switch unless @switches.include?(switch)
+            data24 = uart_anchor(0)
+          end
+          [data24 & 0xFF, (data24 >> 8) & 0xFF, data24 >> 16].each do |data|
+            if data == 0xFF
+              # do nothing
+            elsif data > 246
+              @partner_encoders.each { |encoder| encoder.call_proc_if(data) }
+            else
+              switch = [data >> 5, data & 0b00011111]
+              # To avoid chattering
+              @switches << switch unless @switches.include?(switch)
+            end
           end
         end
-      end
 
-      if @anchor
         desired_layer = @layer
         @mode_keys.each do |mode_key|
           next if mode_key[:layer] != @layer
@@ -870,6 +902,8 @@ class Keyboard
             @modifier |= 0b00100000
           elsif keycode < 0 # Normal keys
             @keycodes << (keycode * -1).chr
+          elsif keycode > 0x100
+            rgb_message = $rgb.invoke_anchor KEYCODE_RGB.key(keycode)
           else # Modifier keys
             @modifier |= keycode
           end
@@ -884,9 +918,7 @@ class Keyboard
           else
             @keycodes << macro_keycode.chr
           end
-          default_sleep = 40 # To avoid accidental skip
-        else
-          default_sleep = 10
+          cycle_time = 40 # To avoid accidental skip
         end
 
         (6 - @keycodes.size).times do
@@ -932,19 +964,22 @@ class Keyboard
           @layer = @locked_layer
         end
       else
+        # Partner
         $encoders.each do |encoder|
           data = encoder.consume_rotation_partner
-          uart_putc_raw(data) if data && data > 0
+          uart_partner_push8(data) if data && data > 0
         end
         @switches.each do |switch|
           # 0b11111111
           #   ^^^      row number (0 to 7)
           #      ^^^^^ col number (0 to 31)
-          uart_putc_raw((switch[0] << 5) + switch[1])
+          uart_partner_push8((switch[0] << 5) + switch[1])
         end
+        rgb_message = uart_partner
+        $rgb.invoke_partner rgb_message if $rgb
       end
 
-      time = default_sleep - (board_millis - now)
+      time = cycle_time - (board_millis - now)
       sleep_ms(time) if time > 0
     end
 
@@ -1037,7 +1072,6 @@ class Keyboard
       @ruby_mode = false
       if $rgb
         $rgb.effect = @prev_rgb_effect || :rainbow
-        $rgb.restore
       end
     else
       @buffer.refresh_screen
@@ -1045,7 +1079,6 @@ class Keyboard
       @ruby_mode_stop = false
       if $rgb
         @prev_rgb_effect = $rgb.effect
-        $rgb.save
         $rgb.effect = :ruby
       end
     end

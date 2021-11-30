@@ -31,9 +31,9 @@ _(left: Raspberry Pi Pico / right: Sparkfun Pro Micro RP2040)_
   - [ ] I2C communication between left and right
 - [x] Macros
 - [ ] Media keys
-- [x] RGBLED. An example on [picoruby/prk_crkbd](https://github.com/picoruby/prk_crkbd/blob/main/keymap.rb#L56-L71)
+- [x] RGBLED. An example on [picoruby/prk_crkbd](https://github.com/picoruby/prk_crkbd/blob/main/keymap.rb)
 - [ ] OLED display
-- [x] Rotary encoder. An example on [prk_helix_rev3/keymap.rb](https://github.com/picoruby/prk_helix_rev3/blob/master/keymap.rb#L74-L95)
+- [x] Rotary encoder. An example on [prk_helix_rev3/keymap.rb](https://github.com/picoruby/prk_helix_rev3/blob/master/keymap.rb)
 - [ ] Mouse / Trackball
 - [x] Debugging over a serial port
 
@@ -66,6 +66,8 @@ Anyhow, you should:
 Your keyboard will automatically reboot. Enjoy!
 
 #### Building a binary by yourself
+
+(See also [Contributing](#Contributing))
 
 You may not want PRK Firmware to be a mass storage device in case that your employer doesn't allow you to bring a USB memory 🙈
 
@@ -150,6 +152,10 @@ make
 
 Then patch and send a pull request.
 
+#### Docker
+
+You can use [Dockerfile](https://github.com/picoruby/prk_firmware/blob/master/Dockerfile) to build if you prefer.
+
 #### For those who are willing to contribute to PRK or write your own keymaps:
 
 - It's possible that your Ruby code can't be compiled as you wish
@@ -162,7 +168,7 @@ Then patch and send a pull request.
 - Raspberrypi Pi Pico
   - [PiPi Gherkin](https://github.com/picoruby/prk_pipigherkin)
 
-- Sparkfun Pro Micro RP2040 (DEV-17717)
+- Sparkfun Pro Micro RP2040
   - [meishi2](https://github.com/picoruby/prk_meishi2)
   - [Crkbd](https://github.com/picoruby/prk_crkbd)
   - [Claw44](https://github.com/picoruby/prk_claw44)

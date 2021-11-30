@@ -7,6 +7,8 @@ print "\e[2J\e[1;1H" # clear all & home
 puts "Welcome to PRK Firmware!\n\nTUD task started.\n"
 autoreload_tick = 0
 
+$mutex = false
+
 while true
   tud_task
   cdc_task
@@ -18,10 +20,7 @@ while true
       puts "Autoreload is ready."
       puts "Suspending keymap."
       suspend_keymap
-      if $rgb
-        $rgb.effect = :off
-        $rgb.status = :null
-      end
+      $rgb.turn_off if $rgb
       $encoders = Array.new
       autoreload_tick = 1000
     elsif autoreload_tick == 1
@@ -35,6 +34,6 @@ while true
       resume_keymap
     end
     autoreload_tick -= 1
-    sleep_ms 1
+    sleep_ms 2
   end
 end

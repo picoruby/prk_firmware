@@ -27,7 +27,7 @@ pico_sdk_init()
 
 execute_process (COMMAND date +%Y%m%d OUTPUT_VARIABLE CMAKE_BUILDDATE OUTPUT_STRIP_TRAILING_WHITESPACE)
 execute_process (COMMAND git rev-parse --short HEAD OUTPUT_VARIABLE CMAKE_REVISION OUTPUT_STRIP_TRAILING_WHITESPACE)
-set (PRK_VERSION   0.9.5.1)
+set (PRK_VERSION   0.9.6)
 set (PRK_BUILDDATE ${CMAKE_BUILDDATE})
 set (PRK_REVISION  ${CMAKE_REVISION})
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/src/version.h.in" "${CMAKE_CURRENT_SOURCE_DIR}/src/version.h")
@@ -80,7 +80,7 @@ else()
 endif()
 
 add_custom_target(models
-  COMMAND ${RBC} -Bcore           core.rb
+  COMMAND ${RBC} -Bfloat_ext      float_ext.rb
   COMMAND ${RBC} -Bkeyboard       keyboard.rb
   COMMAND ${RBC} -Brgb            rgb.rb
   COMMAND ${RBC} -Brotary_encoder rotary_encoder.rb

@@ -15,6 +15,7 @@ class Keyboard
   MOD_KEYCODE: Hash[Symbol, Integer]
   KEYCODE: Array[Symbol]
   KEYCODE_SFT: Hash[Symbol, Integer]
+  KEYCODE_RGB: Hash[Symbol, Integer]
   LETTER: Array[String | Symbol | nil]
   KC_ALIASES: Hash[Symbol, Symbol]
 
@@ -55,16 +56,19 @@ class Keyboard
   @macro_key_numbers: Array[Integer | nil]
   @modifier: Integer
   @split_style: Symbol
+  @message: Integer
 
   attr_accessor split: bool
   attr_accessor uart_pin: Integer
 
   def append: (RGB | RotaryEncoder feature) -> void
   def start_features: -> void
-  def uart_putc_raw : (Integer) -> void
-  def uart_getc : -> Integer
-  def uart_rx_init : (Integer) -> void
-  def uart_tx_init : (Integer) -> void
+  def mutual_uart_at_my_own_risk= : () -> void
+  def uart_partner_push8 : (Integer) -> void
+  def uart_partner : () -> Integer
+  def uart_anchor : (Integer) -> Integer
+  def uart_anchor_init : (Integer) -> void
+  def uart_partner_init : (Integer) -> void
   def report_hid : (Integer, String) -> void
   def initialize: -> void
   def layer: () -> Symbol
