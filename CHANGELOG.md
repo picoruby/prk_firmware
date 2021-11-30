@@ -1,13 +1,17 @@
 # Change log
 
-## 0.9.6 in 2021/11/xx
+## 0.9.6 in 2021/11/30
 ### Big improvements
-- RGB
-  - See [wiki/RGB-feature](https://github.com/picoruby/prk_firmware/wiki/RGB-feature)
+- RGB feature
+  - Keycodes like `:RGB_TOG` (to toggle on and off, for example) are added
+    - See more details on [wiki/RGB-feature](https://github.com/picoruby/prk_firmware/wiki/RGB-feature)
+  - You can set default values of RGB instance like `rgb.speed` (to change the speed of blinking, for example)
+    - See [wiki/RGB-feature#in-your-keymaprb](https://github.com/picoruby/prk_firmware/wiki/RGB-feature#in-your-keymaprb)
+  - On a split type keyboard like CRKBD, LEDs of left and right will be synchronized when you enable "Mutual UART" (see below)
 - Mutual UART communication on a split type keyboard
   - This feature realizes
-    - Sync RGB blinking between both halves
-    - Keycodes like `:RGB_MOD` work on the partner half
+    - Sync RGB blinking between both halves (anchor half and partner half)
+    - Keycodes like `:RGB_TOG` work also on the "partner half"
   - See [wiki/Mutual-UART-communication](https://github.com/picoruby/prk_firmware/wiki/Mutual-UART-communication)
 
 ## 0.9.5 in 2021/10/27
