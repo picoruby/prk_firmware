@@ -1,5 +1,9 @@
 # Change log
 
+## 0.9.7 in 2021/12/02
+### Bug fix
+- `keymap.rb` with CRLF line terminators now works
+
 ## 0.9.6 in 2021/11/30
 ### Big improvements
 - RGB feature

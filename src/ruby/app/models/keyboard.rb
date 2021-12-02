@@ -735,6 +735,7 @@ class Keyboard
     end
   end
 
+  # for Encoders
   def send_key(symbol)
     keycode = KEYCODE.index(symbol)
     if keycode
