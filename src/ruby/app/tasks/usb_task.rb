@@ -13,7 +13,9 @@ while true
   tud_task
   cdc_task
   if $encoders && !$encoders.empty?
-    $encoders.each { |encoder| encoder.read }
+    $encoders.each_with_index do |encoder, index|
+      encoder.read(index)
+    end
   end
   if autoreload_ready?
     if autoreload_tick == 0

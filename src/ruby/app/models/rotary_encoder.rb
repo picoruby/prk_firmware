@@ -38,8 +38,8 @@ class RotaryEncoder
 
   attr_accessor :split_left
 
-  def read
-    @rotation += read_encoder(@pin_a, @pin_b)
+  def read(index)
+    @rotation += read_encoder(index, @pin_a, @pin_b)
   end
 
   def clockwise(&block)

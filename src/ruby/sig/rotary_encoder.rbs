@@ -15,7 +15,7 @@ class RotaryEncoder
   @partner_encoders: Array[RotaryEncoder]
 
   def init_encoder: (Integer, Integer) -> void
-  def read_encoder: (Integer, Integer) -> Integer
+  def read_encoder: (Integer index, Integer pin_a, Integer pin_b) -> Integer
 
   def initialize: (Integer pin_a, Integer pin_b) -> void
   def init_pins: () -> void
@@ -24,7 +24,7 @@ class RotaryEncoder
   def configure: (Symbol symbol) -> void
   def left?: () -> bool
   def right?: () -> bool
-  def read: () -> Integer
+  def read: (Integer index) -> Integer
   def clockwise: () { () -> void } -> void
   def counterclockwise: () { () -> void } -> void
   def consume_rotation_anchor: () -> void
