@@ -142,8 +142,8 @@ class RGB
 
   def hue=(val)
     @hue = val
-    @hue = 0 if @hue < 0
-    @hue = 348 if 348 < @hue
+    @hue = 348 if @hue < 0
+    @hue = 0 if 348 < @hue
     reset_pixel
   end
 
