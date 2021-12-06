@@ -747,6 +747,10 @@ class Keyboard
         modifier = 0b00100000
         c = keycode.chr
       else
+        keycode = KEYCODE_RGB[symbol]
+        if keycode && $rgb
+          $rgb.invoke_anchor(symbol)
+        end
         return
       end
     end
