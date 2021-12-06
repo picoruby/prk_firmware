@@ -8,6 +8,12 @@ static int8_t status_table[] = {0,1,-1,0,-1,0,0,1,1,0,0,-1,0,-1,1,0};
 static int8_t prev_status[] = {0,0,0,0,0};
 
 void
+RotaryEncoder_reset(void)
+{
+  encoder_index = 0;
+}
+
+void
 c_read_encoder(mrb_vm *vm, mrb_value *v, int argc)
 {
   int8_t current_status;

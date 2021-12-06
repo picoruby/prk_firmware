@@ -69,6 +69,7 @@ create_keymap_task(mrbc_tcb *tcb)
   ParserState *p = Compiler_parseInitState(NODE_BOX_SIZE);
   msc_findDirEnt("KEYMAP  RB ", &entry);
   if (entry.Name[0] != '\0') {
+    RotaryEncoder_reset();
     console_printf("keymap.rb found.\n");
     program = (char *)(FLASH_MMAP_ADDR + SECTOR_SIZE * (1 + entry.FstClusLO));
     si = StreamInterface_new(program, STREAM_TYPE_MEMORY);
