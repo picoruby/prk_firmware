@@ -1,10 +1,15 @@
 # Change log
 
-## 0.9.7 in 2021/12/02
+## 0.9.8 on 2021/12/xx
+### RotaryEncoder enhancement
+- Multiple encoders can be configured on a unit🎛
+- `:RGB_xxx` keycodes work with an encoder🌈
+
+## 0.9.7 on 2021/12/02
 ### Bug fix
 - `keymap.rb` with CRLF line terminators now works
 
-## 0.9.6 in 2021/11/30
+## 0.9.6 on 2021/11/30
 ### Big improvements
 - RGB feature
   - Keycodes like `:RGB_TOG` (to toggle the LED between *on* and *off*, for example) are added
@@ -18,7 +23,7 @@
     - Keycodes like `:RGB_TOG` work also on the "partner half"
   - See [wiki/Mutual-UART-communication](https://github.com/picoruby/prk_firmware/wiki/Mutual-UART-communication)
 
-## 0.9.5 in 2021/10/27
+## 0.9.5 on 2021/10/27
 ### Breaking Change 🌈
 - Amend names of RGB.effect
   - from `:rainbow` to `:swirl`
@@ -27,15 +32,15 @@
 - Some keycodes for Japanese keyboard added. See [pull/31](https://github.com/picoruby/prk_firmware/pull/31)
 - Improved startup stability. The startup time is increased, but be patient!
 
-## 0.9.4 in 2021/09/24
+## 0.9.4 on 2021/09/24
 ### Improvement
 - Now you can use "Right side flipped split" keyboard (eg. [Zinc](https://www.sho-k.co.uk/tech/735.html)). See [pull/22](https://github.com/picoruby/prk_firmware/pull/22)
 
-## 0.9.3 in 2021/09/17
+## 0.9.3 on 2021/09/17
 ### Improvement
 - Abbreviated keynames things like `KC_ENT` for `KC_ENTER` can be used in `keymap.rb`. See [bc23e52](https://github.com/picoruby/prk_firmware/commit/bc23e52f51c2899ce5309643f0ab89606a9b469d)
 
-## 0.9.2 in 2021/09/15
+## 0.9.2 on 2021/09/15
 ### Useful feature 🎉
 - You can see debug print on a USB serial port that will be helpful if your `keymap.rb` doesn't work well
   - Configuration:
@@ -50,13 +55,13 @@
 
   ![](doc/images/serial_port.png)
 
-## 0.9.1 in 2021/09/12
+## 0.9.1 on 2021/09/12
 ### Small improvement
 - Sparkfun Pro Micro RP2040 will reboot to BOOTSEL mode if you double-press RESET button without detaching USB cable!
 
   ![](doc/images/RP2040_boards.jpg)
 
-## 0.9.0 in 2021/09/10 (First release🎊)
+## 0.9.0 on 2021/09/10 (First release🎊)
 ### BIG BIG IMPROVEMENT 🍣
 - You no longer need any compiler toolchain!!!
 - No longer detaching USB cable every time amending your keymap, too!!!
