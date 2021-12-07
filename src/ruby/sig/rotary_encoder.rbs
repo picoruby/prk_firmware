@@ -4,8 +4,8 @@
 $encoders: Array[RotaryEncoder]
 
 class RotaryEncoder
-  @proc_cw: ^() -> void
-  @proc_ccw: ^() -> void
+  @proc_cw:  (^() -> void | Proc)
+  @proc_ccw: (^() -> void | Proc)
   @pin_a: Integer
   @pin_b: Integer
   @rotation: Integer
@@ -24,7 +24,7 @@ class RotaryEncoder
   def configure: (Symbol symbol) -> void
   def left?: () -> bool
   def right?: () -> bool
-  def read: (Integer index) -> Integer
+  def read: (Integer index) -> void
   def clockwise: () { () -> void } -> void
   def counterclockwise: () { () -> void } -> void
   def consume_rotation_anchor: () -> void

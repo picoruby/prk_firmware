@@ -7,6 +7,8 @@ class RotaryEncoder
     @partner_keycode_cw = 0
     @partner_keycode_ccw = 0
     @split_left = true
+    @proc_cw = Proc.new { }
+    @proc_ccw = @proc_cw
   end
 
   def init_pins
@@ -66,16 +68,16 @@ class RotaryEncoder
   end
 
   def consume_rotation_anchor
-    # ignore values of 1 and -1
-    if @rotation > 1 && @proc_cw
+    # ignore value of -1..1
+    if @rotation > 1
       @proc_cw.call
-      sleep_ms 20
-    elsif @rotation < -1 && @proc_ccw
+      @rotation -= 2
+    elsif @rotation < -1
       @proc_ccw.call
-      # counterclockwise seems more sensitive
-      sleep_ms 40
+      @rotation += 2
+    else
+      @rotation = 0
     end
-    @rotation = 0
   end
 
   def consume_rotation_partner
