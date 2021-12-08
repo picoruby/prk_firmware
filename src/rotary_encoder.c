@@ -8,7 +8,6 @@
  *   https://coskxlabsite.stars.ne.jp/html/for_students/H8/rotaryencoderTips.html
  */
 const static int8_t status_table[] = {0, 1,-1, 0,-1, 0, 0, 1, 1, 0, 0,-1, 0,-1, 1, 0};
-const static int8_t error_table[]  = {0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0 ,0, 0};
 static int8_t encoder_count = 0;
 static int8_t prev_status[] = {0,0,0,0,0};
 
@@ -26,11 +25,7 @@ c_read_encoder(mrb_vm *vm, mrb_value *v, int argc)
   prev_status[encoder_index] <<= 2;
   prev_status[encoder_index] |= ( (gpio_get(GET_INT_ARG(3))*2 + gpio_get(GET_INT_ARG(2))) & 0b0011);
   prev_status[encoder_index] &= 0b1111;
-  if (error_table[prev_status[encoder_index]] == 1) {
-    SET_INT_RETURN(0);
-  } else {
-    SET_INT_RETURN(status_table[prev_status[encoder_index]]);
-  }
+  SET_INT_RETURN(status_table[prev_status[encoder_index]]);
 }
 
 void

@@ -68,16 +68,13 @@ class RotaryEncoder
   end
 
   def consume_rotation_anchor
-    # ignore value of -1..1
+    # ignore a value between -1..1
     if @rotation > 1
       @proc_cw.call
-      @rotation -= 2
     elsif @rotation < -1
       @proc_ccw.call
-      @rotation += 2
-    else
-      @rotation = 0
     end
+    @rotation = 0
   end
 
   def consume_rotation_partner

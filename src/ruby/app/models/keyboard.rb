@@ -755,9 +755,9 @@ class Keyboard
       end
     end
     report_hid(modifier, "#{c}\000\000\000\000\000")
-    sleep_ms 5
+    sleep_ms 10
     report_hid(0, "\000\000\000\000\000\000")
-    sleep_ms 5
+    sleep_ms 10
   end
 
   # **************************************************************
