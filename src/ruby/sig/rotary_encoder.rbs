@@ -1,21 +1,19 @@
 # TypeProf 0.14.1
 
 # Global variables
-$encoders: Array[RotaryEncoder]
 
 class RotaryEncoder
   @proc_cw:  (^() -> void | Proc)
   @proc_ccw: (^() -> void | Proc)
   @pin_a: Integer
   @pin_b: Integer
-  @rotation: Integer
   @partner_keycode_cw: Integer
   @partner_keycode_ccw: Integer
   @split_left: bool
   @partner_encoders: Array[RotaryEncoder]
 
-  def init_encoder: (Integer, Integer) -> void
-  def read_encoder: (Integer index, Integer pin_a, Integer pin_b) -> Integer
+  def init_encoder: (Integer, Integer) -> Integer
+  def consume_encoder: (Integer) -> Integer
 
   def initialize: (Integer pin_a, Integer pin_b) -> void
   def init_pins: () -> void
@@ -24,7 +22,6 @@ class RotaryEncoder
   def configure: (Symbol symbol) -> void
   def left?: () -> bool
   def right?: () -> bool
-  def read: (Integer index) -> void
   def clockwise: () { () -> void } -> void
   def counterclockwise: () { () -> void } -> void
   def consume_rotation_anchor: () -> void
