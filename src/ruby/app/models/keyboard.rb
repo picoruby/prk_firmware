@@ -830,7 +830,7 @@ class Keyboard
           if rgb_message > 0
             data24 = uart_anchor(rgb_message)
             rgb_message = 0
-          elsif $rgb.ping?
+          elsif $rgb && $rgb.ping?
             data24 = uart_anchor(0b11100000) # adjusts RGB time
           else
             data24 = uart_anchor(0)

@@ -5,6 +5,8 @@
 - Multiple encoders can be configured on a unit🎛
 - `:RGB_xxx` keycodes work with encoders🌈
 - The accuracy of ratation made a big improvement😎
+### Bug fix
+- Some tiny bugs are fixed
 
 ## 0.9.7 on 2021/12/02
 ### Bug fix
