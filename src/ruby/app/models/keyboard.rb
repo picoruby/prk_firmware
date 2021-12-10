@@ -454,7 +454,7 @@ class Keyboard
     @anchor_left = true # so-called "master left"
     @uart_pin = 1
     $rgb = nil
-    $encoders = Array.new
+    @encoders = Array.new
     @partner_encoders = Array.new
     @macro_keycodes = Array.new
     @buffer = Buffer.new("picoirb")
@@ -477,12 +477,12 @@ class Keyboard
         if @anchor_left
           if @anchor == feature.left? # XNOR
             feature.init_pins
-            $encoders << feature
+            @encoders << feature
           end
         else
           if @anchor != feature.left? #XOR
             feature.init_pins
-            $encoders << feature
+            @encoders << feature
           end
         end
         if @anchor && (@anchor_left != feature.left?)
@@ -490,7 +490,7 @@ class Keyboard
         end
       else
         feature.init_pins
-        $encoders << feature
+        @encoders << feature
       end
     end
   end
@@ -747,12 +747,17 @@ class Keyboard
         modifier = 0b00100000
         c = keycode.chr
       else
+        keycode = KEYCODE_RGB[symbol]
+        if keycode && $rgb
+          $rgb.invoke_anchor(symbol)
+        end
         return
       end
     end
     report_hid(modifier, "#{c}\000\000\000\000\000")
-    sleep_ms 5
+    sleep_ms 1
     report_hid(0, "\000\000\000\000\000\000")
+    sleep_ms 1
   end
 
   # **************************************************************
@@ -930,7 +935,7 @@ class Keyboard
           block.call
         end
 
-        $encoders.each do |encoder|
+        @encoders.each do |encoder|
           encoder.consume_rotation_anchor
         end
 
@@ -966,7 +971,7 @@ class Keyboard
         end
       else
         # Partner
-        $encoders.each do |encoder|
+        @encoders.each do |encoder|
           data = encoder.consume_rotation_partner
           uart_partner_push8(data) if data && data > 0
         end

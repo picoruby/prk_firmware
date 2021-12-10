@@ -12,16 +12,12 @@ $mutex = false
 while true
   tud_task
   cdc_task
-  if $encoders && !$encoders.empty?
-    $encoders.each { |encoder| encoder.read }
-  end
   if autoreload_ready?
     if autoreload_tick == 0
       puts "Autoreload is ready."
       puts "Suspending keymap."
       suspend_keymap
       $rgb.turn_off if $rgb
-      $encoders = Array.new
       autoreload_tick = 1000
     elsif autoreload_tick == 1
       puts "Trying to reload keymap."

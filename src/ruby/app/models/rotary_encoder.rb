@@ -3,14 +3,15 @@ class RotaryEncoder
     puts "Initializing RotaryEncoder ..."
     @pin_a = pin_a
     @pin_b = pin_b
-    @rotation = 0
     @partner_keycode_cw = 0
     @partner_keycode_ccw = 0
     @split_left = true
+    @proc_cw = Proc.new { }
+    @proc_ccw = @proc_cw
   end
 
   def init_pins
-    init_encoder(@pin_a, @pin_b)
+    @number = init_encoder(@pin_a, @pin_b)
   end
 
   def create_keycodes(encoders_size)
@@ -38,10 +39,6 @@ class RotaryEncoder
 
   attr_accessor :split_left
 
-  def read
-    @rotation += read_encoder(@pin_a, @pin_b)
-  end
-
   def clockwise(&block)
     @proc_cw = block
   end
@@ -66,28 +63,22 @@ class RotaryEncoder
   end
 
   def consume_rotation_anchor
-    # ignore values of 1 and -1
-    if @rotation > 1 && @proc_cw
+    case consume_encoder(@number)
+    when 1
       @proc_cw.call
-      sleep_ms 20
-    elsif @rotation < -1 && @proc_ccw
+    when -1
       @proc_ccw.call
-      # counterclockwise seems more sensitive
-      sleep_ms 40
     end
-    @rotation = 0
   end
 
   def consume_rotation_partner
-    # ignore values of 1 and -1
-    res = if @rotation > 1 && @proc_cw
+    case consume_encoder(@number)
+    when 1
       @partner_keycode_cw
-    elsif @rotation < -1 && @proc_ccw
+    when -1
       @partner_keycode_ccw
     else
       0
     end
-    @rotation = 0
-    return res
   end
 end
