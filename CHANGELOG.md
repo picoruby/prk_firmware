@@ -4,7 +4,7 @@
 ### RotaryEncoder enhancement
 - Multiple encoders can be configured on a unit🎛
 - `:RGB_xxx` keycodes work with encoders🌈
-- The accuracy of ratation made a big improvement😎
+- The accuracy of rotation made a big improvement😎
 ### Bug fix
 - Some tiny bugs are fixed
 
