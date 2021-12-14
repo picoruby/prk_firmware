@@ -458,6 +458,7 @@ class Keyboard
     @partner_encoders = Array.new
     @macro_keycodes = Array.new
     @buffer = Buffer.new("picoirb")
+    @scan_mode = :matrix
   end
 
   attr_accessor :split, :uart_pin
@@ -510,6 +511,15 @@ class Keyboard
     end
   end
 
+  def set_scan_mode(mode)
+    case mode
+    when :matrix, :direct
+      @scan_mode = mode
+    else
+      puts 'Scan mode only support :matrix and :direct. (default: :matrix)'
+    end
+  end
+
   def init_pins(rows, cols)
     puts "Initializing GPIO ..."
     if @split
@@ -539,6 +549,11 @@ class Keyboard
     # for split type
     @offset_a = (@cols.size / 2.0).ceil_to_i
     @offset_b = @cols.size * 2 - @offset_a - 1
+  end
+
+  def init_direct_pins(pins)
+    set_scan_mode :direct
+    init_pins([], pins)
   end
 
   # Input
@@ -790,7 +805,7 @@ class Keyboard
       @switches.clear
       @modifier = 0
 
-      @switches = scan_matrix!
+      @switches = @scan_mode == :matrix ? scan_matrix! : scan_direct!
 
       # TODO: more features
       $rgb.fifo_push(true) if $rgb && !@switches.empty?
