@@ -997,6 +997,16 @@ class Keyboard
     return switches
   end
 
+  def scan_direct!
+    switches = []
+    @cols.each_with_index do |col_pin, col|
+      if gpio_get(col_pin) == LO
+        switches << [0, col]
+      end
+    end
+    return switches
+  end
+
   #
   # Actions can be used in keymap.rb
   #

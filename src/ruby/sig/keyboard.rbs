@@ -95,4 +95,5 @@ class Keyboard
   def eval: (String) -> void
   def ruby: () -> void
   def scan_matrix!: () -> Array[Array[Integer]]
+  def scan_direct!: () -> Array[Array[Integer]]
 end
