@@ -94,4 +94,5 @@ class Keyboard
   def macro: (String text, ?::Array[Symbol] opt) -> void
   def eval: (String) -> void
   def ruby: () -> void
+  def scan_matrix!: () -> Array[Array[Integer]]
 end

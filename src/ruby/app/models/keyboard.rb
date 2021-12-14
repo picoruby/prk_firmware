@@ -790,35 +790,7 @@ class Keyboard
       @switches.clear
       @modifier = 0
 
-      # detect physical switches that are pushed
-      @rows.each_with_index do |row_pin, row|
-        gpio_put(row_pin, LO)
-        @cols.each_with_index do |col_pin, col|
-          if gpio_get(col_pin) == LO
-            col_data = if @anchor_left
-                         if @anchor
-                           # left
-                           col
-                         else
-                           # right
-                           (col - @offset_a) * -1 + @offset_b
-                         end
-                       else # right side is the anchor
-                         unless @anchor
-                           # left
-                           col
-                         else
-                           # right
-                           (col - @offset_a) * -1 + @offset_b
-                         end
-                       end
-            @switches << [row, col_data]
-          end
-          # @type break: nil
-          break if @switches.size >= @cols.size
-        end
-        gpio_put(row_pin, HI)
-      end
+      @switches = scan_matrix!
 
       # TODO: more features
       $rgb.fifo_push(true) if $rgb && !@switches.empty?
@@ -989,6 +961,40 @@ class Keyboard
       sleep_ms(time) if time > 0
     end
 
+  end
+
+  def scan_matrix!
+    switches = []
+    # detect physical switches that are pushed
+    @rows.each_with_index do |row_pin, row|
+      gpio_put(row_pin, LO)
+      @cols.each_with_index do |col_pin, col|
+        if gpio_get(col_pin) == LO
+          col_data = if @anchor_left
+                       if @anchor
+                         # left
+                         col
+                       else
+                         # right
+                         (col - @offset_a) * -1 + @offset_b
+                       end
+                     else # right side is the anchor
+                       unless @anchor
+                         # left
+                         col
+                       else
+                         # right
+                         (col - @offset_a) * -1 + @offset_b
+                       end
+                     end
+          switches << [row, col_data]
+        end
+        # @type break: nil
+        break if switches.size >= @cols.size
+      end
+      gpio_put(row_pin, HI)
+    end
+    return switches
   end
 
   #
