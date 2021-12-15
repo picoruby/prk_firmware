@@ -458,6 +458,7 @@ class Keyboard
     @partner_encoders = Array.new
     @macro_keycodes = Array.new
     @buffer = Buffer.new("picoirb")
+    @scan_mode = :matrix
   end
 
   attr_accessor :split, :uart_pin
@@ -510,6 +511,15 @@ class Keyboard
     end
   end
 
+  def set_scan_mode(mode)
+    case mode
+    when :matrix, :direct
+      @scan_mode = mode
+    else
+      puts 'Scan mode only support :matrix and :direct. (default: :matrix)'
+    end
+  end
+
   def init_pins(rows, cols)
     puts "Initializing GPIO ..."
     if @split
@@ -539,6 +549,11 @@ class Keyboard
     # for split type
     @offset_a = (@cols.size / 2.0).ceil_to_i
     @offset_b = @cols.size * 2 - @offset_a - 1
+  end
+
+  def init_direct_pins(pins)
+    set_scan_mode :direct
+    init_pins([], pins)
   end
 
   # Input
@@ -790,35 +805,7 @@ class Keyboard
       @switches.clear
       @modifier = 0
 
-      # detect physical switches that are pushed
-      @rows.each_with_index do |row_pin, row|
-        gpio_put(row_pin, LO)
-        @cols.each_with_index do |col_pin, col|
-          if gpio_get(col_pin) == LO
-            col_data = if @anchor_left
-                         if @anchor
-                           # left
-                           col
-                         else
-                           # right
-                           (col - @offset_a) * -1 + @offset_b
-                         end
-                       else # right side is the anchor
-                         unless @anchor
-                           # left
-                           col
-                         else
-                           # right
-                           (col - @offset_a) * -1 + @offset_b
-                         end
-                       end
-            @switches << [row, col_data]
-          end
-          # @type break: nil
-          break if @switches.size >= @cols.size
-        end
-        gpio_put(row_pin, HI)
-      end
+      @switches = @scan_mode == :matrix ? scan_matrix! : scan_direct!
 
       # TODO: more features
       $rgb.fifo_push(true) if $rgb && !@switches.empty?
@@ -989,6 +976,50 @@ class Keyboard
       sleep_ms(time) if time > 0
     end
 
+  end
+
+  def scan_matrix!
+    switches = []
+    # detect physical switches that are pushed
+    @rows.each_with_index do |row_pin, row|
+      gpio_put(row_pin, LO)
+      @cols.each_with_index do |col_pin, col|
+        if gpio_get(col_pin) == LO
+          col_data = if @anchor_left
+                       if @anchor
+                         # left
+                         col
+                       else
+                         # right
+                         (col - @offset_a) * -1 + @offset_b
+                       end
+                     else # right side is the anchor
+                       unless @anchor
+                         # left
+                         col
+                       else
+                         # right
+                         (col - @offset_a) * -1 + @offset_b
+                       end
+                     end
+          switches << [row, col_data]
+        end
+        # @type break: nil
+        break if switches.size >= @cols.size
+      end
+      gpio_put(row_pin, HI)
+    end
+    return switches
+  end
+
+  def scan_direct!
+    switches = []
+    @cols.each_with_index do |col_pin, col|
+      if gpio_get(col_pin) == LO
+        switches << [0, col]
+      end
+    end
+    return switches
   end
 
   #

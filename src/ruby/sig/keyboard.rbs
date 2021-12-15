@@ -58,6 +58,7 @@ class Keyboard
   @split_style: Symbol
   @message: Integer
   @encoders: Array[RotaryEncoder]
+  @scan_mode: Symbol
 
   attr_accessor split: bool
   attr_accessor uart_pin: Integer
@@ -74,8 +75,10 @@ class Keyboard
   def initialize: -> void
   def layer: () -> Symbol
   def set_anchor: (Symbol val) -> void
+  def set_scan_mode: (Symbol val) -> void
   def split_style=: (Symbol style) -> void
   def init_pins: (Array[Integer] rows, Array[Integer] cols) -> void
+  def init_direct_pins: (Array[Integer] pins) -> void
   def add_layer: (Symbol name, Array[Symbol] map) -> void
   def calculate_col_position: (Integer col_index) -> Integer
   def find_keycode_index: (Symbol key) -> (Integer | Symbol)
@@ -94,4 +97,6 @@ class Keyboard
   def macro: (String text, ?::Array[Symbol] opt) -> void
   def eval: (String) -> void
   def ruby: () -> void
+  def scan_matrix!: () -> Array[Array[Integer]]
+  def scan_direct!: () -> Array[Array[Integer]]
 end
