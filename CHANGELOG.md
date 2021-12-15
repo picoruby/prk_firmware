@@ -1,5 +1,26 @@
 # Change log
 
+## 0.9.9 on 2021/12/15
+### Supports direct scan👏
+
+- Some keyboards support **direct scan**. e.g. https://www.sho-k.co.uk/tech/1246.html  
+  Now you can configure it as follow:
+
+  ```ruby
+  kbd.set_scan_mode = :direct
+  kbd.init_pins(
+    [],
+    [ 8, 27, 28, 29, 9, 26 ]
+  )
+  ```
+  or
+
+  ```ruby
+  kbd.init_direct_pins(
+    [ 8, 27, 28, 29, 9, 26 ]
+  )
+  ```
+
 ## 0.9.8 on 2021/12/10
 ### RotaryEncoder enhancement
 - Multiple encoders can be configured on a unit🎛
