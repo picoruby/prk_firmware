@@ -44,6 +44,7 @@ add_executable(${PROJECT}
   src/main.c
   src/msc_disk.c
   src/usb_descriptors.c
+  src/raw_hid.c
   src/gpio.c
   src/uart.c
   src/ws2812.c

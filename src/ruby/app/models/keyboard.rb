@@ -775,6 +775,10 @@ class Keyboard
     sleep_ms 1
   end
 
+  def via_enable
+    self.start_via(@rows.size, @cols.size)
+  end
+  
   # **************************************************************
   #  For those who are willing to contribute to PRK Firmware:
   #

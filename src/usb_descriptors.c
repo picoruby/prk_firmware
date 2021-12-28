@@ -26,6 +26,7 @@
 #include "tusb.h"
 
 #include "usb_descriptors.h"
+#include "raw_hid.h"
 
 /* A combination of interfaces must have a unique product id, since PC will save device driver after the first plug.
  * Same VID/PID with different interface e.g MSC (first), then CDC (later) will possibly cause system error on PC.
@@ -131,6 +132,7 @@ uint8_t const desc_hid_report[] =
 {
   TUD_HID_REPORT_DESC_KEYBOARD( HID_REPORT_ID(REPORT_ID_KEYBOARD         )),
   TUD_HID_REPORT_DESC_MOUSE   ( HID_REPORT_ID(REPORT_ID_MOUSE            )),
+  RAW_HID_REPORT_DESC(          HID_REPORT_ID(REPORT_ID_RAWHID           )),
 };
 
 enum
@@ -233,7 +235,8 @@ uint16_t const* tud_descriptor_string_cb(uint8_t index, uint16_t langid)
 
 const uint8_t hid_report_desc[] = {
   TUD_HID_REPORT_DESC_KEYBOARD(HID_REPORT_ID(REPORT_ID_KEYBOARD)),
-  TUD_HID_REPORT_DESC_MOUSE(HID_REPORT_ID(REPORT_ID_MOUSE))
+  TUD_HID_REPORT_DESC_MOUSE(HID_REPORT_ID(REPORT_ID_MOUSE)),
+  RAW_HID_REPORT_DESC(HID_REPORT_ID(REPORT_ID_RAWHID)),
 };
 
 const uint16_t string_desc_product[] = { // Index: 1
@@ -247,10 +250,37 @@ uint8_t const *tud_hid_descriptor_report_cb(uint8_t instance) {
 uint16_t tud_hid_get_report_cb(uint8_t instance, uint8_t report_id, hid_report_type_t report_type, uint8_t* buffer, uint16_t reqlen) {
     return 0;
 }
+
+uint8_t raw_hid_last_received_report[REPORT_RAW_MAX_LEN];
+uint8_t raw_hid_last_received_report_length;
+bool raw_hid_report_received = false;
 void tud_hid_set_report_cb(uint8_t instance, uint8_t report_id, hid_report_type_t report_type, uint8_t const* buffer, uint16_t bufsize) {
+
+    if (report_type == HID_REPORT_TYPE_INVALID) {
+        report_id = buffer[0];
+        buffer++;
+        bufsize--;
+    } else if(report_type != HID_REPORT_TYPE_OUTPUT && report_type != HID_REPORT_TYPE_FEATURE) {
+        return;
+    }
+
+    if(report_id==REPORT_ID_RAWHID) {
+        memcpy(raw_hid_last_received_report, buffer, bufsize);
+        raw_hid_last_received_report_length = bufsize;
+        raw_hid_report_received = true;
+    }
+
     return;
 }
 
+
+void report_raw_hid(uint8_t* data, uint8_t len)
+{
+  /*------------- RAW HID -------------*/
+  if (tud_hid_ready()) {
+    tud_hid_report(REPORT_ID_RAWHID, data, len);
+  }
+}
 
 //--------------------------------------------------------------------+
 // Ruby methods
@@ -260,6 +290,10 @@ void
 c_tud_task(mrb_vm *vm, mrb_value *v, int argc)
 {
   tud_task();
+  if(raw_hid_report_received) {
+    raw_hid_receive(raw_hid_last_received_report, raw_hid_last_received_report_length);
+    raw_hid_report_received = false;
+  }
 }
 
 void

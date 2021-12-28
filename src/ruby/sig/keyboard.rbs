@@ -72,6 +72,7 @@ class Keyboard
   def uart_anchor_init : (Integer) -> void
   def uart_partner_init : (Integer) -> void
   def report_hid : (Integer, String) -> void
+  def start_via : (Integer, Integer) -> void
   def initialize: -> void
   def layer: () -> Symbol
   def set_anchor: (Symbol val) -> void
