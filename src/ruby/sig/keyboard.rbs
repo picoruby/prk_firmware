@@ -73,6 +73,11 @@ class Keyboard
   def uart_partner_init : (Integer) -> void
   def report_hid : (Integer, String) -> void
   def start_via : (Integer, Integer) -> void
+  def load_via_keymap: -> void
+  def get_keycode_via : (Integer, Integer, Integer) -> Integer
+  def via_keymap_updated?: -> bool
+  def set_via_keymap_updated: -> void
+  def translate_keycode : (Integer) -> (Symbol | Integer) 
   def initialize: -> void
   def layer: () -> Symbol
   def set_anchor: (Symbol val) -> void

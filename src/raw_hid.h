@@ -67,6 +67,9 @@ extern via_keyboard_t via_setting;
 extern uint8_t eeprom[KEYMAP_SIZE_BYTES];
 
 void c_start_via(mrb_vm *vm, mrb_value *v, int argc);
+void c_get_keycode_via(mrb_vm *vm, mrb_value *v, int argc);
+void c_via_keymap_updated(mrb_vm *vm, mrb_value *v, int argc);
+void c_set_via_keymap_updated(mrb_vm *vm, mrb_value *v, int argc);
 void raw_hid_receive(uint8_t *data, uint8_t length);
 
 #endif

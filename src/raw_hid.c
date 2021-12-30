@@ -2,9 +2,23 @@
 #include "raw_hid.h"
 #include "value.h"
 #include "pico/time.h"
+#include <mrubyc.h>
 
 via_keyboard_t via_setting;
 uint8_t eeprom[KEYMAP_SIZE_BYTES];
+bool keymap_updated = false;
+
+void c_via_keymap_updated(mrb_vm *vm, mrb_value *v, int argc) {
+    if(keymap_updated) {
+        SET_TRUE_RETURN();
+    } else {
+        SET_FALSE_RETURN();
+    } 
+}
+
+void c_set_via_keymap_updated(mrb_vm *vm, mrb_value *v, int argc) {
+    keymap_updated = false;
+}
 
 void save_keymap(void) {
     return;
@@ -36,6 +50,16 @@ uint16_t dynamic_keymap_get_keycode(uint8_t layer, uint8_t row, uint8_t column) 
     uint16_t keycode = eeprom_read_byte(address) << 8;
     keycode |= eeprom_read_byte(address + 1);
     return keycode;
+}
+
+void c_get_keycode_via(mrb_vm *vm, mrb_value *v, int argc) {
+    uint8_t layer = GET_INT_ARG(1);
+    uint8_t row = GET_INT_ARG(2);
+    uint8_t col = GET_INT_ARG(3);
+
+    uint16_t keycode = dynamic_keymap_get_keycode(layer, row, col);
+
+    SET_INT_RETURN(keycode);
 }
 
 void dynamic_keymap_set_keycode(uint8_t layer, uint8_t row, uint8_t column, uint16_t keycode) {
@@ -72,9 +96,6 @@ void dynamic_keymap_set_buffer(uint16_t offset, uint16_t size, uint8_t *data) {
         target++;
     }
 }
-
-
-bool keymap_updated = false;
 
 void c_start_via(mrb_vm *vm, mrb_value *v, int argc) {
     via_setting.row_count = GET_INT_ARG(1);

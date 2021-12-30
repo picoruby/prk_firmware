@@ -775,8 +775,44 @@ class Keyboard
     sleep_ms 1
   end
 
+  def translate_keycode(keycode)
+    if (keycode>>8)==0
+      return -(keycode & 0x00FF)
+    else
+      case (keycode>>12) & 0x0F
+      when 0x0
+        
+      when 0x1
+
+      end
+    end
+
+    return 0x0000
+  end
+
+  def load_via_keymap
+    via_layer_count = 4
+    via_layer_count.times do |layer|
+      new_map = Array.new(@rows.size)
+      @rows.size.times do |row_index|
+        new_map[row_index] = Array.new(@entire_cols_size)
+        @entire_cols_size.times do |col_index|
+          keycode = get_keycode_via(layer,row_index,col_index)
+          new_map[row_index][col_index] = translate_keycode(keycode)
+        end
+      end
+      
+      layer_name_sym = layer==0 ? :default : layer.to_s.intern
+      @keymaps[layer_name_sym] = new_map
+      @layer_names << layer_name_sym unless @layer_names.index(layer_name_sym)
+    end
+    set_via_keymap_updated
+  end
+
   def via_enable
-    self.start_via(@rows.size, @cols.size)
+    self.start_via(@rows.size, @entire_cols_size)
+    #@layer = :"0"
+    load_via_keymap
   end
   
   # **************************************************************
@@ -975,6 +1011,8 @@ class Keyboard
         rgb_message = uart_partner
         $rgb.invoke_partner rgb_message if $rgb
       end
+      
+      load_via_keymap if via_keymap_updated?
 
       time = cycle_time - (board_millis - now)
       sleep_ms(time) if time > 0
