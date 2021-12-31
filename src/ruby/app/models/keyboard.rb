@@ -793,16 +793,18 @@ class Keyboard
   def load_via_keymap
     via_layer_count = 4
     via_layer_count.times do |layer|
+      layer_name_sym = layer==0 ? :default : layer.to_s.intern
       new_map = Array.new(@rows.size)
       @rows.size.times do |row_index|
         new_map[row_index] = Array.new(@entire_cols_size)
         @entire_cols_size.times do |col_index|
+          @mode_keys.delete_if { |mode_key|  mode_key[:layer] == layer_name_sym && mode_key[:switch][0] == row_index && mode_key[:switch][1]==col_index }
+
           keycode = get_keycode_via(layer,row_index,col_index)
           new_map[row_index][col_index] = translate_keycode(keycode)
         end
       end
       
-      layer_name_sym = layer==0 ? :default : layer.to_s.intern
       @keymaps[layer_name_sym] = new_map
       @layer_names << layer_name_sym unless @layer_names.index(layer_name_sym)
     end
