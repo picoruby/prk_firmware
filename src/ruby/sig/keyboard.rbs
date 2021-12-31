@@ -41,6 +41,8 @@ class Keyboard
     released_at:       Integer
     }
     ]
+  @mode_keys_via: Hash[Symbol, [ Symbol | Array[Symbol] | Proc | nil, Symbol | Proc, Integer | nil, Integer| nil ] ]
+  @enable_via: bool
   @switches: Array[Array[Integer]]
   @layer_names: Array[Symbol]
   @layer: Symbol
@@ -89,6 +91,8 @@ class Keyboard
   def calculate_col_position: (Integer col_index) -> Integer
   def find_keycode_index: (Symbol key) -> (Integer | Symbol)
   def define_mode_key: (Symbol key_name, [Symbol | Array[Symbol] | Proc | nil, Symbol | Proc, Integer?, Integer?] param) -> void
+  def load_mode_keys_via: -> void
+  def define_mode_key_via : (Symbol key_name, [Symbol | Array[Symbol] | Proc | nil, Symbol | Proc, Integer?, Integer?] param) -> void
   def invert_sft: -> void
   def before_report: () { () -> void } -> void
   def keys_include?: (Symbol) -> bool

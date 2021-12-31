@@ -445,6 +445,8 @@ class Keyboard
     @before_filters = Array.new
     @keymaps = Hash.new
     @mode_keys = Array.new
+    @mode_keys_via = Hash.new
+    @enable_via = false
     @switches = Array.new
     @layer_names = Array.new
     @layer = :default
@@ -775,8 +777,21 @@ class Keyboard
     sleep_ms 1
   end
 
+  def load_mode_keys_via()
+    @mode_keys_via.each do |key_name, param|
+      define_mode_key(key_name, param)
+    end
+  end
+
+  def define_mode_key_via(key_name, param)
+    @mode_keys_via[key_name] = param
+  end
+
   def translate_keycode(keycode)
     if (keycode>>8)==0
+      if 0x00C0 <= keycode && keycode <= 0x00DF
+        return ("VIA_FUNC"+(keycode-0x00C0).to_s).intern
+      end
       return -(keycode & 0x00FF)
     else
       case (keycode>>12) & 0x0F
@@ -801,19 +816,22 @@ class Keyboard
           @mode_keys.delete_if { |mode_key|  mode_key[:layer] == layer_name_sym && mode_key[:switch][0] == row_index && mode_key[:switch][1]==col_index }
 
           keycode = get_keycode_via(layer,row_index,col_index)
-          new_map[row_index][col_index] = translate_keycode(keycode)
+          key = translate_keycode(keycode)
+          new_map[row_index][col_index] = key
         end
       end
       
       @keymaps[layer_name_sym] = new_map
       @layer_names << layer_name_sym unless @layer_names.index(layer_name_sym)
     end
+    load_mode_keys_via
     set_via_keymap_updated
   end
 
   def via_enable
     self.start_via(@rows.size, @entire_cols_size)
     #@layer = :"0"
+    @enable_via = true
     load_via_keymap
   end
   
@@ -1014,7 +1032,7 @@ class Keyboard
         $rgb.invoke_partner rgb_message if $rgb
       end
       
-      load_via_keymap if via_keymap_updated?
+      load_via_keymap if @enable_via && via_keymap_updated?
 
       time = cycle_time - (board_millis - now)
       sleep_ms(time) if time > 0
