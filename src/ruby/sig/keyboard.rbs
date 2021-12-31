@@ -79,7 +79,8 @@ class Keyboard
   def get_keycode_via : (Integer, Integer, Integer) -> Integer
   def via_keymap_updated?: -> bool
   def set_via_keymap_updated: -> void
-  def translate_keycode : (Integer) -> (Symbol | Integer) 
+  def translate_keycode : (Integer) -> (Symbol | Integer)
+  def get_via_layer_count: -> Integer
   def initialize: -> void
   def layer: () -> Symbol
   def set_anchor: (Symbol val) -> void

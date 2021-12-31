@@ -806,7 +806,7 @@ class Keyboard
   end
 
   def load_via_keymap
-    via_layer_count = 4
+    via_layer_count = get_via_layer_count
     via_layer_count.times do |layer|
       layer_name_sym = layer==0 ? :default : layer.to_s.intern
       new_map = Array.new(@rows.size)

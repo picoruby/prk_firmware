@@ -28,6 +28,10 @@ uint8_t dynamic_keymap_get_layer_count(void) {
     return KEYMAP_SIZE_BYTES / sizeof(uint16_t) / (via_setting.col_count * via_setting.row_count);
 }
 
+void c_get_via_layer_count(mrb_vm *vm, mrb_value *v, int argc) {
+    SET_INT_RETURN(dynamic_keymap_get_layer_count());
+}
+
 inline uint8_t eeprom_read_byte(uint8_t *address) {
     return *address;
 }

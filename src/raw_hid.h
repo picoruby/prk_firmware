@@ -25,7 +25,7 @@
     HID_COLLECTION_END
 
 #define VIA_PROTOCOL_VERSION 0x0009
-#define KEYMAP_SIZE_BYTES 40
+#define KEYMAP_SIZE_BYTES 128
 
 typedef uint32_t matrix_row_t;
 
@@ -70,6 +70,7 @@ void c_start_via(mrb_vm *vm, mrb_value *v, int argc);
 void c_get_keycode_via(mrb_vm *vm, mrb_value *v, int argc);
 void c_via_keymap_updated(mrb_vm *vm, mrb_value *v, int argc);
 void c_set_via_keymap_updated(mrb_vm *vm, mrb_value *v, int argc);
+void c_get_via_layer_count(mrb_vm *vm, mrb_value *v, int argc);
 void raw_hid_receive(uint8_t *data, uint8_t length);
 
 #endif

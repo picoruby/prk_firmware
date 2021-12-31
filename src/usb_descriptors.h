@@ -30,6 +30,7 @@ void c_tud_mounted_q(mrb_vm *vm, mrb_value *v, int argc);
   mrbc_define_method(0, mrbc_class_Keyboard, "get_keycode_via", c_get_keycode_via);\
   mrbc_define_method(0, mrbc_class_Keyboard, "via_keymap_updated?", c_via_keymap_updated);\
   mrbc_define_method(0, mrbc_class_Keyboard, "set_via_keymap_updated?", c_set_via_keymap_updated);\
+  mrbc_define_method(0, mrbc_class_Keyboard, "get_via_layer_count", c_get_via_layer_count);\
 } while (0)
 
 #endif /* USB_DESCRIPTORS_H_ */
