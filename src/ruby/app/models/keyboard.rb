@@ -520,20 +520,46 @@ class Keyboard
     end
   end
 
-  def init_pins(rows, cols)
-    puts "Initializing GPIO ..."
-    if @split
-      print "Configured as a split-type"
-      @anchor = tud_mounted?
-      if @anchor
-        uart_anchor_init(@uart_pin)
-        puts " Anchor"
-      else
-        uart_partner_init(@uart_pin)
-        puts " Partner"
-      end
+  def init_uart
+    return unless @split
+    print "Configured as a split-type"
+    @anchor = tud_mounted?
+    if @anchor
+      uart_anchor_init(@uart_pin)
+      puts " Anchor"
+    else
+      uart_partner_init(@uart_pin)
+      puts " Partner"
     end
     sleep_ms 500
+  end
+
+  def init_matrix_pins(matrix)
+    puts "Initializing GPIO."
+    init_uart
+    @matrix = Hash.new
+    matrix.each do |rows|
+      rows.each do |cell|
+        @matrix[cell[0]] = Hash.new unless @matrix[cell[0]]
+      end
+    end
+    matrix.each_with_index do |rows, row_index|
+      rows.each_with_index do |cell, col_index|
+        @matrix[cell[0]][cell[1]] = [row_index, col_index]
+      end
+    end
+  end
+
+  def init_pins(rows, cols)
+    matrix = Array.new
+    rows.each do |row|
+      line = Array.new
+      cols.each do |col|
+        line << [row, col]
+      end
+      matrix << line
+    end
+    init_matrix_pins matrix
     @rows = rows
     @cols = cols
     @rows.each do |pin|
@@ -553,7 +579,12 @@ class Keyboard
 
   def init_direct_pins(pins)
     set_scan_mode :direct
-    init_pins([], pins)
+    pins.each do |pin|
+      gpio_init(pin)
+      gpio_set_dir(pin, GPIO_IN);
+      gpio_pull_up(pin);
+    end
+    @direct_pins = pins
   end
 
   # Input
@@ -1014,7 +1045,7 @@ class Keyboard
 
   def scan_direct!
     switches = []
-    @cols.each_with_index do |col_pin, col|
+    @direct_pins.each_with_index do |col_pin, col|
       if gpio_get(col_pin) == LO
         switches << [0, col]
       end

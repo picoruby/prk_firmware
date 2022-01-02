@@ -14,6 +14,38 @@ class KeyboardTest < MrubycTestCase
 
   ##### Tests from here
 
+  description "init @direct_pins"
+  def direct_pins_case
+    @kbd.init_direct_pins([1,2,3,4])
+    assert_equal [1,2,3,4], @kbd.instance_variable_get("@direct_pins")
+  end
+
+  description "normal matrix of anchor"
+  def init_matrix_case
+    expectation = {
+      1 => { 3 => [0, 0], 4 => [0, 1] },
+      2 => { 3 => [1, 0], 4 => [1, 1] }
+    }
+    assert_equal expectation, @kbd.instance_variable_get("@matrix")
+  end
+
+  description "duplex matrix of anchor"
+  def init_duplex_matrix_case
+    @kbd.init_matrix_pins(
+      [
+        [ [1, 3], [1, 4], [3, 1], [4, 1] ],
+        [ [2, 3], [2, 4], [3, 2], [4, 2] ]
+      ]
+    )
+    expectation = {
+      1 => { 3 => [0, 0], 4 => [0, 1] },
+      3 => { 1 => [0, 2], 2 => [1, 2] },
+      4 => { 1 => [0, 3], 2 => [1, 3] },
+      2 => { 3 => [1, 0], 4 => [1, 1] }
+    }
+    assert_equal expectation, @kbd.instance_variable_get("@matrix")
+  end
+
   description "default layer"
   def default_layer
     assert_equal :default, @kbd.layer

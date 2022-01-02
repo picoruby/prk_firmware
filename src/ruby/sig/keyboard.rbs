@@ -46,8 +46,10 @@ class Keyboard
   @layer: Symbol
   @anchor: bool
   @anchor_left: bool
+  @direct_pins: Array[Integer]
   @rows: Array[Integer]
   @cols: Array[Integer]
+  @matrix: Hash[Integer, Hash[Integer, Array[Integer]]]
   @offset_a: Integer
   @offset_b: Integer
   @locked_layer: Symbol | nil
@@ -77,6 +79,8 @@ class Keyboard
   def set_anchor: (Symbol val) -> void
   def set_scan_mode: (Symbol val) -> void
   def split_style=: (Symbol style) -> void
+  def init_matrix_pins: (Array[Array[Integer]] matrix) -> void
+  def init_uart: () -> void
   def init_pins: (Array[Integer] rows, Array[Integer] cols) -> void
   def init_direct_pins: (Array[Integer] pins) -> void
   def add_layer: (Symbol name, Array[Symbol] map) -> void
