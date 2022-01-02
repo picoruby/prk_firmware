@@ -790,7 +790,10 @@ class Keyboard
   def translate_keycode(keycode)
     if (keycode>>8)==0
       if 0x00C0 <= keycode && keycode <= 0x00DF
-        return ("VIA_FUNC"+(keycode-0x00C0).to_s).intern
+        c = keycode - 192 #0x00C0
+        cs = c.to_s
+        s = "VIA_FUNC" + cs
+        return s.intern
       end
       return -(keycode & 0x00FF)
     else
