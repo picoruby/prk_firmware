@@ -82,7 +82,7 @@ class Keyboard
   def init_pins: (Array[Integer] rows, Array[Integer] cols) -> void
   def init_direct_pins: (Array[Integer] pins) -> void
   def add_layer: (Symbol name, Array[Symbol] map) -> void
-  def calculate_col_position: (Integer col_index) -> Integer
+  def calculate_col_position: (Integer col_index, Integer entire_cols_size) -> Integer
   def find_keycode_index: (Symbol key) -> (Integer | Symbol)
   def define_mode_key: (Symbol key_name, [Symbol | Array[Symbol] | Proc | nil, Symbol | Proc, Integer?, Integer?] param) -> void
   def invert_sft: -> void

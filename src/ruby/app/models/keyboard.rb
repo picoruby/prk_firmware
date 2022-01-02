@@ -605,12 +605,12 @@ class Keyboard
     new_map = Array.new(@rows_size)
     row_index = 0
     col_index = 0
-    @entire_cols_size = @split ? @cols_size * 2 : @cols_size
+    entire_cols_size = @split ? @cols_size * 2 : @cols_size
     map.each do |key|
       new_map[row_index] = Array.new(@cols_size) if col_index == 0
-      col_position = calculate_col_position(col_index)
+      col_position = calculate_col_position(col_index, entire_cols_size)
       new_map[row_index][col_position] = find_keycode_index(key)
-      if col_index == @entire_cols_size - 1
+      if col_index == entire_cols_size - 1
         col_index = 0
         row_index += 1
       else
@@ -621,18 +621,22 @@ class Keyboard
     @layer_names << name
   end
 
-  def calculate_col_position(col_index)
+  def calculate_col_position(col_index, entire_cols_size)
     return col_index unless @split
-
     case @split_style
+    # `when STANDARD_SPLIT` can be deleted after fixing a picoruby's bug
+    #   https://github.com/picoruby/picoruby/issues/74
     when STANDARD_SPLIT
       col_index
     when RIGHT_SIDE_FLIPPED_SPLIT
       if col_index < @cols_size
         col_index
       else
-        @entire_cols_size - (col_index - @cols_size) - 1
+        entire_cols_size - (col_index - @cols_size) - 1
       end
+    else
+      # Should not happen but be guarded to pass steep check.
+      col_index
     end
   end
 
