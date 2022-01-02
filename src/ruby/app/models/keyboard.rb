@@ -537,15 +537,39 @@ class Keyboard
   def init_matrix_pins(matrix)
     puts "Initializing GPIO."
     init_uart
+    @rows_size = matrix.size
+    @cols_size = 0
     @matrix = Hash.new
-    matrix.each do |rows|
-      rows.each do |cell|
+    matrix.each do |cols|
+      @cols_size = cols.size if @cols_size < cols.size
+      cols.each do |cell|
         @matrix[cell[0]] = Hash.new unless @matrix[cell[0]]
       end
     end
+    offset_a = (@cols_size / 2.0).ceil_to_i
+    offset_b = @cols_size * 2 - offset_a - 1
     matrix.each_with_index do |rows, row_index|
-      rows.each_with_index do |cell, col_index|
+      rows.each_with_index do |cell, index|
+        col_index = if @anchor_left
+          if @anchor # left
+            index
+          else # right
+            (index - offset_a) * -1 + offset_b
+          end
+        else # right side is the anchor
+          unless @anchor # left
+            index
+          else # right
+            (index - offset_a) * -1 + offset_b
+          end
+        end
         @matrix[cell[0]][cell[1]] = [row_index, col_index]
+        gpio_init(cell[0])
+        gpio_set_dir(cell[0], GPIO_IN);
+        gpio_pull_up(cell[0]);
+        gpio_init(cell[1])
+        gpio_set_dir(cell[1], GPIO_IN);
+        gpio_pull_up(cell[1]);
       end
     end
   end
@@ -560,21 +584,6 @@ class Keyboard
       matrix << line
     end
     init_matrix_pins matrix
-    @rows = rows
-    @cols = cols
-    @rows.each do |pin|
-      gpio_init(pin)
-      gpio_set_dir(pin, GPIO_OUT);
-      gpio_put(pin, HI);
-    end
-    @cols.each do |pin|
-      gpio_init(pin)
-      gpio_set_dir(pin, GPIO_IN);
-      gpio_pull_up(pin);
-    end
-    # for split type
-    @offset_a = (@cols.size / 2.0).ceil_to_i
-    @offset_b = @cols.size * 2 - @offset_a - 1
   end
 
   def init_direct_pins(pins)
@@ -593,12 +602,12 @@ class Keyboard
   # Result
   #   layer: { default:      [ [ -0x04, -0x05, 0b00000001, :MACRO_1 ],... ] }
   def add_layer(name, map)
-    new_map = Array.new(@rows.size)
+    new_map = Array.new(@rows_size)
     row_index = 0
     col_index = 0
-    @entire_cols_size = @split ? @cols.size * 2 : @cols.size
+    @entire_cols_size = @split ? @cols_size * 2 : @cols_size
     map.each do |key|
-      new_map[row_index] = Array.new(@cols.size) if col_index == 0
+      new_map[row_index] = Array.new(@cols_size) if col_index == 0
       col_position = calculate_col_position(col_index)
       new_map[row_index][col_position] = find_keycode_index(key)
       if col_index == @entire_cols_size - 1
@@ -619,10 +628,10 @@ class Keyboard
     when STANDARD_SPLIT
       col_index
     when RIGHT_SIDE_FLIPPED_SPLIT
-      if col_index < @cols.size
+      if col_index < @cols_size
         col_index
       else
-        @entire_cols_size - (col_index - @cols.size) - 1
+        @entire_cols_size - (col_index - @cols_size) - 1
       end
     end
   end
@@ -1012,33 +1021,16 @@ class Keyboard
   def scan_matrix!
     switches = []
     # detect physical switches that are pushed
-    @rows.each_with_index do |row_pin, row|
-      gpio_put(row_pin, LO)
-      @cols.each_with_index do |col_pin, col|
-        if gpio_get(col_pin) == LO
-          col_data = if @anchor_left
-                       if @anchor
-                         # left
-                         col
-                       else
-                         # right
-                         (col - @offset_a) * -1 + @offset_b
-                       end
-                     else # right side is the anchor
-                       unless @anchor
-                         # left
-                         col
-                       else
-                         # right
-                         (col - @offset_a) * -1 + @offset_b
-                       end
-                     end
-          switches << [row, col_data]
+    @matrix.each do |out_pin, in_pins|
+      gpio_set_dir(out_pin, GPIO_OUT)
+      gpio_put(out_pin, LO)
+      in_pins.each do |in_pin, switch|
+        if gpio_get(in_pin) == LO
+          switches << switch
         end
-        # @type break: nil
-        break if switches.size >= @cols.size
       end
-      gpio_put(row_pin, HI)
+      gpio_set_dir(out_pin, GPIO_IN)
+      gpio_pull_up(out_pin)
     end
     return switches
   end

@@ -47,11 +47,9 @@ class Keyboard
   @anchor: bool
   @anchor_left: bool
   @direct_pins: Array[Integer]
-  @rows: Array[Integer]
-  @cols: Array[Integer]
+  @rows_size: Integer
+  @cols_size: Integer
   @matrix: Hash[Integer, Hash[Integer, Array[Integer]]]
-  @offset_a: Integer
-  @offset_b: Integer
   @locked_layer: Symbol | nil
   @keycodes: Array[String]
   @macro_keys: Array[Integer]

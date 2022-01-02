@@ -4,7 +4,6 @@ class KeyboardTest < MrubycTestCase
     kbd = Keyboard.new
     mock(kbd).gpio_init(1)
     mock(kbd).gpio_set_dir(2)
-    mock(kbd).gpio_put(2)
     mock(kbd).gpio_pull_up(1)
   end
   def setup
@@ -27,6 +26,43 @@ class KeyboardTest < MrubycTestCase
       2 => { 3 => [1, 0], 4 => [1, 1] }
     }
     assert_equal expectation, @kbd.instance_variable_get("@matrix")
+    assert_equal 2, @kbd.instance_variable_get("@rows_size")
+    assert_equal 2, @kbd.instance_variable_get("@cols_size")
+  end
+
+  description "normal matrix of partner"
+  def init_partner_matrix_case
+    kbd = Keyboard.new
+    stub(kbd).tud_mounted? { false }
+    mock(kbd).uart_partner_init(1)
+    kbd.split = true
+    kbd.init_pins([1,2], [3,4])
+    expectation = {
+      1 => { 3 => [0, 3], 4 => [0, 2] },
+      2 => { 3 => [1, 3], 4 => [1, 2] }
+    }
+    assert_equal expectation, kbd.instance_variable_get("@matrix")
+  end
+
+  description "duplex matrix of partner"
+  def init_duplex_partner_matrix_case
+    kbd = Keyboard.new
+    stub(kbd).tud_mounted? { false }
+    mock(kbd).uart_partner_init(1)
+    kbd.split = true
+    kbd.init_matrix_pins(
+      [
+        [ [1, 3], [1, 4], [3, 1], [4, 1] ],
+        [ [2, 3], [2, 4], [3, 2], [4, 2] ]
+      ]
+    )
+    expectation = {
+      1 => { 3 => [0, 7], 4 => [0, 6] },
+      3 => { 1 => [0, 5], 2 => [1, 5] },
+      4 => { 1 => [0, 4], 2 => [1, 4] },
+      2 => { 3 => [1, 7], 4 => [1, 6] }
+    }
+    assert_equal expectation, kbd.instance_variable_get("@matrix")
   end
 
   description "duplex matrix of anchor"
@@ -44,6 +80,8 @@ class KeyboardTest < MrubycTestCase
       2 => { 3 => [1, 0], 4 => [1, 1] }
     }
     assert_equal expectation, @kbd.instance_variable_get("@matrix")
+    assert_equal 2, @kbd.instance_variable_get("@rows_size")
+    assert_equal 4, @kbd.instance_variable_get("@cols_size")
   end
 
   description "default layer"
