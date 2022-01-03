@@ -3,10 +3,20 @@
 #include "value.h"
 #include "pico/time.h"
 #include <mrubyc.h>
+#include "hardware/flash.h"
+#include "pico/stdlib.h"
 
-via_keyboard_t via_setting;
+#define MAGIC 0xDEADBEEF
+
+via_keyboard_t via_setting = {
+    .col_count = 2,
+    .row_count = 2,
+};
+
 uint8_t eeprom[KEYMAP_SIZE_BYTES];
+const uint8_t *via_flash = (const uint8_t *) (XIP_BASE + VIA_KEYMAP_FLASH_OFFSET);
 bool keymap_updated = false;
+bool keymap_saved = true;
 
 void c_via_keymap_updated(mrb_vm *vm, mrb_value *v, int argc) {
     if(keymap_updated) {
@@ -21,7 +31,13 @@ void c_set_via_keymap_updated(mrb_vm *vm, mrb_value *v, int argc) {
 }
 
 void save_keymap(void) {
-    return;
+    if(! keymap_saved) {
+        uint32_t ints = save_and_disable_interrupts();
+        flash_range_erase(VIA_KEYMAP_FLASH_OFFSET, (KEYMAP_SIZE_BYTES/FLASH_SECTOR_SIZE+1)*FLASH_SECTOR_SIZE);
+        flash_range_program(VIA_KEYMAP_FLASH_OFFSET, eeprom, ( KEYMAP_SIZE_BYTES/FLASH_PAGE_SIZE +1)*FLASH_PAGE_SIZE);
+        restore_interrupts(ints);
+        keymap_saved = true;
+    }
 }
 
 uint8_t dynamic_keymap_get_layer_count(void) {
@@ -73,6 +89,37 @@ void dynamic_keymap_set_keycode(uint8_t layer, uint8_t row, uint8_t column, uint
     eeprom_update_byte(address + 1, (uint8_t)(keycode & 0xFF));
 }
 
+bool dynamic_keymap_initialized() {
+    for(uint8_t i=0; i<4; i++) {
+        if( *(via_flash-FLASH_PAGE_SIZE+i) != (0x00FF & (MAGIC>>8*(3-i))) ) {
+            return false;
+        }
+    }
+    return true;
+}
+
+void c_via_initialized(mrb_vm *vm, mrb_value *v, int argc) {
+    if( dynamic_keymap_initialized() ) {
+        SET_TRUE_RETURN();
+    } else { 
+        SET_FALSE_RETURN();
+    } 
+}
+
+void c_via_set_initialized(mrb_vm *vm, mrb_value *v, int argc) {
+    uint8_t data[FLASH_PAGE_SIZE];
+    memset(data, 0, FLASH_PAGE_SIZE);
+
+    for(uint8_t i=0; i<4; i++) {
+        *(data+i) = 0xFF & ( MAGIC>>(8*(3-i)) );
+    }
+
+    uint32_t ints = save_and_disable_interrupts();
+    flash_range_erase(VIA_KEYMAP_FLASH_OFFSET-FLASH_SECTOR_SIZE, FLASH_SECTOR_SIZE);
+    flash_range_program(VIA_KEYMAP_FLASH_OFFSET-FLASH_PAGE_SIZE, data, FLASH_PAGE_SIZE);
+    restore_interrupts(ints);
+}
+
 void dynamic_keymap_get_buffer(uint16_t offset, uint16_t size, uint8_t *data) {
     uint16_t dynamic_keymap_eeprom_size = dynamic_keymap_get_layer_count() * via_setting.row_count * via_setting.col_count * 2;
     uint8_t *source                     = (via_get_eeprom_addr() + offset);
@@ -101,9 +148,23 @@ void dynamic_keymap_set_buffer(uint16_t offset, uint16_t size, uint8_t *data) {
     }
 }
 
+void c_via_set_key(mrb_vm *vm, mrb_value *v, int argc) {
+    uint8_t layer = GET_INT_ARG(1);
+    uint8_t row = GET_INT_ARG(2);
+    uint8_t col = GET_INT_ARG(3);
+    uint16_t keycode = GET_INT_ARG(4);
+    dynamic_keymap_set_keycode(layer, row, col, keycode);
+}
+
 void c_start_via(mrb_vm *vm, mrb_value *v, int argc) {
     via_setting.row_count = GET_INT_ARG(1);
     via_setting.col_count = GET_INT_ARG(2);
+    
+    if(dynamic_keymap_initialized()) {
+        memcpy(eeprom, via_flash, KEYMAP_SIZE_BYTES);
+    } else {
+        memset(eeprom, 0, KEYMAP_SIZE_BYTES);
+    }
 }
 
 void raw_hid_send(uint8_t *data, uint8_t len) {
@@ -227,6 +288,7 @@ void raw_hid_receive(uint8_t *data, uint8_t length) {
         case id_dynamic_keymap_set_keycode: {
             dynamic_keymap_set_keycode(command_data[0], command_data[1], command_data[2], (command_data[3] << 8) | command_data[4]);
             keymap_updated = true;
+            keymap_saved = false;
             break;
         }
         case id_dynamic_keymap_reset: {
@@ -267,9 +329,9 @@ void raw_hid_receive(uint8_t *data, uint8_t length) {
             uint16_t offset = (command_data[0] << 8) | command_data[1];
             uint16_t size   = command_data[2];  // size <= 28
             dynamic_keymap_get_buffer(offset, size, &command_data[3]);
-            if( keymap_updated ) {
+            if(! keymap_saved ) {
                 save_keymap();
-                keymap_updated = false;
+                keymap_saved = true;
             }
             break;
         }
@@ -278,6 +340,7 @@ void raw_hid_receive(uint8_t *data, uint8_t length) {
             uint16_t size   = command_data[2];  // size <= 28
             dynamic_keymap_set_buffer(offset, size, &command_data[3]);
             keymap_updated = true;
+            keymap_saved = false;
             break;
         }
         default: {

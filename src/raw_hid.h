@@ -2,6 +2,10 @@
 #define RAW_HID_H_
 
 #include "hid.h"
+//#include "msc_disk.h"
+
+// using 448KB for keymap.rb, 64KB for VIA of 2MB RAM
+#define VIA_KEYMAP_FLASH_OFFSET ( 0x00180000+0x70000 )
 
 #define REPORT_RAW_MAX_LEN 0x20
 #define RAW_HID_REPORT_DESC(...) \
@@ -25,7 +29,7 @@
     HID_COLLECTION_END
 
 #define VIA_PROTOCOL_VERSION 0x0009
-#define KEYMAP_SIZE_BYTES 128
+#define KEYMAP_SIZE_BYTES 256
 
 typedef uint32_t matrix_row_t;
 
@@ -71,6 +75,10 @@ void c_get_keycode_via(mrb_vm *vm, mrb_value *v, int argc);
 void c_via_keymap_updated(mrb_vm *vm, mrb_value *v, int argc);
 void c_set_via_keymap_updated(mrb_vm *vm, mrb_value *v, int argc);
 void c_get_via_layer_count(mrb_vm *vm, mrb_value *v, int argc);
+void c_via_set_key(mrb_vm *vm, mrb_value *v, int argc);
+void c_via_initialized(mrb_vm *vm, mrb_value *v, int argc);
+void c_via_set_initialized(mrb_vm *vm, mrb_value *v, int argc);
+
 void raw_hid_receive(uint8_t *data, uint8_t length);
 
 #endif

@@ -833,6 +833,28 @@ class Keyboard
 
   def via_enable
     self.start_via(@rows.size, @entire_cols_size)
+
+    unless via_initialized?
+      via_layer_count = get_via_layer_count
+      l = 0
+      @keymaps.each do |name, map|
+        @rows.size.times do |row_index|
+          @entire_cols_size.times do |col_index|
+            key = map[row_index][col_index]
+            case key.class
+            when Integer
+              # @type var key: Integer
+              via_set_key(l, row_index, col_index, -key)
+            else
+              via_set_key(l, row_index, col_index, 0)
+            end
+          end
+        end
+        l += 1
+        break @keymap if via_layer_count==l
+      end
+      via_set_initialized
+    end
     #@layer = :"0"
     @enable_via = true
     load_via_keymap
