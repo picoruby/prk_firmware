@@ -2,14 +2,21 @@
 
 #include "hardware/gpio.h"
 
+#define GPIO_IN          0b000
+#define GPIO_IN_PULLUP   0b010
+#define GPIO_IN_PULLDOWN 0b110
+#define GPIO_OUT         0b001
+#define GPIO_OUT_LO      0b011
+#define GPIO_OUT_HI      0b101
+
 void
 c_gpio_get(mrb_vm *vm, mrb_value *v, int argc)
 {
   int gpio = GET_INT_ARG(1);
   if (gpio_get(gpio)) {
-    SET_INT_RETURN(1);
+    SET_TRUE_RETURN();
   } else {
-    SET_INT_RETURN(0);
+    SET_FALSE_RETURN();
   }
 }
 
@@ -22,7 +29,21 @@ c_gpio_init(mrb_vm *vm, mrb_value *v, int argc)
 void
 c_gpio_set_dir(mrb_vm *vm, mrb_value *v, int argc)
 {
-  gpio_set_dir(GET_INT_ARG(1), GET_INT_ARG(2));
+  if (GET_INT_ARG(2)&1 == GPIO_OUT) {
+    gpio_set_dir(GET_INT_ARG(1), true);
+    if (GET_INT_ARG(2) == GPIO_OUT_LO) {
+      gpio_put(GET_INT_ARG(1), 0);
+    } else if (GET_INT_ARG(2) == GPIO_OUT_HI) {
+      gpio_put(GET_INT_ARG(1), 1);
+    }
+  } else {
+    gpio_set_dir(GET_INT_ARG(1), false);
+    if (GET_INT_ARG(2) == GPIO_IN_PULLUP) {
+      gpio_pull_up(GET_INT_ARG(1));
+    } else if (GET_INT_ARG(2) == GPIO_IN_PULLDOWN) {
+      gpio_pull_down(GET_INT_ARG(1));
+    }
+  }
 }
 
 void

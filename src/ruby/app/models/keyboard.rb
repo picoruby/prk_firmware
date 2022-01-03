@@ -1,9 +1,10 @@
 class Keyboard
-  GPIO_OUT = 1
-  GPIO_IN  = 0
-
-  HI = 1
-  LO = 0
+  GPIO_IN          = 0b000
+  GPIO_IN_PULLUP   = 0b010
+  GPIO_IN_PULLDOWN = 0b110
+  GPIO_OUT         = 0b001
+  GPIO_OUT_LO      = 0b011
+  GPIO_OUT_HI      = 0b101
 
   MOD_KEYCODE = {
     KC_LCTL: 0b00000001,
@@ -565,11 +566,9 @@ class Keyboard
         end
         @matrix[cell[0]][cell[1]] = [row_index, col_index]
         gpio_init(cell[0])
-        gpio_set_dir(cell[0], GPIO_IN);
-        gpio_pull_up(cell[0]);
+        gpio_set_dir(cell[0], GPIO_IN_PULLUP)
         gpio_init(cell[1])
-        gpio_set_dir(cell[1], GPIO_IN);
-        gpio_pull_up(cell[1]);
+        gpio_set_dir(cell[1], GPIO_IN_PULLUP)
       end
     end
   end
@@ -590,8 +589,7 @@ class Keyboard
     set_scan_mode :direct
     pins.each do |pin|
       gpio_init(pin)
-      gpio_set_dir(pin, GPIO_IN);
-      gpio_pull_up(pin);
+      gpio_set_dir(pin, GPIO_IN_PULLUP)
     end
     @direct_pins = pins
   end
@@ -1029,12 +1027,11 @@ class Keyboard
       gpio_set_dir(out_pin, GPIO_OUT)
       gpio_put(out_pin, LO)
       in_pins.each do |in_pin, switch|
-        if gpio_get(in_pin) == LO
+        if gpio_get(in_pin)
           switches << switch
         end
       end
-      gpio_set_dir(out_pin, GPIO_IN)
-      gpio_pull_up(out_pin)
+      gpio_set_dir(out_pin, GPIO_IN_PULLUP)
     end
     return switches
   end
@@ -1042,7 +1039,7 @@ class Keyboard
   def scan_direct!
     switches = []
     @direct_pins.each_with_index do |col_pin, col|
-      if gpio_get(col_pin) == LO
+      if gpio_get(col_pin)
         switches << [0, col]
       end
     end

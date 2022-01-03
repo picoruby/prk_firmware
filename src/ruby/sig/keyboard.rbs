@@ -8,10 +8,13 @@ class Object
 end
 
 class Keyboard
-  GPIO_OUT: Integer
   GPIO_IN: Integer
-  HI: Integer
-  LO: Integer
+  GPIO_IN_PULLUP: Integer
+  GPIO_IN_PULLDOWN: Integer
+  GPIO_OUT: Integer
+  GPIO_OUT_LO: Integer
+  GPIO_OUT_HI: Integer
+
   MOD_KEYCODE: Hash[Symbol, Integer]
   KEYCODE: Array[Symbol]
   KEYCODE_SFT: Hash[Symbol, Integer]

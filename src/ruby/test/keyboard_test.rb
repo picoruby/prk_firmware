@@ -4,7 +4,6 @@ class KeyboardTest < MrubycTestCase
     kbd = Keyboard.new
     mock(kbd).gpio_init(1)
     mock(kbd).gpio_set_dir(2)
-    mock(kbd).gpio_pull_up(1)
   end
   def setup
     @kbd = Keyboard.new
