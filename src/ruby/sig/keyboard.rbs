@@ -77,6 +77,9 @@ class Keyboard
   def start_via : (Integer, Integer) -> void
   def via_initialized?: -> bool
   def via_set_initialized: -> void
+  def raw_hid_report_received: -> bool
+  def get_last_received_raw_hid_report: -> Array[Integer]
+  def report_raw_hid : (Array[Integer]) -> void
   def load_via_keymap: -> void
   def get_keycode_via : (Integer, Integer, Integer) -> Integer
   def via_set_key : (Integer, Integer, Integer, Integer) -> void

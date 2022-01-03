@@ -273,6 +273,26 @@ void tud_hid_set_report_cb(uint8_t instance, uint8_t report_id, hid_report_type_
     return;
 }
 
+void c_raw_hid_report_received(mrb_vm *vm, mrb_value *v, int argc) {
+  if(raw_hid_report_received) {
+    SET_TRUE_RETURN();
+  } else {
+    SET_FALSE_RETURN();
+  }
+}
+
+void c_get_last_received_raw_hid_report(mrb_vm *vm, mrb_value *v, int argc) {
+  mrbc_value rb_val_array = mrbc_array_new(vm, REPORT_RAW_MAX_LEN);
+  mrbc_array *rb_array = rb_val_array.array;
+
+  rb_array->n_stored = raw_hid_last_received_report_length;
+  for(uint8_t i=0; i<raw_hid_last_received_report_length && i<REPORT_RAW_MAX_LEN; i++) {
+    mrbc_set_integer( (rb_array->data)+i, raw_hid_last_received_report[i] );
+  } 
+  raw_hid_report_received = false;
+
+  SET_RETURN(rb_val_array);
+}
 
 void report_raw_hid(uint8_t* data, uint8_t len)
 {
@@ -280,6 +300,18 @@ void report_raw_hid(uint8_t* data, uint8_t len)
   if (tud_hid_ready()) {
     tud_hid_report(REPORT_ID_RAWHID, data, len);
   }
+}
+
+void c_report_raw_hid(mrb_vm *vm, mrb_value *v, int argc) {
+  mrbc_array rb_ary = *( GET_ARY_ARG(1).array );
+  uint8_t c_data[REPORT_RAW_MAX_LEN];
+
+  memset(c_data, 0, REPORT_RAW_MAX_LEN);
+
+  for(uint8_t i=0; i<rb_ary.n_stored && i<REPORT_RAW_MAX_LEN; i++) {
+    c_data[i] = mrbc_integer(rb_ary.data[i]);
+  }
+  report_raw_hid(c_data, rb_ary.n_stored<REPORT_RAW_MAX_LEN ? rb_ary.n_stored : REPORT_RAW_MAX_LEN );
 }
 
 //--------------------------------------------------------------------+
