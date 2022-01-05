@@ -1,5 +1,29 @@
 # Change log
 
+## 0.9.10 on 2022/01/06
+### Keyboard#define_composite_key
+
+Now you can define a composite key that reports multiple keycodes at once.
+
+Let's say there is a five-keys pad. You can make the most useful programming tool like this:
+
+```ruby
+kbd.add_layer :default, %i(KC_SPACE CUT COPY PASTE KC_ENTER)
+kbd.define_composite_key :CUT,   %i(KC_LCTL KC_X)
+kbd.define_composite_key :COPY,  %i(KC_LCTL KC_C)
+kbd.define_composite_key :PASTE, %i(KC_LCTL KC_V)
+```
+
+You can also write the equivalent keymap in this way:
+
+```ruby
+kbd.add_layer :default, [ :KC_SPACE, [:KC_LCTL, :KC_X], [:KC_LCTL, :KC_C], [:KC_LCTL, :KC_V], :KC_ENTER ]
+```
+
+If you prefer to make an array of symbols with `%i` syntax, the former should seem elegant.
+
+If you don't mind typing more colons, commas, and nested brackets, the latter would be intuitive.
+
 ## 0.9.9 on 2021/12/15
 ### Supports direct scan👏
 
