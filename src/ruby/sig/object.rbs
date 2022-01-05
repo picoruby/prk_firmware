@@ -22,4 +22,6 @@ class Object
   def gpio_pull_up : (Integer) -> void
   def gpio_put : (Integer, Integer) -> void
   def gpio_get : (Integer) -> Integer
+  def write_file_internal : (String, Array[Integer]) -> void
+  def find_file : (String) -> bool
 end
