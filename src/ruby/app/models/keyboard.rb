@@ -444,6 +444,7 @@ class Keyboard
     @SHIFT_LETTER_OFFSET_UNDS    = @SHIFT_LETTER_THRESHOLD_UNDS - KEYCODE_SFT[:KC_UNDS]
     @before_filters = Array.new
     @keymaps = Hash.new
+    @composite_keys = Array.new
     @mode_keys = Array.new
     @switches = Array.new
     @layer_names = Array.new
@@ -569,7 +570,22 @@ class Keyboard
     map.each do |key|
       new_map[row_index] = Array.new(@cols.size) if col_index == 0
       col_position = calculate_col_position(col_index)
-      new_map[row_index][col_position] = find_keycode_index(key)
+      case key.class
+      when Symbol
+        # @type var map: Array[Symbol]
+        # @type var key: Symbol
+        new_map[row_index][col_position] = find_keycode_index(key)
+      when Array
+        # @type var map: Array[Array[Symbol]]
+        # @type var key: Array[Symbol]
+        composite_key = key.join("_").to_sym
+        new_map[row_index][col_position] = composite_key
+        @composite_keys << {
+          layer: name,
+          keycodes: convert_composite_keys(key),
+          switch: [row_index, col_position]
+        }
+      end
       if col_index == @entire_cols_size - 1
         col_index = 0
         row_index += 1
@@ -613,6 +629,35 @@ class Keyboard
     end
   end
 
+  def convert_composite_keys(keys)
+    keys.map do |sym|
+      keycode_index = KEYCODE.index(sym)
+      if keycode_index
+        keycode_index * -1
+      elsif KEYCODE_SFT[sym]
+        (KEYCODE_SFT[sym] + 0x100) * -1
+      else # Should be a modifier
+        MOD_KEYCODE[sym]
+      end
+    end
+  end
+
+  def define_composite_key(key_name, keys)
+    @keymaps.each do |layer, map|
+      map.each_with_index do |row, row_index|
+        row.each_with_index do |key_symbol, col_index|
+          if key_name == key_symbol
+            @composite_keys << {
+              layer: layer,
+              keycodes: convert_composite_keys(keys),
+              switch: [row_index, col_index]
+            }
+          end
+        end
+      end
+    end
+  end
+
   # param[0] :on_release
   # param[1] :on_hold
   # param[2] :release_threshold
@@ -640,18 +685,7 @@ class Keyboard
             when Array
               # @type var on_release: Array[Symbol]
               # @type var ary: Array[Integer]
-              ary = Array.new
-              on_release.each do |sym|
-                keycode_index = KEYCODE.index(sym)
-                ary << if keycode_index
-                  keycode_index * -1
-                elsif KEYCODE_SFT[sym]
-                  (KEYCODE_SFT[sym] + 0x100) * -1
-                else # Should be a modifier
-                  MOD_KEYCODE[sym]
-                end
-              end
-              ary
+              convert_composite_keys(on_release)
             when Proc
               # @type var on_release: Proc
               on_release
@@ -836,6 +870,12 @@ class Keyboard
         end
 
         desired_layer = @layer
+        @composite_keys.each do |composite_key|
+          next if composite_key[:layer] != @layer
+          if @switches.include?(composite_key[:switch])
+            action_on_release(composite_key[:keycodes])
+          end
+        end
         @mode_keys.each do |mode_key|
           next if mode_key[:layer] != @layer
           if @switches.include?(mode_key[:switch])

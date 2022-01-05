@@ -29,6 +29,11 @@ class Keyboard
 
   @before_filters: Array[^() -> void]
   @keymaps: Hash[Symbol, Array[Array[Integer | Symbol | Proc]]]
+  @composite_keys: Array[{
+    layer:             Symbol,
+    keycodes:          Array[Integer],
+    switch:            [Integer, Integer],
+  }]
   @mode_keys: Array[{
     layer:             Symbol,
     on_release:        Integer | Array[Integer] | Proc | nil,
@@ -39,8 +44,7 @@ class Keyboard
     prev_state:        Symbol,
     pushed_at:         Integer,
     released_at:       Integer
-    }
-    ]
+  }]
   @switches: Array[Array[Integer]]
   @layer_names: Array[Symbol]
   @layer: Symbol
@@ -79,9 +83,11 @@ class Keyboard
   def split_style=: (Symbol style) -> void
   def init_pins: (Array[Integer] rows, Array[Integer] cols) -> void
   def init_direct_pins: (Array[Integer] pins) -> void
-  def add_layer: (Symbol name, Array[Symbol] map) -> void
+  def convert_composite_keys: (Array[Symbol]) -> Array[Integer]
+  def add_layer: (Symbol name, Array[ Symbol | Array[Symbol] ] map) -> void
   def calculate_col_position: (Integer col_index) -> Integer
   def find_keycode_index: (Symbol key) -> (Integer | Symbol)
+  def define_composite_key: (Symbol key_name, Array[Symbol] keys) -> void
   def define_mode_key: (Symbol key_name, [Symbol | Array[Symbol] | Proc | nil, Symbol | Proc, Integer?, Integer?] param) -> void
   def invert_sft: -> void
   def before_report: () { () -> void } -> void
