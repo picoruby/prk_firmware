@@ -23,5 +23,6 @@ class Object
   def gpio_put : (Integer, Integer) -> void
   def gpio_get : (Integer) -> Integer
   def write_file_internal : (String, Array[Integer]) -> void
-  def file_exist? : (String) -> bool
+  def find_file : (String) -> ( [Integer, Integer] | nil )
+  def read_file : (Integer, Integer) -> Array[Integer]
 end

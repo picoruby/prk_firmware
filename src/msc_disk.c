@@ -56,6 +56,7 @@ https://github.com/picoruby/prk_firmware\n"
 #define FAT_START ( (uint8_t*)FLASH_MMAP_ADDR+FLASH_SECTOR_SIZE*1 )
 
 void c_find_file(mrb_vm *vm, mrb_value *v, int argc);
+void c_read_file(mrb_vm *vm, mrb_value *v, int argc);
 
 uint8_t msc_disk[4][SECTOR_SIZE] =
 {
@@ -292,7 +293,7 @@ int32_t tud_msc_scsi_cb (uint8_t lun, uint8_t const scsi_cmd[16], void* buffer, 
 }
 
 void
-msc_write_file(const char *filename, uint8_t *data, uint16_t length);
+msc_write_file(const char *filename, const uint8_t *data, uint16_t length);
 
 void msc_init(void)
 {
@@ -321,8 +322,9 @@ void msc_init(void)
   msc_write_file("ROOTDIR bin", buf_rootdir, FLASH_SECTOR_SIZE-1);
   restore_interrupts(ints);
 */
-  mrbc_define_method(0, mrbc_class_object, "write_file_internal",  c_write_file_internal);
-  mrbc_define_method(0, mrbc_class_object, "file_exist?",  c_find_file);
+  mrbc_define_method(0, mrbc_class_object, "write_file_internal", c_write_file_internal);
+  mrbc_define_method(0, mrbc_class_object, "find_file", c_find_file);
+  mrbc_define_method(0, mrbc_class_object, "read_file", c_read_file);
 }
 
 /*
@@ -350,18 +352,46 @@ msc_findDirEnt(const char *filename, DirEnt *entry)
 void c_find_file(mrb_vm *vm, mrb_value *v, int argc) {
   uint8_t *rb_filename = GET_STRING_ARG(1);
   DirEnt entry;
-  
+  mrbc_value return_val = mrbc_array_new(vm, 2);
+  mrbc_array *rb_array = return_val.array;
+
   msc_findDirEnt(rb_filename, &entry);
 
   if(strncmp(rb_filename, entry.Name, 11)==0) {
-    SET_TRUE_RETURN();
+    rb_array->n_stored = 2;
+    mrbc_set_integer( rb_array->data, entry.FstClusLO );
+    mrbc_set_integer( rb_array->data+1, entry.FileSize );
+    SET_RETURN(return_val);
   } else {
-    SET_FALSE_RETURN();
+    SET_NIL_RETURN();
   }
 }
 
+uint8_t*
+msc_read_sector(uint16_t sector)
+{
+  return (uint8_t*)(FLASH_MMAP_ADDR + (SECTOR_SIZE * (1+sector)));
+}
+
 void
-msc_write_file(const char *filename, uint8_t *data, uint16_t length)
+c_read_file(mrb_vm *vm, mrb_value *v, int argc) {
+  uint16_t sector = GET_INT_ARG(1);
+  uint16_t length = GET_INT_ARG(2);
+
+  mrbc_value rb_val_array = mrbc_array_new(vm, length);
+  mrbc_array *rb_array = rb_val_array.array;
+  uint8_t *data = msc_read_sector(sector);
+
+  rb_array->n_stored = length;
+  for(uint16_t i=0; i<length; i++) {
+    mrbc_set_integer( (rb_array->data)+i, data[i] );
+  }
+
+  SET_RETURN(rb_val_array);
+}
+
+void
+msc_write_file(const char *filename, const uint8_t *data, uint16_t length)
 {
   DirEnt entry;
   void* addr;

@@ -892,7 +892,26 @@ class Keyboard
   def via_enable
     self.start_via(@rows.size, @entire_cols_size)
 
-    unless file_exist?(VIA_FILENAME)
+    fileinfo = find_file(VIA_FILENAME)
+    if fileinfo
+      script = ""
+      ary = read_file(fileinfo[0], fileinfo[1])
+      ary.each do |i|
+        script << i.chr;
+      end
+
+      ret = eval_val(script)
+      
+      if ret.class == Array
+        # @type var ret: Array[Array[Symbol]]
+        ret.each_with_index do |map,i|
+          layer_name_str = "VIA_LAYER"+i.to_s
+          layer_name = i==0 ? :default : layer_name_str.intern
+
+          add_layer layer_name, map
+        end
+      end
+    else
       save_keymap_via
     end
 
@@ -1224,6 +1243,25 @@ class Keyboard
       end
     else
       macro("Error: Compile failed")
+    end
+  end
+
+  def eval_val(script)
+    if sandbox_picorbc(script)
+      if sandbox_resume
+        n = 0
+        while sandbox_state != 0 do # 0: TASKSTATE_DORMANT == finished(?)
+          sleep_ms 50
+          n += 50
+          if n > 10000
+            puts "Error: Timeout (sandbox_state: #{sandbox_state})"
+            break;
+          end
+        end
+        return sandbox_result
+      end
+    else
+      return nil
     end
   end
 

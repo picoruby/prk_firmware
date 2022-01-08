@@ -25,12 +25,7 @@ void c_report_raw_hid(mrb_vm *vm, mrb_value *v, int argc);
 void c_raw_hid_report_received(mrb_vm *vm, mrb_value *v, int argc);
 void c_get_last_received_raw_hid_report(mrb_vm *vm, mrb_value *v, int argc);
 
-
-#define USB_INIT() do { \
-  mrbc_define_method(0, mrbc_class_object,   "tud_task",     c_tud_task);      \
-  mrbc_define_method(0, mrbc_class_object,   "tud_mounted?", c_tud_mounted_q); \
-  mrbc_class *mrbc_class_Keyboard = mrbc_define_class(0, "Keyboard", mrbc_class_object); \
-  mrbc_define_method(0, mrbc_class_Keyboard, "report_hid",   c_report_hid);    \
+#define VIA_INIT() do {\
   mrbc_define_method(0, mrbc_class_Keyboard, "start_via", c_start_via);\
   mrbc_define_method(0, mrbc_class_Keyboard, "get_keycode_via", c_get_keycode_via);\
   mrbc_define_method(0, mrbc_class_Keyboard, "via_keymap_updated?", c_via_keymap_updated);\
@@ -42,6 +37,14 @@ void c_get_last_received_raw_hid_report(mrb_vm *vm, mrb_value *v, int argc);
   mrbc_define_method(0, mrbc_class_Keyboard, "report_raw_hid", c_report_raw_hid);\
   mrbc_define_method(0, mrbc_class_Keyboard, "raw_hid_report_received", c_raw_hid_report_received);\
   mrbc_define_method(0, mrbc_class_Keyboard, "get_last_received_raw_hid_report", c_get_last_received_raw_hid_report);\
+} while(0)
+
+#define USB_INIT() do { \
+  mrbc_define_method(0, mrbc_class_object,   "tud_task",     c_tud_task);      \
+  mrbc_define_method(0, mrbc_class_object,   "tud_mounted?", c_tud_mounted_q); \
+  mrbc_class *mrbc_class_Keyboard = mrbc_define_class(0, "Keyboard", mrbc_class_object); \
+  mrbc_define_method(0, mrbc_class_Keyboard, "report_hid",   c_report_hid);    \
+  VIA_INIT();\
 } while (0)
 
 #endif /* USB_DESCRIPTORS_H_ */
