@@ -53,6 +53,7 @@ Notice:\n\
 https://github.com/picoruby/prk_firmware\n"
 
 #define README_LENGTH (sizeof(README_CONTENTS) - 1)
+#define FAT_START ( (uint8_t*)FLASH_MMAP_ADDR+FLASH_SECTOR_SIZE*1 )
 
 void c_find_file(mrb_vm *vm, mrb_value *v, int argc);
 
@@ -73,7 +74,7 @@ uint8_t msc_disk[4][SECTOR_SIZE] =
     0x01, 0x00,             /*    BPB_RsvdSecCnt */
     0x01,                   /*    BPB_NumFATs */
     0x80, 0x00,             /* ** BPB_RootEntCnt ** */
-    0x00, 0x01,             /* ** BPB_TotSec16 ** */
+    0x80, 0x00,             /* ** BPB_TotSec16 ** */
     0xF8,                   /*    BPB_Media  */
     0x01, 0x00,             /*    BPB_FATSz16 */
     0x01, 0x00,             /*    BPB_SecPerTrk */
@@ -290,6 +291,9 @@ int32_t tud_msc_scsi_cb (uint8_t lun, uint8_t const scsi_cmd[16], void* buffer, 
   return resplen;
 }
 
+void
+msc_write_file(const char *filename, uint8_t *data, uint16_t length);
+
 void msc_init(void)
 {
 #ifndef FORCE_FORMAT_FLASH
@@ -308,8 +312,17 @@ void msc_init(void)
     flash_range_program(FLASH_TARGET_OFFSET, msc_disk[0], SECTOR_SIZE * 4);
     restore_interrupts(ints);
   }
+/*
+  uint8_t buf_rootdir[FLASH_SECTOR_SIZE], buf_fat[FLASH_SECTOR_SIZE];
+  memcpy(buf_rootdir, (uint8_t*)(FLASH_MMAP_ADDR+SECTOR_SIZE*2), FLASH_SECTOR_SIZE);
+  memcpy(buf_fat, (uint8_t*)(FLASH_MMAP_ADDR+SECTOR_SIZE*1), FLASH_SECTOR_SIZE);
+  uint32_t ints = save_and_disable_interrupts();
+  msc_write_file("FAT     bin", buf_fat, FLASH_SECTOR_SIZE-1);
+  msc_write_file("ROOTDIR bin", buf_rootdir, FLASH_SECTOR_SIZE-1);
+  restore_interrupts(ints);
+*/
   mrbc_define_method(0, mrbc_class_object, "write_file_internal",  c_write_file_internal);
-  mrbc_define_method(0, mrbc_class_object, "find_file",  c_find_file);
+  mrbc_define_method(0, mrbc_class_object, "file_exist?",  c_find_file);
 }
 
 /*
@@ -359,12 +372,12 @@ msc_write_file(const char *filename, uint8_t *data, uint16_t length)
   Sector#3 : Cluster#2
   Sector#4 : Cluster#3
    */
-  uint32_t cluster_usage_table[4] = {0,0,0,0}; // RootEntCount is 0x0080 (128)
+  //uint32_t cluster_usage_table[4] = {0,0,0,0}; // RootEntCount is 0x0080 (128)
   uint8_t dir_entry_index_to_write = 0;
   uint16_t empty_cluster_id = 0;
   
   // cluster0 and cluster1 is reserved
-  cluster_usage_table[0] |= 1<<0 | 1<<1;
+  //cluster_usage_table[0] |= 1<<0 | 1<<1;
   
   for (uint8_t i=1; i<128; i++ )
   {
@@ -381,41 +394,62 @@ msc_write_file(const char *filename, uint8_t *data, uint16_t length)
         dir_entry_index_to_write = i;
       }
       break;
+    }
+  }
+
+  for(uint8_t i=0; i<128; i++) {
+    uint16_t fatusage;
+
+    if(i%2==0) {
+      fatusage = ((uint16_t)*(FAT_START+i/2*3))<<4 | ((*(FAT_START+i/2*3+1)) & 0x0F);
     } else {
-      uint16_t cluster_id = entry.FstClusLO;
-      cluster_usage_table[cluster_id/32] |= 1ULL<<(cluster_id%32);
+      fatusage = ( (uint16_t)(*(FAT_START+i/2*3+1)) &0xF0 )<<4 | (*(FAT_START+i/2*3+2));
+    }
+
+    if(fatusage==0) {
+      empty_cluster_id = i;
+      break;
     }
   }
-
-  for(uint8_t i=0; i<4; i++) {
-    for(uint8_t j=0; j<32; j++) {
-      if(! (cluster_usage_table[i] & (1ULL<<j))) {
-        empty_cluster_id = 32*i+j;
-        break;
-      }
-    }
-  }
-
+  
   if(empty_cluster_id && dir_entry_index_to_write) {
     uint8_t buf[FLASH_SECTOR_SIZE];
-    //uint8_t seek_count = dir_entry_index_to_write/8;
-    //uint8_t position_in_page = dir_entry_index_to_write%8;
+    uint8_t buf_fat[FLASH_SECTOR_SIZE];
     // There are (1) Reserved Sector
-    // copy to erase
+    // copy RootDir to erase
     memcpy(buf, (void*)(FLASH_MMAP_ADDR+FLASH_SECTOR_SIZE*2), FLASH_SECTOR_SIZE);
+
+    // copy DirEntry from README.TXT
     memcpy(&entry, buf+32, 32);
     entry.FstClusLO = empty_cluster_id;
     entry.FileSize = length;
+    entry.NTRes = 0x18;
     memcpy(&entry.Name, filename, 11);
     memcpy(buf+32*dir_entry_index_to_write, &entry, 32);
 
+    // copy FAT to erase
+    memcpy(buf_fat, (void*)(FLASH_MMAP_ADDR+FLASH_SECTOR_SIZE*1), FLASH_SECTOR_SIZE);
+    if(empty_cluster_id%2==0) {
+      buf_fat[empty_cluster_id/2*3] = 0xFF;
+      buf_fat[empty_cluster_id/2*3+1] = 0x0F | (0xF0 & buf_fat[empty_cluster_id/2*3+1]);  
+    } else {
+      buf_fat[empty_cluster_id/2*3+1] = 0xF0 | (0x0F & buf_fat[empty_cluster_id/2*3+1]); 
+      buf_fat[empty_cluster_id/2*3+2] = 0xFF;
+    }
+
     uint32_t ints = save_and_disable_interrupts();
+    // write data
+    flash_range_erase(FLASH_TARGET_OFFSET+FLASH_SECTOR_SIZE*(1+empty_cluster_id), FLASH_SECTOR_SIZE);
+    flash_range_program(FLASH_TARGET_OFFSET+FLASH_SECTOR_SIZE*(1+empty_cluster_id), data, (length/FLASH_PAGE_SIZE+1)*FLASH_PAGE_SIZE);
+
+    // write FAT
+    flash_range_erase(FLASH_TARGET_OFFSET+FLASH_SECTOR_SIZE*1, FLASH_SECTOR_SIZE);
+    flash_range_program(FLASH_TARGET_OFFSET+FLASH_SECTOR_SIZE*1, buf_fat, FLASH_SECTOR_SIZE);
+    
+    // write RootDir
     // RootDirSector is Sector#1
     flash_range_erase(FLASH_TARGET_OFFSET+FLASH_SECTOR_SIZE*2, FLASH_SECTOR_SIZE);
     flash_range_program(FLASH_TARGET_OFFSET+FLASH_SECTOR_SIZE*2, buf, FLASH_SECTOR_SIZE);
-    
-    flash_range_erase(FLASH_TARGET_OFFSET+FLASH_SECTOR_SIZE*(1+empty_cluster_id), FLASH_SECTOR_SIZE);
-    flash_range_program(FLASH_TARGET_OFFSET+FLASH_SECTOR_SIZE*(1+empty_cluster_id), data, (length/FLASH_PAGE_SIZE+1)*FLASH_PAGE_SIZE);
     restore_interrupts(ints);
   }
 }
