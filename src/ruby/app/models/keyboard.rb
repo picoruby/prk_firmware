@@ -433,6 +433,7 @@ class Keyboard
 
   STANDARD_SPLIT = :standard_split
   RIGHT_SIDE_FLIPPED_SPLIT = :right_side_flipped_split
+  VIA_FILENAME = "VIA_MAP RB "
 
   def initialize
     puts "Initializing Keyboard ..."
@@ -808,6 +809,32 @@ class Keyboard
     return 0x0000
   end
 
+  def find_keyname(key)
+    case key.class
+    when Integer
+      # @type var key: Integer
+      if key<-255
+        key = key * (-1)
+        KEYCODE_RGB.each do |k,v|
+          return k if v == key
+        end
+
+        key -= 0x100
+        KEYCODE_SFT.each do |k,v|
+          return k if v == key
+        end
+        return :KC_NO
+      else
+        return KEYCODE[-key] || :KC_NO
+      end
+    when Symbol
+      # @type var key: Symbol
+      return key
+    else
+      return :KC_NO
+    end
+  end
+
   def load_via_keymap
     via_layer_count = get_via_layer_count
     via_layer_count.times do |layer|
@@ -831,33 +858,46 @@ class Keyboard
     set_via_keymap_updated
   end
 
+  def convert_to_uint8_array(str)
+    data = []
+    str.each_char do |c|
+      data << c.ord
+    end
+    return data
+  end
+
+  def save_keymap_via
+    keymap_strs = []
+
+    @keymaps.each do |name,map|
+      keymap = []
+      map.each do |row|
+        keycodes_row = []
+        row.each do |key|
+          keycodes_row << find_keyname(key).to_s
+        end
+        keymap << keycodes_row.join(" ")
+      end
+      keymap_strs << keymap.join(" \n    ")
+    end
+
+    data = "keymap = [ \n%i[ "
+    data << keymap_strs.join("], \n\n%i[ ")
+    data << " ] \n]\n"
+    binary = convert_to_uint8_array(data)
+    
+    write_file_internal(VIA_FILENAME, binary);
+  end
+
   def via_enable
     self.start_via(@rows.size, @entire_cols_size)
 
-    unless via_initialized?
-      via_layer_count = get_via_layer_count
-      l = 0
-      @keymaps.each do |name, map|
-        @rows.size.times do |row_index|
-          @entire_cols_size.times do |col_index|
-            key = map[row_index][col_index]
-            case key.class
-            when Integer
-              # @type var key: Integer
-              via_set_key(l, row_index, col_index, -key)
-            else
-              via_set_key(l, row_index, col_index, 0)
-            end
-          end
-        end
-        l += 1
-        break @keymap if via_layer_count==l
-      end
-      via_set_initialized
+    unless file_exist?(VIA_FILENAME)
+      save_keymap_via
     end
-    #@layer = :"0"
+
     @enable_via = true
-    load_via_keymap
+    #load_via_keymap
   end
   
   # **************************************************************

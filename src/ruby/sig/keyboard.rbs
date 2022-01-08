@@ -21,6 +21,7 @@ class Keyboard
 
   STANDARD_SPLIT: Symbol
   RIGHT_SIDE_FLIPPED_SPLIT: Symbol
+  VIA_FILENAME: String
 
   @SHIFT_LETTER_OFFSET_A: Integer
   @SHIFT_LETTER_OFFSET_UNDS: Integer
@@ -74,6 +75,8 @@ class Keyboard
   def uart_anchor_init : (Integer) -> void
   def uart_partner_init : (Integer) -> void
   def report_hid : (Integer, String) -> void
+
+  # VIA
   def start_via : (Integer, Integer) -> void
   def via_initialized?: -> bool
   def via_set_initialized: -> void
@@ -87,6 +90,12 @@ class Keyboard
   def set_via_keymap_updated: -> void
   def translate_keycode : (Integer) -> (Symbol | Integer)
   def get_via_layer_count: -> Integer
+  def load_mode_keys_via: -> void
+  def define_mode_key_via : (Symbol key_name, [Symbol | Array[Symbol] | Proc | nil, Symbol | Proc, Integer?, Integer?] param) -> void
+  def convert_to_uint8_array : (String) -> Array[Integer]
+  def save_keymap_via: -> void
+  def find_keyname : (Integer | Symbol | Proc) -> Symbol
+  
   def initialize: -> void
   def layer: () -> Symbol
   def set_anchor: (Symbol val) -> void
@@ -98,8 +107,6 @@ class Keyboard
   def calculate_col_position: (Integer col_index) -> Integer
   def find_keycode_index: (Symbol key) -> (Integer | Symbol)
   def define_mode_key: (Symbol key_name, [Symbol | Array[Symbol] | Proc | nil, Symbol | Proc, Integer?, Integer?] param) -> void
-  def load_mode_keys_via: -> void
-  def define_mode_key_via : (Symbol key_name, [Symbol | Array[Symbol] | Proc | nil, Symbol | Proc, Integer?, Integer?] param) -> void
   def invert_sft: -> void
   def before_report: () { () -> void } -> void
   def keys_include?: (Symbol) -> bool
