@@ -322,10 +322,6 @@ void
 c_tud_task(mrb_vm *vm, mrb_value *v, int argc)
 {
   tud_task();
-  if(raw_hid_report_received) {
-    raw_hid_receive(raw_hid_last_received_report, raw_hid_last_received_report_length);
-    raw_hid_report_received = false;
-  }
 }
 
 void
