@@ -86,9 +86,10 @@ class Keyboard
   def report_hid : (Integer, String) -> void
 
   # VIA Ruby
-  def raw_hid_report_received: -> bool
+  def raw_hid_report_received?: -> bool
+  def set_raw_hid_report_read: -> void
   def get_last_received_raw_hid_report: -> Array[Integer]
-  def report_raw_hid : (Array[Integer]) -> void
+  def report_raw_hid : (Array[Integer]) -> bool
   def save_keymap_via: -> void
   def find_keyname : (Integer | Symbol | Proc) -> Symbol
   def eval_val : (String) -> untyped

@@ -1520,10 +1520,12 @@ class Keyboard
   end
   
   def via_task
-    if raw_hid_report_received
-      data = get_last_received_raw_hid_report || [0]
-      data = raw_hid_receive( data )
+    if raw_hid_report_received?
+      data = raw_hid_receive( get_last_received_raw_hid_report )
+      # sleep is needed to be received
+      sleep_ms 1
       report_raw_hid( data )
+      end
     end
   end
 end

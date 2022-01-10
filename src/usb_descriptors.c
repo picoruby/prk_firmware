@@ -273,12 +273,16 @@ void tud_hid_set_report_cb(uint8_t instance, uint8_t report_id, hid_report_type_
     return;
 }
 
-void c_raw_hid_report_received(mrb_vm *vm, mrb_value *v, int argc) {
+void c_raw_hid_report_received_Q(mrb_vm *vm, mrb_value *v, int argc) {
   if(raw_hid_report_received) {
     SET_TRUE_RETURN();
   } else {
     SET_FALSE_RETURN();
   }
+}
+
+void c_set_raw_hid_report_read(mrb_vm *vm, mrb_value *v, int argc) {
+  raw_hid_report_received = false;
 }
 
 void c_get_last_received_raw_hid_report(mrb_vm *vm, mrb_value *v, int argc) {
@@ -294,10 +298,10 @@ void c_get_last_received_raw_hid_report(mrb_vm *vm, mrb_value *v, int argc) {
   SET_RETURN(rb_val_array);
 }
 
-void report_raw_hid(uint8_t* data, uint8_t len)
+bool report_raw_hid(uint8_t* data, uint8_t len)
 {
   uint32_t const btn = 1;
-
+  bool ret;
   // Remote wakeup
   if (tud_suspended() && btn) {
     // Wake up host if we are in suspend mode
@@ -306,7 +310,9 @@ void report_raw_hid(uint8_t* data, uint8_t len)
   }
   /*------------- RAW HID -------------*/
   if (tud_hid_ready()) {
-    tud_hid_report(REPORT_ID_RAWHID, data, len);
+    return tud_hid_report(REPORT_ID_RAWHID, data, len);
+  } else {
+    return false;
   }
 }
 
@@ -324,7 +330,12 @@ void c_report_raw_hid(mrb_vm *vm, mrb_value *v, int argc) {
       c_data[i] = mrbc_integer(rb_ary.data[i]);
     }
   }
-  report_raw_hid(c_data, len);
+
+  if( report_raw_hid(c_data, len) ) {
+    SET_TRUE_RETURN();
+  } else {
+    SET_FALSE_RETURN();
+  }
 }
 
 //--------------------------------------------------------------------+

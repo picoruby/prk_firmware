@@ -14,14 +14,13 @@ enum {
   REPORT_ID_COUNT
 };
 
-void report_raw_hid(uint8_t* data, uint8_t len);
-
 void c_tud_task(mrb_vm *vm, mrb_value *v, int argc);
 void c_tud_mounted_q(mrb_vm *vm, mrb_value *v, int argc);
 
 void c_report_hid(mrb_vm *vm, mrb_value *v, int argc);
 void c_report_raw_hid(mrb_vm *vm, mrb_value *v, int argc);
-void c_raw_hid_report_received(mrb_vm *vm, mrb_value *v, int argc);
+void c_raw_hid_report_received_Q(mrb_vm *vm, mrb_value *v, int argc);
+void c_set_raw_hid_report_read(mrb_vm *vm, mrb_value *v, int argc);
 void c_get_last_received_raw_hid_report(mrb_vm *vm, mrb_value *v, int argc);
 
 #define VIA_C_INIT() do {\
@@ -36,7 +35,8 @@ void c_get_last_received_raw_hid_report(mrb_vm *vm, mrb_value *v, int argc);
 }
 #define VIA_INIT() do {\
   mrbc_define_method(0, mrbc_class_Keyboard, "report_raw_hid", c_report_raw_hid);\
-  mrbc_define_method(0, mrbc_class_Keyboard, "raw_hid_report_received", c_raw_hid_report_received);\
+  mrbc_define_method(0, mrbc_class_Keyboard, "raw_hid_report_received?", c_raw_hid_report_received_Q);\
+  mrbc_define_method(0, mrbc_class_Keyboard, "set_raw_hid_report_read", c_set_raw_hid_report_read);\
   mrbc_define_method(0, mrbc_class_Keyboard, "get_last_received_raw_hid_report", c_get_last_received_raw_hid_report);\
 } while(0)
 
