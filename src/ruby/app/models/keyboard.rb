@@ -448,6 +448,8 @@ class Keyboard
     @mode_keys = Array.new
     @mode_keys_via = Hash.new
     @enable_via = false
+    @via_layer_count = 5
+    @keymap_saved = true
     @switches = Array.new
     @layer_names = Array.new
     @layer = :default
@@ -809,6 +811,33 @@ class Keyboard
     return 0x0000
   end
 
+  def get_keycode(key)
+    case key.class
+    when Integer
+      # @type var key: Integer
+      if key<-255
+        key = key * (-1) - 0x100
+        return (0x12<<8) | key
+      else
+        -key
+      end
+    when Symbol
+      # @type var key: Symbol
+      if key==:KC_NO
+        0
+      else
+        key_str = key.to_s
+        if key_str.start_with?("VIA_FUNC")
+          0x00C0 + key_str.split("C")[1].to_i
+        else
+          0
+        end
+      end
+    else
+      0
+    end
+  end
+
   def find_keyname(key)
     case key.class
     when Integer
@@ -833,29 +862,6 @@ class Keyboard
     else
       return :KC_NO
     end
-  end
-
-  def load_via_keymap
-    via_layer_count = get_via_layer_count
-    via_layer_count.times do |layer|
-      layer_name_sym = layer==0 ? :default : layer.to_s.intern
-      new_map = Array.new(@rows.size)
-      @rows.size.times do |row_index|
-        new_map[row_index] = Array.new(@entire_cols_size)
-        @entire_cols_size.times do |col_index|
-          @mode_keys.delete_if { |mode_key|  mode_key[:layer] == layer_name_sym && mode_key[:switch][0] == row_index && mode_key[:switch][1]==col_index }
-
-          keycode = get_keycode_via(layer,row_index,col_index)
-          key = translate_keycode(keycode)
-          new_map[row_index][col_index] = key
-        end
-      end
-      
-      @keymaps[layer_name_sym] = new_map
-      @layer_names << layer_name_sym unless @layer_names.index(layer_name_sym)
-    end
-    load_mode_keys_via
-    set_via_keymap_updated
   end
 
   def convert_to_uint8_array(str)
@@ -888,10 +894,9 @@ class Keyboard
     
     write_file_internal(VIA_FILENAME, binary);
   end
-
+  
   def via_enable
-    self.start_via(@rows.size, @entire_cols_size)
-
+    @via_layer_count = 7
     fileinfo = find_file(VIA_FILENAME)
     if fileinfo
       script = ""
@@ -918,7 +923,7 @@ class Keyboard
     @enable_via = true
     #load_via_keymap
   end
-  
+
   # **************************************************************
   #  For those who are willing to contribute to PRK Firmware:
   #
@@ -1116,7 +1121,7 @@ class Keyboard
         $rgb.invoke_partner rgb_message if $rgb
       end
       
-      load_via_keymap if @enable_via && via_keymap_updated?
+      via_task if @enable_via 
 
       time = cycle_time - (board_millis - now)
       sleep_ms(time) if time > 0
@@ -1285,7 +1290,240 @@ class Keyboard
       end
     end
   end
+end
 
+class Keyboard
+  VIA_IDs = %i[
+    ID_NONE
+    ID_GET_PROTOCOL_VERISON
+    ID_GET_KEYBOARD_VALUE
+    ID_SET_KEYBOARD_VALUE
+    ID_VIA_GET_KEYCODE
+    ID_VIA_SET_KEYCODE
+    ID_VIA_RESET
+    ID_LIGHTING_SET_VALUE
+    ID_LIGHTING_GET_VALUE
+    ID_LIGHTING_SAVE
+    ID_EEPROM_RESET
+    ID_BOOTLOADER_JUMP
+    ID_VIA_MACRO_GET_COUNT
+    ID_VIA_MACRO_GET_BUFFER_SIZE
+    ID_VIA_MACRO_GET_BUFFER
+    ID_VIA_MACRO_SET_BUFFER
+    ID_VIA_MACRO_RESET
+    ID_VIA_GET_LAYER_COUNT
+    ID_VIA_GET_BUFFER
+    ID_VIA_SET_BUFFER
+  ]
+  ID_UNHANDLED = 0xFF
+  VIA_PROTOCOL_VERSION = 0x0009
+  KEYBOARD_VALUES = %i[
+    ID_NONE
+    ID_UPTIME
+    ID_LAYOUT_OPTIONS
+    ID_SWITCH_MATRIX_STATE
+  ]
+
+  def raw_hid_receive_kb(data)
+    ary = Array.new(data.size)
+    ary[0] = ID_UNHANDLED
+    return ary
+  end
+
+  def raw_hid_receive(data)
+      command_id   = data[0]
+      command_name = VIA_IDs[command_id]
+
+      case command_name
+      when :ID_GET_PROTOCOL_VERSION
+          data[1] = VIA_PROTOCOL_VERSION >> 8
+          data[2] = VIA_PROTOCOL_VERSION & 0xFF
+      when :ID_GET_KEYBOARD_VALUE
+          case KEYBOARD_VALUES[data[1]]
+          when :ID_UPTIME
+              value  = board_millis >> 10 # seconds
+              data[2] = (value >> 24) & 0xFF
+              data[3] = (value >> 16) & 0xFF
+              data[4] = (value >> 8) & 0xFF
+              data[5] = value & 0xFF
+          when :ID_LAYOUT_OPTIONS
+              value  = 0x12345678 #via_get_layout_options
+              data[2] = (value >> 24) & 0xFF
+              data[3] = (value >> 16) & 0xFF
+              data[4] = (value >> 8) & 0xFF
+              data[5] = value & 0xFF
+          when :ID_SWITCH_MATRIX_STATE
+              if (@entire_cols_size / 8 + 1) * @rows.size <= 28
+                  i = 2;
+                  @rows.size.times do |row|
+                      value = 0 #matrix_get_row(row)
+                      if @entire_cols_size > 24
+                        data[i] = (value >> 24) & 0xFF
+                        i += 1
+                      end
+                      if @entire_cols_size > 16
+                        data[i] = (value >> 16) & 0xFF
+                        i += 1
+                      end
+                      if @entire_cols_size > 8
+                        data[i] = (value >> 8) & 0xFF
+                        i += 1
+                      end
+                      data[i] = value & 0xFF
+                      i += 1
+                  end
+              end
+          else
+              data = raw_hid_receive_kb(data)
+          end
+      
+      when :ID_SET_KEYBOARD_VALUE
+          case KEYBOARD_VALUES[data[1]]
+          when :ID_LAYOUT_OPTIONS
+              value = (data[2] << 24) | (data[3] << 16)  | (data[4] << 8) | data[5]
+              #via_set_layout_options(value);
+          else
+              data = raw_hid_receive_kb(data)
+          end
+      when :ID_VIA_GET_KEYCODE
+          keycode = dynamic_keymap_get_keycode(data[1], data[2], data[3])
+          data[4]  = keycode >> 8
+          data[5]  = keycode & 0xFF
+      when :ID_VIA_SET_KEYCODE
+          dynamic_keymap_set_keycode(data[1], data[2], data[3], (data[4] << 8) | data[5])
+          @keymap_saved = false
+      when :ID_VIA_MACRO_GET_COUNT
+          data[1] = 0
+          return data
+      when :ID_VIA_MACRO_GET_BUFFER_SIZE
+          size   = 0x0 #dynamic_keymap_macro_get_buffer_size()
+          data[1] = size >> 8
+          data[2] = size & 0xFF
+      when :ID_VIA_GET_LAYER_COUNT
+        data[1] = @via_layer_count
+        return data
+      when :ID_VIA_GET_BUFFER
+          data = dynamic_keymap_get_buffer(data)
+          
+          unless @keymap_saved
+              #save_keymap
+              @keymap_saved = true
+          end
+      when :ID_VIA_SET_BUFFER
+          dynamic_keymap_set_buffer(data)
+          
+          keymap_saved = false;
+      else
+
+      end
+
+      return data
+  end
+
+  def via_get_layer_name(i)
+    return :default if i==0
+    
+    s = "VIA_LAYER"+i.to_s
+    return s.intern
+  end
+
+  def dynamic_keymap_set_buffer(data)
+    offset = (data[1]<<8) | data[2]
+    size   = data[3]
+    map_size = @entire_cols_size * @rows.size
+    layer_num = offset/2/map_size
+    key_index = offset/2 - layer_num * map_size
+    
+    layer_name = via_get_layer_name layer_num
+    
+    (data.size/2).times do |i|
+      next if i<2 #header
+      keycode = data[i*2] << 8 | data[i*2+1]
+      if key_index==map_size
+        layer_num += 1
+        layer_name = via_get_layer_name layer_num
+      end
+      keyname = translate_keycode(keyname)
+
+      unless @keymaps[layer_name]
+        @layer_names << layer_name
+        @keymaps[layer_name] = Array.new(@rows.size)
+      end
+      @keymaps[layer_name][key_index/@rows.size][key_index % @rows.size] = keyname
+      
+      key_index += 1
+    end
+  end
+
+  def dynamic_keymap_get_buffer(data)
+    offset = (data[1]<<8) | data[2]
+    size   = data[3]
+    map_size = @entire_cols_size * @rows.size
+    layer_num = offset/2/map_size
+    key_index = offset/2 - layer_num * map_size
+    
+    layer_name = via_get_layer_name layer_num
+    
+    (data.size/2).times do |i|
+      next if i<2 #header
+      
+      if key_index==map_size
+        layer_num += 1
+        layer_name = via_get_layer_name layer_num
+      end
+      keyname = if @keymaps[layer_name]
+          @keymaps[layer_name][key_index/@entire_cols_size][key_index % @entire_cols_size]
+        else
+          :KC_NO
+        end
+      keycode = get_keycode(keyname)
+      
+      # @type var keycode : Integer
+      data[i*2] = (keycode >> 8) & 0xFF
+      data[i*2+1] = keycode & 0xFF
+      
+      key_index += 1
+    end
+    
+    return data
+  end
+
+  def dynamic_keymap_get_keycode(layer, row, col)
+    layer_name = via_get_layer_name layer
+    keyname = if @keymaps[layer_name]
+        @keymaps[layer_name][row][col]
+      else
+        :KC_NO
+      end
+    return get_keycode(keyname)
+  end
+
+  def dynamic_keymap_set_keycode(layer, row, col, keycode)
+    layer_name = via_get_layer_name layer
+    keyname = translate_keycode(keycode)
+    
+    unless @keymaps[layer_name]
+      @keymaps[layer_name] = Array.new(@rows.size)
+      @layer_names << layer_name
+    end
+
+    @keymaps[layer_name][row][col] = keyname
+  end
+  
+  def via_get_layer_count( received_data )
+    data = Array.new(received_data.size)
+    data[0] = VIA_IDs.index(:ID_VIA_GET_LAYER_COUNT) || 17
+    data[1] = @via_layer_count
+    return data
+  end
+
+  def via_task
+    if raw_hid_report_received
+      data = get_last_received_raw_hid_report || [0]
+      data = raw_hid_receive( data )
+      report_raw_hid( data )
+    end
+  end
 end
 
 $mutex = true

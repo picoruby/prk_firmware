@@ -296,6 +296,14 @@ void c_get_last_received_raw_hid_report(mrb_vm *vm, mrb_value *v, int argc) {
 
 void report_raw_hid(uint8_t* data, uint8_t len)
 {
+  uint32_t const btn = 1;
+
+  // Remote wakeup
+  if (tud_suspended() && btn) {
+    // Wake up host if we are in suspend mode
+    // and REMOTE_WAKEUP feature is enabled by host
+    tud_remote_wakeup();
+  }
   /*------------- RAW HID -------------*/
   if (tud_hid_ready()) {
     tud_hid_report(REPORT_ID_RAWHID, data, len);
@@ -305,13 +313,18 @@ void report_raw_hid(uint8_t* data, uint8_t len)
 void c_report_raw_hid(mrb_vm *vm, mrb_value *v, int argc) {
   mrbc_array rb_ary = *( GET_ARY_ARG(1).array );
   uint8_t c_data[REPORT_RAW_MAX_LEN];
-
+  uint8_t len = REPORT_RAW_MAX_LEN;
+  
   memset(c_data, 0, REPORT_RAW_MAX_LEN);
-
-  for(uint8_t i=0; i<rb_ary.n_stored && i<REPORT_RAW_MAX_LEN; i++) {
-    c_data[i] = mrbc_integer(rb_ary.data[i]);
+  if(GET_ARY_ARG(1).tt == MRBC_TT_ARRAY) {
+    if(rb_ary.n_stored<len) {
+      len = rb_ary.n_stored;
+    }
+    for(uint8_t i=0; i<len; i++) {
+      c_data[i] = mrbc_integer(rb_ary.data[i]);
+    }
   }
-  report_raw_hid(c_data, rb_ary.n_stored<REPORT_RAW_MAX_LEN ? rb_ary.n_stored : REPORT_RAW_MAX_LEN );
+  report_raw_hid(c_data, len);
 }
 
 //--------------------------------------------------------------------+

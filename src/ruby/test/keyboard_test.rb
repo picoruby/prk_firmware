@@ -77,4 +77,10 @@ class KeyboardTest < MrubycTestCase
     @kbd.ruby
     assert_equal true, @kbd.instance_variable_get("@ruby_mode")
   end
+
+  description "VIA Response"
+  def via_get_layer_count
+    response = @kbd.raw_hid_receive([17,0,0,0])
+    assert_equal 5, response[1]
+  end
 end
