@@ -874,8 +874,12 @@ class Keyboard
 
   def save_keymap_via
     keymap_strs = []
+    
+    @via_layer_count.times do |i|
+      layer_name = via_get_layer_name i
+      map = @keymaps[layer_name]
+      next unless map
 
-    @keymaps.each do |name,map|
       keymap = []
       map.each do |row|
         keycodes_row = []
@@ -910,13 +914,18 @@ class Keyboard
       if ret.class == Array
         # @type var ret: Array[Array[Symbol]]
         ret.each_with_index do |map,i|
-          layer_name_str = "VIA_LAYER"+i.to_s
-          layer_name = i==0 ? :default : layer_name_str.intern
-
+          layer_name = via_get_layer_name i
           add_layer layer_name, map
         end
       end
     else
+      i = 0
+      @keymaps.each do |name, map|
+        next if name.to_s.start_with?("VIA_LAYER")
+        via_layer_name = via_get_layer_name i
+        @keymaps[via_layer_name] = map
+        i += 1
+      end
       save_keymap_via
     end
 
@@ -1406,7 +1415,7 @@ class Keyboard
           data = dynamic_keymap_get_buffer(data)
           
           unless @keymap_saved
-              #save_keymap
+              save_keymap_via
               @keymap_saved = true
           end
       when :ID_VIA_SET_BUFFER
@@ -1510,13 +1519,6 @@ class Keyboard
     @keymaps[layer_name][row][col] = keyname
   end
   
-  def via_get_layer_count( received_data )
-    data = Array.new(received_data.size)
-    data[0] = VIA_IDs.index(:ID_VIA_GET_LAYER_COUNT) || 17
-    data[1] = @via_layer_count
-    return data
-  end
-
   def via_task
     if raw_hid_report_received
       data = get_last_received_raw_hid_report || [0]
