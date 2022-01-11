@@ -65,7 +65,7 @@ class RGB
       ws2812_set_pixel_at(i, -1)
     when :rainbow
       puts "[WARN] :rainbow is deprecated. Use :swirl instead"
-    when :breatheng
+    when :breathing
       puts "[WARN] :breathing is deprecated. Use :rainbow_mood instead"
     end
     @offed = false
