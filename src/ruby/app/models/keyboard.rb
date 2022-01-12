@@ -1253,6 +1253,37 @@ class Keyboard
     return ary.join("_")
   end
 
+  def get_via_composite_keycode(keyname)
+    names = "LCTL LSFT LALT LGUI RCTL RSFT RALT RGUI".split
+    modifier = 0
+    via_keycode = 0
+    keyname.to_s.split("_").each do |n|
+      i = names.index n
+      if i
+        modifier |= 1<<i
+      else
+        key_str = "KC_"+n
+        prk_keycode = find_keycode_index( key_str.intern )
+        
+        if prk_keycode.class == Integer
+          # @type var prk_keycode: Integer
+          via_keycode = get_keycode(prk_keycode)
+        else
+          via_keycode = 0
+        end
+      end
+    end
+    
+    if 0x0F & modifier == 0
+      via_keycode |= (modifier<<4) & 0x0F00
+      via_keycode |= 0x1000
+    else
+      via_keycode |= modifier<<8
+    end
+
+    return via_keycode
+  end
+
   # VIA_Keycode -> :VIA_FUNCn | PRK_Keycode
   def translate_keycode(keycode)
     if (keycode>>8)==0
@@ -1288,22 +1319,24 @@ class Keyboard
         key = key * (-1) - 0x100
         return (0x12<<8) | key
       else
-        -key
+        return -key
       end
     when Symbol
       # @type var key: Symbol
       if key==:KC_NO
-        0
+        return 0
       else
         key_str = key.to_s
         if key_str.start_with?("VIA_FUNC")
-          0x00C0 + key_str.split("C")[1].to_i
+          return 0x00C0 + key_str.split("C")[1].to_i
+        elsif ! key_str.start_with?("KC_")
+          return get_via_composite_keycode(key)
         else
-          0
+          return 0
         end
       end
     else
-      0
+      return 0
     end
   end
 
@@ -1369,8 +1402,8 @@ class Keyboard
     write_file_internal(VIA_FILENAME, binary);
   end
   
-  def via_enable
-    @via_layer_count = 7
+  def via_enable(layer_count=7)
+    @via_layer_count = layer_count
     fileinfo = find_file(VIA_FILENAME)
     
     if fileinfo

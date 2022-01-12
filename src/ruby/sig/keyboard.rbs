@@ -96,9 +96,7 @@ class Keyboard
   def get_last_received_raw_hid_report: -> Array[Integer]
   def report_raw_hid : (Array[Integer]) -> bool
   def save_keymap_via: -> void
-  def find_keyname : (Integer | Symbol | Proc) -> Symbol
   def eval_val : (String) -> untyped
-  def get_keycode : (Integer | Symbol | Proc) -> Integer
   def raw_hid_receive : (Array[Integer]) -> Array[Integer]
   def raw_hid_receive_kb : (Array[Integer]) -> Array[Integer]
   def via_get_layer_name : (Integer) -> Symbol
@@ -108,8 +106,11 @@ class Keyboard
   def dynamic_keymap_set_keycode : (Integer, Integer, Integer, Integer) -> void
   def via_task: -> void
   def via_get_layer_count : (Array[Integer]) -> Array[Integer]
+  def find_keyname : (Integer | Symbol | Proc) -> Symbol
   def translate_keycode : (Integer) -> ( [Integer, Integer] | Symbol | Integer )
   def get_composite_key : (Symbol) -> Array[Symbol]
+  def get_via_composite_keycode : (Symbol) -> Integer
+  def get_keycode : (Integer | Symbol | Proc) -> Integer
   def get_modifier_name : (Integer) -> String
   def load_mode_keys_via: -> void
   def define_mode_key_via : (Symbol key_name, [Symbol | Array[Symbol] | Proc | nil, Symbol | Proc, Integer?, Integer?] param) -> void
