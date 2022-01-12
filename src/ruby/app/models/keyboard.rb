@@ -814,159 +814,6 @@ class Keyboard
     sleep_ms 1
   end
 
-  def load_mode_keys_via()
-    @mode_keys_via.each do |key_name, param|
-      define_mode_key(key_name, param)
-    end
-  end
-
-  def define_mode_key_via(key_name, param)
-    @mode_keys_via[key_name] = param
-  end
-
-  def translate_keycode(keycode)
-    if (keycode>>8)==0
-      if 0x00C0 <= keycode && keycode <= 0x00DF
-        c = keycode - 192 #0x00C0
-        cs = c.to_s
-        s = "VIA_FUNC" + cs
-        return s.intern
-      end
-      return -(keycode & 0x00FF)
-    else
-      case (keycode>>12) & 0x0F
-      when 0x0
-        
-      when 0x1
-
-      end
-    end
-
-    return 0x0000
-  end
-
-  def get_keycode(key)
-    case key.class
-    when Integer
-      # @type var key: Integer
-      if key<-255
-        key = key * (-1) - 0x100
-        return (0x12<<8) | key
-      else
-        -key
-      end
-    when Symbol
-      # @type var key: Symbol
-      if key==:KC_NO
-        0
-      else
-        key_str = key.to_s
-        if key_str.start_with?("VIA_FUNC")
-          0x00C0 + key_str.split("C")[1].to_i
-        else
-          0
-        end
-      end
-    else
-      0
-    end
-  end
-
-  def find_keyname(key)
-    case key.class
-    when Integer
-      # @type var key: Integer
-      if key<-255
-        key = key * (-1)
-        KEYCODE_RGB.each do |k,v|
-          return k if v == key
-        end
-
-        key -= 0x100
-        KEYCODE_SFT.each do |k,v|
-          return k if v == key
-        end
-        return :KC_NO
-      else
-        return KEYCODE[-key] || :KC_NO
-      end
-    when Symbol
-      # @type var key: Symbol
-      return key
-    else
-      return :KC_NO
-    end
-  end
-
-  def convert_to_uint8_array(str)
-    data = []
-    str.each_char do |c|
-      data << c.ord
-    end
-    return data
-  end
-
-  def save_keymap_via
-    keymap_strs = []
-    
-    @via_layer_count.times do |i|
-      layer_name = via_get_layer_name i
-      map = @keymaps[layer_name]
-      next unless map
-
-      keymap = []
-      map.each do |row|
-        keycodes_row = []
-        row.each do |key|
-          keycodes_row << find_keyname(key).to_s
-        end
-        keymap << keycodes_row.join(" ")
-      end
-      keymap_strs << keymap.join(" \n    ")
-    end
-
-    data = "keymap = [ \n%i[ "
-    data << keymap_strs.join("], \n\n%i[ ")
-    data << " ] \n]\n"
-    binary = convert_to_uint8_array(data)
-    
-    write_file_internal(VIA_FILENAME, binary);
-  end
-  
-  def via_enable
-    @via_layer_count = 7
-    fileinfo = find_file(VIA_FILENAME)
-    if fileinfo
-      script = ""
-      ary = read_file(fileinfo[0], fileinfo[1])
-      ary.each do |i|
-        script << i.chr;
-      end
-
-      ret = eval_val(script)
-      
-      if ret.class == Array
-        # @type var ret: Array[Array[Symbol]]
-        ret.each_with_index do |map,i|
-          layer_name = via_get_layer_name i
-          add_layer layer_name, map
-        end
-      end
-    else
-      i = 0
-      @keymaps.each do |name, map|
-        next if name.to_s.start_with?("VIA_LAYER")
-        via_layer_name = via_get_layer_name i
-        @keymaps[via_layer_name] = map
-        i += 1
-      end
-      save_keymap_via
-    end
-
-    @enable_via = true
-    #load_via_keymap
-  end
-
   # **************************************************************
   #  For those who are willing to contribute to PRK Firmware:
   #
@@ -1373,6 +1220,202 @@ class Keyboard
     ID_SWITCH_MATRIX_STATE
   ]
 
+  def load_mode_keys_via
+    @mode_keys_via.each do |key_name, param|
+      define_mode_key(key_name, param)
+    end
+  end
+
+  def define_mode_key_via(key_name, param)
+    @mode_keys_via[key_name] = param
+  end
+
+  def get_composite_key(name)
+    names = "LCTL LSFT LALT LGUI RCTL RSFT RALT RGUI".split
+    
+    keynames = []
+    ary = name.to_s.split("_")
+    ary.each do |n|
+      keynames << ("KC_"+n).intern
+    end
+
+    return keynames
+  end
+
+  def get_modifier_name(bits)
+    names = "LCTL LSFT LALT LGUI RCTL RSFT RALT RGUI".split
+    ary = []
+    8.times do |i|
+      unless ( bits & (1<<i) )==0
+        ary << names[i]
+      end
+    end
+    return ary.join("_")
+  end
+
+  # VIA_Keycode -> :VIA_FUNCn | PRK_Keycode
+  def translate_keycode(keycode)
+    if (keycode>>8)==0
+      if 0x00C0 <= keycode && keycode <= 0x00DF
+        c = keycode - 0x00C0
+        cs = c.to_s
+        s = "VIA_FUNC" + cs
+        return s.intern
+      end
+      return -(keycode & 0x00FF)
+    else
+      case (keycode>>12) & 0x0F
+      when 0x0
+        modifiers = (keycode>>8) & 0x0F
+        prk_keycode = -(keycode & 0x00FF)
+        return [ modifiers, prk_keycode ]
+      when 0x1
+        modifiers = ( (keycode>>8) & 0x0F )<<4
+        prk_keycode = -(keycode & 0x00FF)
+        return [ modifiers, prk_keycode ]
+      end
+    end
+
+    return 0x0000
+  end
+
+  # PRK_KeySymbol | PRK_Keycode -> VIA_Keycode
+  def get_keycode(key)
+    case key.class
+    when Integer
+      # @type var key: Integer
+      if key<-255
+        key = key * (-1) - 0x100
+        return (0x12<<8) | key
+      else
+        -key
+      end
+    when Symbol
+      # @type var key: Symbol
+      if key==:KC_NO
+        0
+      else
+        key_str = key.to_s
+        if key_str.start_with?("VIA_FUNC")
+          0x00C0 + key_str.split("C")[1].to_i
+        else
+          0
+        end
+      end
+    else
+      0
+    end
+  end
+
+  # PRK_KeySymbol | PRK_Keycode -> keymap.rb Symbol 
+  def find_keyname(key)
+    case key.class
+    when Integer
+      # @type var key: Integer
+      if key<-255
+        key = key * (-1)
+        KEYCODE_RGB.each do |k,v|
+          return k if v == key
+        end
+
+        key -= 0x100
+        KEYCODE_SFT.each do |k,v|
+          return k if v == key
+        end
+        return :KC_NO
+      else
+        return KEYCODE[-key] || :KC_NO
+      end
+    when Symbol
+      # @type var key: Symbol
+      return key
+    else
+      return :KC_NO
+    end
+  end
+
+  def convert_to_uint8_array(str)
+    data = []
+    str.each_char do |c|
+      data << c.ord
+    end
+    return data
+  end
+
+  def save_keymap_via
+    keymap_strs = []
+    
+    @via_layer_count.times do |i|
+      layer_name = via_get_layer_name i
+      map = @keymaps[layer_name]
+      next unless map
+
+      keymap = []
+      map.each do |row|
+        keycodes_row = []
+        row.each do |key|
+          keycodes_row << find_keyname(key).to_s
+        end
+        keymap << keycodes_row.join(" ")
+      end
+      keymap_strs << keymap.join(" \n    ")
+    end
+
+    data = "keymap = [ \n%i[ "
+    data << keymap_strs.join("], \n\n%i[ ")
+    data << " ] \n]\n"
+    binary = convert_to_uint8_array(data)
+    
+    write_file_internal(VIA_FILENAME, binary);
+  end
+  
+  def via_enable
+    @via_layer_count = 7
+    fileinfo = find_file(VIA_FILENAME)
+    
+    if fileinfo
+      script = ""
+      ary = read_file(fileinfo[0], fileinfo[1])
+      ary.each do |i|
+        script << i.chr;
+      end
+
+      ret = eval_val(script)
+      
+      if ret.class == Array
+        # @type var ret: Array[Array[Symbol]]
+        keynames_not_kc = []
+        
+        ret.each_with_index do |map,i|
+          layer_name = via_get_layer_name i
+          add_layer layer_name, map
+          map.each do |kc|
+            next if kc.to_s.start_with?("KC")
+            next if kc.to_s.start_with?("VIA_FUNC")
+            keynames_not_kc << kc
+          end
+        end
+
+        keynames_not_kc.each do |kc|
+          # composite keys
+          define_composite_key kc, get_composite_key(kc)
+        end
+      end
+    else
+      i = 0
+      @keymaps.each do |name, map|
+        next if name.to_s.start_with?("VIA_LAYER")
+        via_layer_name = via_get_layer_name i
+        @keymaps[via_layer_name] = map
+        i += 1
+      end
+      save_keymap_via
+    end
+
+    @enable_via = true
+    #load_via_keymap
+  end
+
   def raw_hid_receive_kb(data)
     ary = Array.new(data.size)
     ary[0] = ID_UNHANDLED
@@ -1477,11 +1520,14 @@ class Keyboard
   end
 
   def dynamic_keymap_set_buffer(data)
+    # @type var data: Array[Integer]
     offset = (data[1]<<8) | data[2]
     size   = data[3]
     map_size = @entire_cols_size * @rows.size
     layer_num = offset/2/map_size
     key_index = offset/2 - layer_num * map_size
+    row = (key_index / @rows.size).to_i
+    col = (key_index % @rows.size).to_i
     
     layer_name = via_get_layer_name layer_num
     
@@ -1492,13 +1538,26 @@ class Keyboard
         layer_num += 1
         layer_name = via_get_layer_name layer_num
       end
-      keyname = translate_keycode(keyname)
+      keyname = translate_keycode(keycode)
 
       unless @keymaps[layer_name]
         @layer_names << layer_name
         @keymaps[layer_name] = Array.new(@rows.size)
       end
-      @keymaps[layer_name][key_index/@rows.size][key_index % @rows.size] = keyname
+
+      case keyname.class
+      when Array
+        # composite key
+        # @type var keyname: [ Integer, Integer ]
+        @composite_keys << {
+          layer: layer_name,
+          keycodes: keyname,
+          switch: [ row, col ]
+        }
+      else
+        # @type var keyname: ( Symbol | Integer )
+        @keymaps[layer_name][row][col] = keyname
+      end
       
       key_index += 1
     end
@@ -1556,7 +1615,22 @@ class Keyboard
       @layer_names << layer_name
     end
 
-    @keymaps[layer_name][row][col] = keyname
+    case keyname.class
+    when Array
+      # composite key
+      # @type var keyname: [Integer, Integer]
+      @composite_keys << {
+        layer: layer_name,
+        keycodes: keyname,
+        switch: [ row, col ]
+      }
+      @keymaps[layer_name][row][col] = (
+          get_modifier_name(keyname[0]) + "_" + 
+          find_keyname(keyname[1]).to_s.split("_")[1] ).intern
+    else
+      # @type var keyname: ( Symbol | Integer )
+      @keymaps[layer_name][row][col] = keyname
+    end
   end
   
   def via_task
