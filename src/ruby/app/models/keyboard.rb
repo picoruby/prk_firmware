@@ -1400,6 +1400,8 @@ class Keyboard
     binary = convert_to_uint8_array(data)
     
     write_file_internal(VIA_FILENAME, binary);
+
+    load_mode_keys_via
   end
   
   def via_enable(layer_count=7)
@@ -1559,8 +1561,6 @@ class Keyboard
     map_size = @entire_cols_size * @rows.size
     layer_num = offset/2/map_size
     key_index = offset/2 - layer_num * map_size
-    row = (key_index / @rows.size).to_i
-    col = (key_index % @rows.size).to_i
     
     layer_name = via_get_layer_name layer_num
     
@@ -1571,6 +1571,9 @@ class Keyboard
         layer_num += 1
         layer_name = via_get_layer_name layer_num
       end
+      row = (key_index / @rows.size).to_i
+      col = (key_index % @rows.size).to_i
+    
       keyname = translate_keycode(keycode)
 
       unless @keymaps[layer_name]
@@ -1578,7 +1581,10 @@ class Keyboard
         @keymaps[layer_name] = Array.new(@rows.size)
         @rows.size.times { |i| @keymaps[layer_name][i] = [] }
       end
-
+      
+      @composite_keys.delete_if { |item| item[:layer]==layer_name && item[:switch]==[row, col] }
+      @mode_keys.delete_if { |item| item[:layer]==layer_name && item[:switch]==[row, col] }
+    
       case keyname.class
       when Array
         # composite key
@@ -1649,6 +1655,9 @@ class Keyboard
       @layer_names << layer_name
       @rows.size.times { |i| @keymaps[layer_name][i] = [] }
     end
+
+    @composite_keys.delete_if { |item| item[:layer]==layer_name && item[:switch]==[row, col] }
+    @mode_keys.delete_if { |item| item[:layer]==layer_name && item[:switch]==[row, col] }
 
     case keyname.class
     when Array
