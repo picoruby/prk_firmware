@@ -1386,8 +1386,13 @@ class Keyboard
       keymap = []
       map.each do |row|
         keycodes_row = []
+        
         row.each do |key|
           keycodes_row << find_keyname(key).to_s
+        end
+
+        (@entire_cols_size - row.size).times do |i|
+          keycodes_row << "KC_NO"
         end
         keymap << keycodes_row.join(" ")
       end
@@ -1448,7 +1453,7 @@ class Keyboard
     end
 
     @enable_via = true
-    #load_via_keymap
+    load_mode_keys_via
   end
 
   def raw_hid_receive_kb(data)
@@ -1607,8 +1612,8 @@ class Keyboard
     offset = (data[1]<<8) | data[2]
     size   = data[3]
     map_size = @entire_cols_size * @rows.size
-    layer_num = offset/2/map_size
-    key_index = offset/2 - layer_num * map_size
+    layer_num = (offset/2/map_size).to_i
+    key_index = (offset/2 - layer_num * map_size).to_i
     
     layer_name = via_get_layer_name layer_num
     
@@ -1618,6 +1623,7 @@ class Keyboard
       if key_index==map_size
         layer_num += 1
         layer_name = via_get_layer_name layer_num
+        key_index = 0
       end
       keyname = if @keymaps[layer_name]
           @keymaps[layer_name][key_index/@entire_cols_size][key_index % @entire_cols_size]
