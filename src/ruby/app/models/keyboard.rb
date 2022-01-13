@@ -1576,6 +1576,7 @@ class Keyboard
       unless @keymaps[layer_name]
         @layer_names << layer_name
         @keymaps[layer_name] = Array.new(@rows.size)
+        @rows.size.times { |i| @keymaps[layer_name][i] = [] }
       end
 
       case keyname.class
@@ -1646,6 +1647,7 @@ class Keyboard
     unless @keymaps[layer_name]
       @keymaps[layer_name] = Array.new(@rows.size)
       @layer_names << layer_name
+      @rows.size.times { |i| @keymaps[layer_name][i] = [] }
     end
 
     case keyname.class
