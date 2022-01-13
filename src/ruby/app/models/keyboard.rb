@@ -1064,10 +1064,9 @@ class Keyboard
     switches = []
     # detect physical switches that are pushed
     @matrix.each do |out_pin, in_pins|
-      gpio_set_dir(out_pin, GPIO_OUT)
-      gpio_put(out_pin, LO)
+      gpio_set_dir(out_pin, GPIO_OUT_LO)
       in_pins.each do |in_pin, switch|
-        if gpio_get(in_pin)
+        unless gpio_get(in_pin)
           switches << switch
         end
       end
