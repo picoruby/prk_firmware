@@ -313,15 +313,15 @@ void msc_init(void)
     flash_range_program(FLASH_TARGET_OFFSET, msc_disk[0], SECTOR_SIZE * 4);
     restore_interrupts(ints);
   }
-/*
+#ifdef DEBUG_FAT
   uint8_t buf_rootdir[FLASH_SECTOR_SIZE], buf_fat[FLASH_SECTOR_SIZE];
   memcpy(buf_rootdir, (uint8_t*)(FLASH_MMAP_ADDR+SECTOR_SIZE*2), FLASH_SECTOR_SIZE);
   memcpy(buf_fat, (uint8_t*)(FLASH_MMAP_ADDR+SECTOR_SIZE*1), FLASH_SECTOR_SIZE);
   uint32_t ints = save_and_disable_interrupts();
-  msc_write_file("FAT     bin", buf_fat, FLASH_SECTOR_SIZE-1);
-  msc_write_file("ROOTDIR bin", buf_rootdir, FLASH_SECTOR_SIZE-1);
+  msc_write_file("FAT     BIN", buf_fat, FLASH_SECTOR_SIZE-1);
+  msc_write_file("ROOTDIR BIN", buf_rootdir, FLASH_SECTOR_SIZE-1);
   restore_interrupts(ints);
-*/
+#endif
   mrbc_define_method(0, mrbc_class_object, "write_file_internal", c_write_file_internal);
   mrbc_define_method(0, mrbc_class_object, "find_file", c_find_file);
   mrbc_define_method(0, mrbc_class_object, "read_file", c_read_file);
@@ -483,6 +483,11 @@ msc_write_file(const char *filename, const uint8_t *data, uint16_t length)
     memcpy(buf+32*dir_entry_index_to_write, &entry, 32);
 
     uint32_t ints = save_and_disable_interrupts();
+    // write RootDir
+    // RootDirSector is Sector#1
+    flash_range_erase(FLASH_TARGET_OFFSET+FLASH_SECTOR_SIZE*2, FLASH_SECTOR_SIZE);
+    flash_range_program(FLASH_TARGET_OFFSET+FLASH_SECTOR_SIZE*2, buf, FLASH_SECTOR_SIZE);
+
     // write data
     flash_range_erase(FLASH_TARGET_OFFSET+FLASH_SECTOR_SIZE*(1+cluster_id_to_write), FLASH_SECTOR_SIZE);
     flash_range_program(FLASH_TARGET_OFFSET+FLASH_SECTOR_SIZE*(1+cluster_id_to_write), data, (length/FLASH_PAGE_SIZE+1)*FLASH_PAGE_SIZE);
@@ -491,10 +496,6 @@ msc_write_file(const char *filename, const uint8_t *data, uint16_t length)
       flash_range_erase(FLASH_TARGET_OFFSET+FLASH_SECTOR_SIZE*1, FLASH_SECTOR_SIZE);
       flash_range_program(FLASH_TARGET_OFFSET+FLASH_SECTOR_SIZE*1, buf_fat, FLASH_SECTOR_SIZE);
     }
-    // write RootDir
-    // RootDirSector is Sector#1
-    flash_range_erase(FLASH_TARGET_OFFSET+FLASH_SECTOR_SIZE*2, FLASH_SECTOR_SIZE);
-    flash_range_program(FLASH_TARGET_OFFSET+FLASH_SECTOR_SIZE*2, buf, FLASH_SECTOR_SIZE);
     restore_interrupts(ints);
   }
 }
