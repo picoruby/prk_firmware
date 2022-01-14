@@ -106,11 +106,11 @@ class Keyboard
   def dynamic_keymap_set_keycode : (Integer, Integer, Integer, Integer) -> void
   def via_task: -> void
   def via_get_layer_count : (Array[Integer]) -> Array[Integer]
-  def find_keyname : (Integer | Symbol | Proc) -> Symbol
-  def translate_keycode : (Integer) -> ( [Integer, Integer] | Symbol | Integer )
+  def prk_keycode_into_keysymbol : (Integer | Symbol | Proc) -> Symbol
+  def via_keycode_into_prk_keycode : (Integer) -> ( [Integer, Integer] | Symbol | Integer )
   def get_composite_key : (Symbol) -> Array[Symbol]
   def get_via_composite_keycode : (Symbol) -> Integer
-  def get_keycode : (Integer | Symbol | Proc) -> Integer
+  def prk_keycode_into_via_keycode : (Integer | Symbol | Proc) -> Integer
   def get_modifier_name : (Integer) -> String
   def load_mode_keys_via: -> void
   def define_mode_key_via : (Symbol key_name, [Symbol | Array[Symbol] | Proc | nil, Symbol | Proc, Integer?, Integer?] param) -> void

@@ -1267,7 +1267,7 @@ class Keyboard
         
         if prk_keycode.class == Integer
           # @type var prk_keycode: Integer
-          via_keycode = get_keycode(prk_keycode)
+          via_keycode = prk_keycode_into_via_keycode(prk_keycode)
         else
           via_keycode = 0
         end
@@ -1285,7 +1285,7 @@ class Keyboard
   end
 
   # VIA_Keycode -> :VIA_FUNCn | PRK_Keycode
-  def translate_keycode(keycode)
+  def via_keycode_into_prk_keycode(keycode)
     if (keycode>>8)==0
       if 0x00C0 <= keycode && keycode <= 0x00DF
         c = keycode - 0x00C0
@@ -1311,7 +1311,7 @@ class Keyboard
   end
 
   # PRK_KeySymbol | PRK_Keycode -> VIA_Keycode
-  def get_keycode(key)
+  def prk_keycode_into_via_keycode(key)
     case key.class
     when Integer
       # @type var key: Integer
@@ -1341,7 +1341,7 @@ class Keyboard
   end
 
   # PRK_KeySymbol | PRK_Keycode -> keymap.rb Symbol 
-  def find_keyname(key)
+  def prk_keycode_into_keysymbol(key)
     case key.class
     when Integer
       # @type var key: Integer
@@ -1388,7 +1388,7 @@ class Keyboard
         keycodes_row = []
         
         row.each do |key|
-          keycodes_row << find_keyname(key).to_s
+          keycodes_row << prk_keycode_into_keysymbol(key).to_s
         end
 
         (@entire_cols_size - row.size).times do |i|
@@ -1579,7 +1579,7 @@ class Keyboard
       row = (key_index / @rows.size).to_i
       col = (key_index % @rows.size).to_i
     
-      keyname = translate_keycode(keycode)
+      keyname = via_keycode_into_prk_keycode(keycode)
 
       unless @keymaps[layer_name]
         @layer_names << layer_name
@@ -1630,7 +1630,7 @@ class Keyboard
         else
           :KC_NO
         end
-      keycode = get_keycode(keyname)
+      keycode = prk_keycode_into_via_keycode(keyname)
       
       # @type var keycode : Integer
       data[i*2] = (keycode >> 8) & 0xFF
@@ -1649,12 +1649,12 @@ class Keyboard
       else
         :KC_NO
       end
-    return get_keycode(keyname)
+    return prk_keycode_into_via_keycode(keyname)
   end
 
   def dynamic_keymap_set_keycode(layer, row, col, keycode)
     layer_name = via_get_layer_name layer
-    keyname = translate_keycode(keycode)
+    keyname = via_keycode_into_prk_keycode(keycode)
     
     unless @keymaps[layer_name]
       @keymaps[layer_name] = Array.new(@rows.size)
@@ -1676,7 +1676,7 @@ class Keyboard
       }
       @keymaps[layer_name][row][col] = (
           get_modifier_name(keyname[0]) + "_" + 
-          find_keyname(keyname[1]).to_s.split("_")[1] ).intern
+          prk_keycode_into_keysymbol(keyname[1]).to_s.split("_")[1] ).intern
     else
       # @type var keyname: ( Symbol | Integer )
       @keymaps[layer_name][row][col] = keyname
