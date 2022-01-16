@@ -25,7 +25,6 @@ class KeyboardTest < MrubycTestCase
       2 => { 3 => [1, 0], 4 => [1, 1] }
     }
     assert_equal expectation, @kbd.instance_variable_get("@matrix")
-    assert_equal 2, @kbd.instance_variable_get("@rows_size")
     assert_equal 2, @kbd.instance_variable_get("@cols_size")
   end
 
@@ -37,8 +36,8 @@ class KeyboardTest < MrubycTestCase
     kbd.split = true
     kbd.init_pins([1,2], [3,4])
     expectation = {
-      1 => { 3 => [0, 3], 4 => [0, 2] },
-      2 => { 3 => [1, 3], 4 => [1, 2] }
+      1 => { 3 => [0, 0], 4 => [0, 1] },
+      2 => { 3 => [1, 0], 4 => [1, 1] }
     }
     assert_equal expectation, kbd.instance_variable_get("@matrix")
   end
@@ -54,36 +53,60 @@ class KeyboardTest < MrubycTestCase
       [
         [ [1, 3], [3, 1], [2, 3], [3, 2] ], # 0
         [ [1, 4], [4, 1], [2, 4], [4, 2] ], # 1
-        [         [5, 1], [2, 5]         ]  # 2
+        [ [1, 5], [5, 1], [2, 5], [5, 2] ]  # 2
       ]
     )
-    expectation = {
-      1 => { 3 => [0, 7], 4 => [1, 7] },
-      3 => { 1 => [0, 6], 2 => [0, 4] },
-      2 => { 3 => [0, 5], 4 => [1, 5], 5 => [2, 6] },
-      4 => { 1 => [1, 6], 2 => [1, 4] },
-      5 => { 1 => [2, 7] }
+    matrix = {
+      1 => { 3 => [0, 0], 4 => [1, 0], 5 => [2, 0] },
+      3 => { 1 => [0, 1], 2 => [0, 3] },
+      2 => { 3 => [0, 2], 4 => [1, 2], 5 => [2, 2] },
+      4 => { 1 => [1, 1], 2 => [1, 3] },
+      5 => { 1 => [2, 1], 2 => [2, 3] }
     }
-    assert_equal expectation, kbd.instance_variable_get("@matrix")
+    assert_equal matrix, kbd.instance_variable_get("@matrix")
+    kbd.add_layer :default, %i(
+      KC_A    KC_B KC_C XXXXXXX XXXXXXX KC_1 KC_2 KC_3
+      KC_D    KC_E KC_F KC_G    KC_5    KC_6 KC_7 KC_8
+      XXXXXXX KC_H KC_I XXXXXXX XXXXXXX KC_9 KC_0 XXXXXXX
+    )
+    layer = [
+      [-4,  -5,  -6,   0,   0, -30, -31, -32],
+      [-7,  -8,  -9, -10, -34, -35, -36, -37],
+      [ 0, -11, -12,   0,   0, -38, -39,   0]
+    ]
+    assert_equal layer, kbd.instance_variable_get("@keymaps")[:default]
   end
 
   description "duplex matrix of anchor"
   def init_duplex_matrix_case
     @kbd.init_matrix_pins(
+    # col 0       1       2       3           row
       [
-        [ [1, 3], [1, 4], [3, 1], [4, 1] ],
-        [ [2, 3], [2, 4], [3, 2], [4, 2] ]
+        [ [1, 3], [3, 1], [2, 3], [3, 2] ], # 0
+        [ [1, 4], [4, 1], [2, 4], [4, 2] ], # 1
+        [ [1, 5], [5, 1], [2, 5], [5, 2] ]  # 2
       ]
     )
-    expectation = {
-      1 => { 3 => [0, 0], 4 => [0, 1] },
-      3 => { 1 => [0, 2], 2 => [1, 2] },
-      4 => { 1 => [0, 3], 2 => [1, 3] },
-      2 => { 3 => [1, 0], 4 => [1, 1] }
+    matrix = {
+      1 => { 3 => [0, 0], 4 => [1, 0], 5 => [2, 0] },
+      3 => { 1 => [0, 1], 2 => [0, 3] },
+      2 => { 3 => [0, 2], 4 => [1, 2], 5 => [2, 2] },
+      4 => { 1 => [1, 1], 2 => [1, 3] },
+      5 => { 1 => [2, 1], 2 => [2, 3] }
     }
-    assert_equal expectation, @kbd.instance_variable_get("@matrix")
-    assert_equal 2, @kbd.instance_variable_get("@rows_size")
+    assert_equal matrix, @kbd.instance_variable_get("@matrix")
     assert_equal 4, @kbd.instance_variable_get("@cols_size")
+    @kbd.add_layer :default, %i(
+      KC_1    KC_2 KC_3 XXXXXXX
+      KC_5    KC_6 KC_7 KC_8
+      XXXXXXX KC_9 KC_0 XXXXXXX
+    )
+    layer = [
+      [-30, -31, -32,   0],
+      [-34, -35, -36, -37],
+      [  0, -38, -39,   0]
+    ]
+    assert_equal layer, @kbd.instance_variable_get("@keymaps")[:default]
   end
 
   description "default layer"

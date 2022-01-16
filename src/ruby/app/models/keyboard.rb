@@ -436,7 +436,7 @@ class Keyboard
   RIGHT_SIDE_FLIPPED_SPLIT = :right_side_flipped_split
 
   def initialize
-    puts "Initializing Keyboard ..."
+    puts "Initializing Keyboard."
     # mruby/c VM doesn't work with a CONSTANT to make another CONSTANT
     # steep doesn't allow dynamic assignment of CONSTANT
     @SHIFT_LETTER_THRESHOLD_A    = LETTER.index('A').to_i
@@ -539,7 +539,6 @@ class Keyboard
   def init_matrix_pins(matrix)
     puts "Initializing GPIO."
     init_uart
-    @rows_size = matrix.size
     @cols_size = 0
     @matrix = Hash.new
     matrix.each do |cols|
@@ -548,23 +547,8 @@ class Keyboard
         @matrix[cell[0]] = Hash.new unless @matrix[cell[0]]
       end
     end
-    offset_a = (@cols_size / 2.0).ceil_to_i
-    offset_b = @cols_size * 2 - offset_a - 1
     matrix.each_with_index do |rows, row_index|
-      rows.each_with_index do |cell, index|
-        col_index = if @anchor_left
-          if @anchor # left
-            index
-          else # right
-            (index - offset_a) * -1 + offset_b
-          end
-        else # right side is the anchor
-          unless @anchor # left
-            index
-          else # right
-            (index - offset_a) * -1 + offset_b
-          end
-        end
+      rows.each_with_index do |cell, col_index|
         @matrix[cell[0]][cell[1]] = [row_index, col_index]
         gpio_init(cell[0])
         gpio_set_dir(cell[0], GPIO_IN_PULLUP)
@@ -572,6 +556,8 @@ class Keyboard
         gpio_set_dir(cell[1], GPIO_IN_PULLUP)
       end
     end
+    @offset_a = (@cols_size / 2.0).ceil_to_i
+    @offset_b = @cols_size * 2 - @offset_a - 1
   end
 
   def init_pins(rows, cols)
@@ -601,13 +587,16 @@ class Keyboard
   # Result
   #   layer: { default:      [ [ -0x04, -0x05, 0b00000001, :MACRO_1 ],... ] }
   def add_layer(name, map)
-    new_map = Array.new(@rows_size)
+    new_map = Array.new
     row_index = 0
     col_index = 0
-    entire_cols_size = @split ? @cols_size * 2 : @cols_size
     map.each do |key|
-      new_map[row_index] = Array.new(@cols_size) if col_index == 0
-      col_position = calculate_col_position(col_index, entire_cols_size)
+      if entire_cols_size <= col_index
+        row_index += 1
+        col_index = 0
+      end
+      new_map[row_index] = Array.new if col_index == 0
+      col_position = calculate_col_position(col_index)
       case key.class
       when Symbol
         # @type var map: Array[Symbol]
@@ -624,18 +613,17 @@ class Keyboard
           switch: [row_index, col_position]
         }
       end
-      if col_index == entire_cols_size - 1
-        col_index = 0
-        row_index += 1
-      else
-        col_index += 1
-      end
+      col_index += 1
     end
     @keymaps[name] = new_map
     @layer_names << name
   end
 
-  def calculate_col_position(col_index, entire_cols_size)
+  def entire_cols_size
+    @entire_cols_size ||= @split ? @cols_size * 2 : @cols_size
+  end
+
+  def calculate_col_position(col_index)
     return col_index unless @split
     case @split_style
     # `when STANDARD_SPLIT` can be deleted after fixing a picoruby's bug
@@ -1067,7 +1055,24 @@ class Keyboard
       gpio_set_dir(out_pin, GPIO_OUT_LO)
       in_pins.each do |in_pin, switch|
         unless gpio_get(in_pin)
-          switches << switch
+          col = if @anchor_left
+            if @anchor
+              # left
+              switch[1]
+            else
+              # right
+              (switch[1] - @offset_a) * -1 + @offset_b
+            end
+          else # right side is the anchor
+            unless @anchor
+              # left
+              switch[1]
+            else
+              # right
+              (switch[1] - @offset_a) * -1 + @offset_b
+            end
+          end
+          switches << [switch[0], col]
         end
       end
       gpio_set_dir(out_pin, GPIO_IN_PULLUP)

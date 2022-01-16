@@ -54,7 +54,6 @@ class Keyboard
   @anchor: bool
   @anchor_left: bool
   @direct_pins: Array[Integer]
-  @rows_size: Integer
   @cols_size: Integer
   @matrix: Hash[Integer, Hash[Integer, Array[Integer]]]
   @locked_layer: Symbol | nil
@@ -66,6 +65,9 @@ class Keyboard
   @message: Integer
   @encoders: Array[RotaryEncoder]
   @scan_mode: Symbol
+  @offset_a: Integer
+  @offset_b: Integer
+  @entire_cols_size: Integer
 
   attr_accessor split: bool
   attr_accessor uart_pin: Integer
@@ -88,7 +90,7 @@ class Keyboard
   def init_uart: () -> void
   def init_pins: (Array[Integer] rows, Array[Integer] cols) -> void
   def init_direct_pins: (Array[Integer] pins) -> void
-  def calculate_col_position: (Integer col_index, Integer entire_cols_size) -> Integer
+  def calculate_col_position: (Integer col_index) -> Integer
   def convert_composite_keys: (Array[Symbol]) -> Array[Integer]
   def add_layer: (Symbol name, Array[ Symbol | Array[Symbol] ] map) -> void
   def find_keycode_index: (Symbol key) -> (Integer | Symbol)
@@ -110,4 +112,6 @@ class Keyboard
   def ruby: () -> void
   def scan_matrix!: () -> Array[Array[Integer]]
   def scan_direct!: () -> Array[Array[Integer]]
+  def switch_exists?: (Integer row, Integer col) -> bool
+  def entire_cols_size: () -> Integer
 end
