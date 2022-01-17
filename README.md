@@ -36,6 +36,7 @@ _(left: Raspberry Pi Pico / right: Sparkfun Pro Micro RP2040)_
 - [x] Rotary encoder. An example on [prk_helix_rev3/keymap.rb](https://github.com/picoruby/prk_helix_rev3/blob/master/keymap.rb)
 - [ ] Mouse / Trackball
 - [x] Debugging over a serial port
+- [x] Duplex matrix
 
 ### Getting started
 
