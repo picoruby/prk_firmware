@@ -542,18 +542,22 @@ class Keyboard
     @cols_size = 0
     @matrix = Hash.new
     matrix.each do |cols|
-      @cols_size = cols.size if @cols_size < cols.size
+      @cols_size = [cols.size, @cols_size].max.to_i
       cols.each do |cell|
-        @matrix[cell[0]] = Hash.new unless @matrix[cell[0]]
+        if cell.is_a?(Array)
+          @matrix[cell[0]] = Hash.new unless @matrix[cell[0]]
+        end
       end
     end
     matrix.each_with_index do |rows, row_index|
       rows.each_with_index do |cell, col_index|
-        @matrix[cell[0]][cell[1]] = [row_index, col_index]
-        gpio_init(cell[0])
-        gpio_set_dir(cell[0], GPIO_IN_PULLUP)
-        gpio_init(cell[1])
-        gpio_set_dir(cell[1], GPIO_IN_PULLUP)
+        if cell.is_a?(Array)
+          @matrix[cell[0]][cell[1]] = [row_index, col_index]
+          gpio_init(cell[0])
+          gpio_set_dir(cell[0], GPIO_IN_PULLUP)
+          gpio_init(cell[1])
+          gpio_set_dir(cell[1], GPIO_IN_PULLUP)
+        end
       end
     end
     @offset_a = (@cols_size / 2.0).ceil_to_i

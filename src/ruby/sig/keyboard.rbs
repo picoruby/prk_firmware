@@ -86,7 +86,7 @@ class Keyboard
   def set_anchor: (Symbol val) -> void
   def set_scan_mode: (Symbol val) -> void
   def split_style=: (Symbol style) -> void
-  def init_matrix_pins: (Array[Array[Integer]] matrix) -> void
+  def init_matrix_pins: (Array[Array[Array[Integer] | nil]] matrix) -> void
   def init_uart: () -> void
   def init_pins: (Array[Integer] rows, Array[Integer] cols) -> void
   def init_direct_pins: (Array[Integer] pins) -> void
