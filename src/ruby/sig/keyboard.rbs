@@ -68,6 +68,7 @@ class Keyboard
   @offset_a: Integer
   @offset_b: Integer
   @entire_cols_size: Integer
+  @skip_positions: Array[Array[Integer]]
 
   attr_accessor split: bool
   attr_accessor uart_pin: Integer
@@ -114,4 +115,5 @@ class Keyboard
   def scan_direct!: () -> Array[Array[Integer]]
   def switch_exists?: (Integer row, Integer col) -> bool
   def entire_cols_size: () -> Integer
+  def skip_position?: (Integer row_index, Integer col_index) -> bool
 end

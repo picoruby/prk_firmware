@@ -461,6 +461,7 @@ class Keyboard
     @macro_keycodes = Array.new
     @buffer = Buffer.new("picoirb")
     @scan_mode = :matrix
+    @skip_positions = Array.new
   end
 
   attr_accessor :split, :uart_pin
@@ -557,6 +558,8 @@ class Keyboard
           gpio_set_dir(cell[0], GPIO_IN_PULLUP)
           gpio_init(cell[1])
           gpio_set_dir(cell[1], GPIO_IN_PULLUP)
+        else # should be nil
+          @skip_positions << [row_index, col_index]
         end
       end
     end
@@ -585,6 +588,20 @@ class Keyboard
     @direct_pins = pins
   end
 
+  def skip_position?(row, col)
+    if col < @cols_size
+      @skip_positions.include?([row, col])
+    else
+      col2 = if @split_style == RIGHT_SIDE_FLIPPED_SPLIT
+        col - @cols_size
+      else # STANDARD_SPLIT
+        (col - @cols_size) * -1
+      end
+      #col2 = (col - @cols_size) * -1
+      @skip_positions.include?([row, col2])
+    end
+  end
+
   # Input
   #   name:    default, map: [ [ :KC_A, :KC_B, :KC_LCTL,   :MACRO_1 ],... ]
   # ↓
@@ -592,14 +609,24 @@ class Keyboard
   #   layer: { default:      [ [ -0x04, -0x05, 0b00000001, :MACRO_1 ],... ] }
   def add_layer(name, map)
     new_map = Array.new
+    new_map[0] = Array.new
     row_index = 0
     col_index = 0
     map.each do |key|
       if entire_cols_size <= col_index
         row_index += 1
         col_index = 0
+        new_map[row_index] = Array.new
       end
-      new_map[row_index] = Array.new if col_index == 0
+      while skip_position?(row_index, col_index)
+        new_map[row_index][col_index] = 0
+        col_index += 1
+        if entire_cols_size <= col_index
+          row_index += 1
+          col_index = 0
+          new_map[row_index] = Array.new
+        end
+      end
       col_position = calculate_col_position(col_index)
       case key.class
       when Symbol
