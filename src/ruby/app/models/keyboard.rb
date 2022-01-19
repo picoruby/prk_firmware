@@ -437,6 +437,7 @@ class Keyboard
 
   def initialize
     puts "Initializing Keyboard."
+    sleep_ms 500
     # mruby/c VM doesn't work with a CONSTANT to make another CONSTANT
     # steep doesn't allow dynamic assignment of CONSTANT
     @SHIFT_LETTER_THRESHOLD_A    = LETTER.index('A').to_i
@@ -528,17 +529,19 @@ class Keyboard
     print "Configured as a split-type"
     @anchor = tud_mounted?
     if @anchor
-      uart_anchor_init(@uart_pin)
       puts " Anchor"
+      sleep_ms 500
+      uart_anchor_init(@uart_pin)
     else
-      uart_partner_init(@uart_pin)
       puts " Partner"
+      uart_partner_init(@uart_pin)
     end
     sleep_ms 500
   end
 
   def init_matrix_pins(matrix)
     puts "Initializing GPIO."
+    sleep_ms 500
     init_uart
     @cols_size = 0
     @matrix = Hash.new
@@ -884,7 +887,7 @@ class Keyboard
     # To avoid unintentional report on startup
     # which happens only on Sparkfun Pro Micro RP2040
     if @split && @anchor
-      sleep_ms 100
+      sleep_ms 500
       while true
         data = uart_anchor(0)
         break if data == 0xFFFFFF
