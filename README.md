@@ -20,12 +20,12 @@ The author gave a talk about PRK Firmware in RubyConf 2021.
 
 See the video on [YouTube](https://www.youtube.com/watch?v=SLSwn41iJX4&t=12s).
 
-A Japanese talk is also available at [RubyKaigi Takeout 2021](https://rubykaigi.org/2021-takeout/presentations/hasumikin.html).
+Japanese talk is available at [RubyKaigi Takeout 2021](https://rubykaigi.org/2021-takeout/presentations/hasumikin.html).
 
 ### Roadmap
 
-- [x] Unsplit keyboard
-- [ ] Split keyboard
+- [x] Non-split-type keyboard
+- [ ] Split-type keyboard
   - [x] Symmetrical type. eg) Crkbd
   - [ ] Asymmetrical type. eg) ???
   - [x] UART communication between left and right
@@ -34,7 +34,7 @@ A Japanese talk is also available at [RubyKaigi Takeout 2021](https://rubykaigi.
 - [ ] Media keys
 - [x] RGBLED. An example on [picoruby/prk_crkbd](https://github.com/picoruby/prk_crkbd/blob/main/keymap.rb)
 - [ ] OLED display
-- [x] Rotary encoder. An example on [prk_helix_rev3/keymap.rb](https://github.com/picoruby/prk_helix_rev3/blob/master/keymap.rb)
+- [x] Rotary encoders. An example on [prk_helix_rev3/keymap.rb](https://github.com/picoruby/prk_helix_rev3/blob/master/keymap.rb)
 - [ ] Mouse / Trackball
 - [x] Debugging over a serial port
 - [x] Duplex matrix
