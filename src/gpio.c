@@ -2,10 +2,10 @@
 
 #include "hardware/gpio.h"
 
-#define GPIO_IN          0b000
+//      GPIO_IN          0b000 (defined in the SDK)
 #define GPIO_IN_PULLUP   0b010
 #define GPIO_IN_PULLDOWN 0b110
-#define GPIO_OUT         0b001
+//      GPIO_OUT         0b001 (defined in the SDK)
 #define GPIO_OUT_LO      0b011
 #define GPIO_OUT_HI      0b101
 
