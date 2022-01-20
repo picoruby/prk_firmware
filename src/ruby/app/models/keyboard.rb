@@ -902,7 +902,7 @@ class Keyboard
       @switches.clear
       @modifier = 0
 
-      @switches = @scan_mode == :matrix ? scan_matrix! : scan_direct!
+      @scan_mode == :matrix ? scan_matrix! : scan_direct!
 
       # TODO: more features
       $rgb.fifo_push(true) if $rgb && !@switches.empty?
@@ -1082,7 +1082,6 @@ class Keyboard
   end
 
   def scan_matrix!
-    switches = []
     # detect physical switches that are pushed
     @matrix.each do |out_pin, in_pins|
       gpio_set_dir(out_pin, GPIO_OUT_LO)
@@ -1105,22 +1104,19 @@ class Keyboard
               (switch[1] - @offset_a) * -1 + @offset_b
             end
           end
-          switches << [switch[0], col]
+          @switches << [switch[0], col]
         end
       end
       gpio_set_dir(out_pin, GPIO_IN_PULLUP)
     end
-    return switches
   end
 
   def scan_direct!
-    switches = []
     @direct_pins.each_with_index do |col_pin, col|
       if gpio_get(col_pin)
-        switches << [0, col]
+        @switches << [0, col]
       end
     end
-    return switches
   end
 
   #
