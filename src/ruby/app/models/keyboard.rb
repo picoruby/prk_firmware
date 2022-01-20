@@ -592,17 +592,16 @@ class Keyboard
   end
 
   def skip_position?(row, col)
-    if col < @cols_size
-      @skip_positions.include?([row, col])
+    col2 = if col < @cols_size
+      col
     else
-      col2 = if @split_style == RIGHT_SIDE_FLIPPED_SPLIT
+      if @split_style == RIGHT_SIDE_FLIPPED_SPLIT
         col - @cols_size
       else # STANDARD_SPLIT
-        (col - @cols_size) * -1
+        (col - @cols_size + 1) * -1 + @cols_size
       end
-      #col2 = (col - @cols_size) * -1
-      @skip_positions.include?([row, col2])
     end
+    @skip_positions.include?([row, col2])
   end
 
   # Input
@@ -622,7 +621,7 @@ class Keyboard
         new_map[row_index] = Array.new
       end
       while skip_position?(row_index, col_index)
-        new_map[row_index][col_index] = 0
+        new_map[row_index][calculate_col_position(col_index)] = 0
         col_index += 1
         if entire_cols_size <= col_index
           row_index += 1
