@@ -22,4 +22,12 @@ class Object
   def gpio_pull_up : (Integer) -> void
   def gpio_put : (Integer, Integer) -> void
   def gpio_get : (Integer) -> Integer
+  def i2c_init : -> void
+  def i2c_write : (Integer, Array[Integer]) -> void
+  def i2c_read : (Integer, Integer, Integer)-> Array[Integer]
+  def oled_init : -> void
+  def oled_puts_logo : -> void
+  def oled_puts_txt : (Integer, String) -> void
+  def oled_clear : -> void
+  def oled_clear_line : (Integer) -> void
 end

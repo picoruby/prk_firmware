@@ -46,6 +46,9 @@ add_executable(${PROJECT}
   src/usb_descriptors.c
   src/gpio.c
   src/uart.c
+  src/i2c.c
+  src/glcdfont.c
+  src/oled.c
   src/ws2812.c
   src/rotary_encoder.c
   lib/picoruby/cli/sandbox.c
@@ -127,6 +130,7 @@ target_link_libraries(${PROJECT}
   picoruby
   hardware_pio
   hardware_pwm
+  hardware_i2c
   pico_multicore
   hardware_flash
 )

@@ -13,6 +13,8 @@
 #include "gpio.h"
 #include "usb_descriptors.h"
 #include "uart.h"
+#include "i2c.h"
+#include "oled.h"
 #include "ws2812.h"
 #include "rotary_encoder.h"
 #include "../lib/picoruby/cli/sandbox.h"
@@ -174,6 +176,8 @@ int main() {
   GPIO_INIT();
   USB_INIT();
   UART_INIT();
+  I2C_INIT();
+  OLED_INIT();
   WS2812_INIT();
   ROTARY_ENCODER_INIT();
   SANDBOX_INIT();
