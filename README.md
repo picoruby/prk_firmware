@@ -4,6 +4,8 @@
 
 PRK Firmware is a framework for DIY-keyboards written and configured in [PicoRuby](https://github.com/picoruby/picoruby) which is an alternative mruby implementation targeting on one-chip microcontrollers.
 
+<img src="https://github.com/picoruby/picoruby/blob/master/docs/logos/fukuokarubyaward.png?raw=true" width="212">
+
 ### Features
 
 - A "keymap" can be configured in Ruby which is a concise, readable and happy language
