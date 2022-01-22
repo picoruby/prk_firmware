@@ -24,6 +24,7 @@ static void c_instance_variable_get(struct VM *vm, mrbc_value v[], int argc)
   for(int i = 0; i < kvh->n_stored; i++) {
     if (strncmp(&name[1], symid_to_str(kvh->data[i].sym_id), strlen(name) - 1) == 0) {
       SET_RETURN(kvh->data[i].value);
+      mrbc_incref(&kvh->data[i].value);
       return;
     }
   }

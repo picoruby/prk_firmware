@@ -1,9 +1,10 @@
 class Keyboard
-  GPIO_OUT = 1
-  GPIO_IN  = 0
-
-  HI = 1
-  LO = 0
+  GPIO_IN          = 0b000
+  GPIO_IN_PULLUP   = 0b010
+  GPIO_IN_PULLDOWN = 0b110
+  GPIO_OUT         = 0b001
+  GPIO_OUT_LO      = 0b011
+  GPIO_OUT_HI      = 0b101
 
   MOD_KEYCODE = {
     KC_LCTL: 0b00000001,
@@ -435,7 +436,8 @@ class Keyboard
   RIGHT_SIDE_FLIPPED_SPLIT = :right_side_flipped_split
 
   def initialize
-    puts "Initializing Keyboard ..."
+    puts "Initializing Keyboard."
+    sleep_ms 500
     # mruby/c VM doesn't work with a CONSTANT to make another CONSTANT
     # steep doesn't allow dynamic assignment of CONSTANT
     @SHIFT_LETTER_THRESHOLD_A    = LETTER.index('A').to_i
@@ -460,6 +462,7 @@ class Keyboard
     @macro_keycodes = Array.new
     @buffer = Buffer.new("picoirb")
     @scan_mode = :matrix
+    @skip_positions = Array.new
   end
 
   attr_accessor :split, :uart_pin
@@ -521,40 +524,84 @@ class Keyboard
     end
   end
 
-  def init_pins(rows, cols)
-    puts "Initializing GPIO ..."
-    if @split
-      print "Configured as a split-type"
-      @anchor = tud_mounted?
-      if @anchor
-        uart_anchor_init(@uart_pin)
-        puts " Anchor"
-      else
-        uart_partner_init(@uart_pin)
-        puts " Partner"
-      end
+  def init_uart
+    return unless @split
+    print "Configured as a split-type"
+    @anchor = tud_mounted?
+    if @anchor
+      puts " Anchor"
+      sleep_ms 500
+      uart_anchor_init(@uart_pin)
+    else
+      puts " Partner"
+      uart_partner_init(@uart_pin)
     end
     sleep_ms 500
-    @rows = rows
-    @cols = cols
-    @rows.each do |pin|
-      gpio_init(pin)
-      gpio_set_dir(pin, GPIO_OUT);
-      gpio_put(pin, HI);
+  end
+
+  def init_matrix_pins(matrix)
+    puts "Initializing GPIO."
+    sleep_ms 500
+    init_uart
+    @cols_size = 0
+    @matrix = Hash.new
+    matrix.each do |cols|
+      @cols_size = [cols.size, @cols_size].max.to_i
+      cols.each do |cell|
+        if cell.is_a?(Array)
+          @matrix[cell[0]] = Hash.new unless @matrix[cell[0]]
+        end
+      end
     end
-    @cols.each do |pin|
-      gpio_init(pin)
-      gpio_set_dir(pin, GPIO_IN);
-      gpio_pull_up(pin);
+    matrix.each_with_index do |rows, row_index|
+      rows.each_with_index do |cell, col_index|
+        if cell.is_a?(Array)
+          @matrix[cell[0]][cell[1]] = [row_index, col_index]
+          gpio_init(cell[0])
+          gpio_set_dir(cell[0], GPIO_IN_PULLUP)
+          gpio_init(cell[1])
+          gpio_set_dir(cell[1], GPIO_IN_PULLUP)
+        else # should be nil
+          @skip_positions << [row_index, col_index]
+        end
+      end
     end
-    # for split type
-    @offset_a = (@cols.size / 2.0).ceil_to_i
-    @offset_b = @cols.size * 2 - @offset_a - 1
+    @offset_a = (@cols_size / 2.0).ceil_to_i
+    @offset_b = @cols_size * 2 - @offset_a - 1
+  end
+
+  def init_pins(rows, cols)
+    matrix = Array.new
+    rows.each do |row|
+      line = Array.new
+      cols.each do |col|
+        line << [row, col]
+      end
+      matrix << line
+    end
+    init_matrix_pins matrix
   end
 
   def init_direct_pins(pins)
     set_scan_mode :direct
-    init_pins([], pins)
+    pins.each do |pin|
+      gpio_init(pin)
+      gpio_set_dir(pin, GPIO_IN_PULLUP)
+    end
+    @direct_pins = pins
+  end
+
+  def skip_position?(row, col)
+    col2 = if col < @cols_size
+      col
+    else
+      if @split_style == RIGHT_SIDE_FLIPPED_SPLIT
+        col - @cols_size
+      else # STANDARD_SPLIT
+        (col - @cols_size + 1) * -1 + @cols_size
+      end
+    end
+    @skip_positions.include?([row, col2])
   end
 
   # Input
@@ -563,12 +610,25 @@ class Keyboard
   # Result
   #   layer: { default:      [ [ -0x04, -0x05, 0b00000001, :MACRO_1 ],... ] }
   def add_layer(name, map)
-    new_map = Array.new(@rows.size)
+    new_map = Array.new
+    new_map[0] = Array.new
     row_index = 0
     col_index = 0
-    @entire_cols_size = @split ? @cols.size * 2 : @cols.size
     map.each do |key|
-      new_map[row_index] = Array.new(@cols.size) if col_index == 0
+      if entire_cols_size <= col_index
+        row_index += 1
+        col_index = 0
+        new_map[row_index] = Array.new
+      end
+      while skip_position?(row_index, col_index)
+        new_map[row_index][calculate_col_position(col_index)] = 0
+        col_index += 1
+        if entire_cols_size <= col_index
+          row_index += 1
+          col_index = 0
+          new_map[row_index] = Array.new
+        end
+      end
       col_position = calculate_col_position(col_index)
       case key.class
       when Symbol
@@ -586,29 +646,32 @@ class Keyboard
           switch: [row_index, col_position]
         }
       end
-      if col_index == @entire_cols_size - 1
-        col_index = 0
-        row_index += 1
-      else
-        col_index += 1
-      end
+      col_index += 1
     end
     @keymaps[name] = new_map
     @layer_names << name
   end
 
+  def entire_cols_size
+    @entire_cols_size ||= @split ? @cols_size * 2 : @cols_size
+  end
+
   def calculate_col_position(col_index)
     return col_index unless @split
-
     case @split_style
+    # `when STANDARD_SPLIT` can be deleted after fixing a picoruby's bug
+    #   https://github.com/picoruby/picoruby/issues/74
     when STANDARD_SPLIT
       col_index
     when RIGHT_SIDE_FLIPPED_SPLIT
-      if col_index < @cols.size
+      if col_index < @cols_size
         col_index
       else
-        @entire_cols_size - (col_index - @cols.size) - 1
+        entire_cols_size - (col_index - @cols_size) - 1
       end
+    else
+      # Should not happen but be guarded to pass steep check.
+      col_index
     end
   end
 
@@ -823,7 +886,7 @@ class Keyboard
     # To avoid unintentional report on startup
     # which happens only on Sparkfun Pro Micro RP2040
     if @split && @anchor
-      sleep_ms 100
+      sleep_ms 500
       while true
         data = uart_anchor(0)
         break if data == 0xFFFFFF
@@ -839,7 +902,7 @@ class Keyboard
       @switches.clear
       @modifier = 0
 
-      @switches = @scan_mode == :matrix ? scan_matrix! : scan_direct!
+      @scan_mode == :matrix ? scan_matrix! : scan_direct!
 
       # TODO: more features
       $rgb.fifo_push(true) if $rgb && !@switches.empty?
@@ -1019,47 +1082,41 @@ class Keyboard
   end
 
   def scan_matrix!
-    switches = []
     # detect physical switches that are pushed
-    @rows.each_with_index do |row_pin, row|
-      gpio_put(row_pin, LO)
-      @cols.each_with_index do |col_pin, col|
-        if gpio_get(col_pin) == LO
-          col_data = if @anchor_left
-                       if @anchor
-                         # left
-                         col
-                       else
-                         # right
-                         (col - @offset_a) * -1 + @offset_b
-                       end
-                     else # right side is the anchor
-                       unless @anchor
-                         # left
-                         col
-                       else
-                         # right
-                         (col - @offset_a) * -1 + @offset_b
-                       end
-                     end
-          switches << [row, col_data]
+    @matrix.each do |out_pin, in_pins|
+      gpio_set_dir(out_pin, GPIO_OUT_LO)
+      in_pins.each do |in_pin, switch|
+        unless gpio_get(in_pin)
+          col = if @anchor_left
+            if @anchor
+              # left
+              switch[1]
+            else
+              # right
+              (switch[1] - @offset_a) * -1 + @offset_b
+            end
+          else # right side is the anchor
+            unless @anchor
+              # left
+              switch[1]
+            else
+              # right
+              (switch[1] - @offset_a) * -1 + @offset_b
+            end
+          end
+          @switches << [switch[0], col]
         end
-        # @type break: nil
-        break if switches.size >= @cols.size
       end
-      gpio_put(row_pin, HI)
+      gpio_set_dir(out_pin, GPIO_IN_PULLUP)
     end
-    return switches
   end
 
   def scan_direct!
-    switches = []
-    @cols.each_with_index do |col_pin, col|
-      if gpio_get(col_pin) == LO
-        switches << [0, col]
+    @direct_pins.each_with_index do |col_pin, col|
+      if gpio_get(col_pin)
+        @switches << [0, col]
       end
     end
-    return switches
   end
 
   #

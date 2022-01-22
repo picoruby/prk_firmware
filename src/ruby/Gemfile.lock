@@ -50,6 +50,7 @@ GEM
     zeitwerk (2.5.3)
 
 PLATFORMS
+  ruby
   x86_64-linux
 
 DEPENDENCIES

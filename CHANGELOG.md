@@ -1,5 +1,10 @@
 # Change log
 
+## 0.9.11 on 2022/01/21
+### Duplex matrix 😎
+- Now we encourage you to make a duplex matrix keyboard with Seeed XIAO RP2040  
+  Check details of the API here: [https://github.com/picoruby/prk_firmware/wiki/Keyscan-matrix#duplex-and-round-robin-matrix](https://github.com/picoruby/prk_firmware/wiki/Keyscan-matrix#duplex-and-round-robin-matrix)
+
 ## 0.9.10 on 2022/01/06
 ### Keyboard#define_composite_key
 

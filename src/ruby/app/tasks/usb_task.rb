@@ -1,7 +1,7 @@
-4000.times do
+2000.times do
   tud_task
   cdc_task
-  sleep_ms 1
+  sleep_ms 2
 end
 print "\e[2J\e[1;1H" # clear all & home
 puts "Welcome to PRK Firmware!\n\nTUD task started.\n"
@@ -18,14 +18,14 @@ while true
       puts "Suspending keymap."
       suspend_keymap
       $rgb.turn_off if $rgb
-      autoreload_tick = 1000
+      autoreload_tick = 500
     elsif autoreload_tick == 1
       puts "Trying to reload keymap."
       reload_keymap
-      3000.times do
+      500.times do
         tud_task
         cdc_task
-        sleep_ms 1
+        sleep_ms 2
       end
       resume_keymap
     end

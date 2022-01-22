@@ -8,10 +8,13 @@ class Object
 end
 
 class Keyboard
-  GPIO_OUT: Integer
   GPIO_IN: Integer
-  HI: Integer
-  LO: Integer
+  GPIO_IN_PULLUP: Integer
+  GPIO_IN_PULLDOWN: Integer
+  GPIO_OUT: Integer
+  GPIO_OUT_LO: Integer
+  GPIO_OUT_HI: Integer
+
   MOD_KEYCODE: Hash[Symbol, Integer]
   KEYCODE: Array[Symbol]
   KEYCODE_SFT: Hash[Symbol, Integer]
@@ -50,10 +53,9 @@ class Keyboard
   @layer: Symbol
   @anchor: bool
   @anchor_left: bool
-  @rows: Array[Integer]
-  @cols: Array[Integer]
-  @offset_a: Integer
-  @offset_b: Integer
+  @direct_pins: Array[Integer]
+  @cols_size: Integer
+  @matrix: Hash[Integer, Hash[Integer, Array[Integer]]]
   @locked_layer: Symbol | nil
   @keycodes: Array[String]
   @macro_keys: Array[Integer]
@@ -63,6 +65,10 @@ class Keyboard
   @message: Integer
   @encoders: Array[RotaryEncoder]
   @scan_mode: Symbol
+  @offset_a: Integer
+  @offset_b: Integer
+  @entire_cols_size: Integer
+  @skip_positions: Array[Array[Integer]]
 
   attr_accessor split: bool
   attr_accessor uart_pin: Integer
@@ -81,11 +87,13 @@ class Keyboard
   def set_anchor: (Symbol val) -> void
   def set_scan_mode: (Symbol val) -> void
   def split_style=: (Symbol style) -> void
+  def init_matrix_pins: (Array[Array[Array[Integer] | nil]] matrix) -> void
+  def init_uart: () -> void
   def init_pins: (Array[Integer] rows, Array[Integer] cols) -> void
   def init_direct_pins: (Array[Integer] pins) -> void
+  def calculate_col_position: (Integer col_index) -> Integer
   def convert_composite_keys: (Array[Symbol]) -> Array[Integer]
   def add_layer: (Symbol name, Array[ Symbol | Array[Symbol] ] map) -> void
-  def calculate_col_position: (Integer col_index) -> Integer
   def find_keycode_index: (Symbol key) -> (Integer | Symbol)
   def define_composite_key: (Symbol key_name, Array[Symbol] keys) -> void
   def define_mode_key: (Symbol key_name, [Symbol | Array[Symbol] | Proc | nil, Symbol | Proc, Integer?, Integer?] param) -> void
@@ -103,6 +111,9 @@ class Keyboard
   def macro: (String text, ?::Array[Symbol] opt) -> void
   def eval: (String) -> void
   def ruby: () -> void
-  def scan_matrix!: () -> Array[Array[Integer]]
-  def scan_direct!: () -> Array[Array[Integer]]
+  def scan_matrix!: () -> void
+  def scan_direct!: () -> void
+  def switch_exists?: (Integer row, Integer col) -> bool
+  def entire_cols_size: () -> Integer
+  def skip_position?: (Integer row_index, Integer col_index) -> bool
 end
