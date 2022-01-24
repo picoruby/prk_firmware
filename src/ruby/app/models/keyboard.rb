@@ -934,8 +934,7 @@ class Keyboard
             when :released
               mode_key[:pushed_at] = now
               mode_key[:prev_state] = :pushed
-              if on_hold.is_a?(Symbol) &&
-                  @layer_names.index(desired_layer).to_i < @layer_names.index(on_hold).to_i
+              if on_hold.is_a?(Symbol)
                 desired_layer = on_hold
               end
             when :pushed
