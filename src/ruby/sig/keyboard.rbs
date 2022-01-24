@@ -101,7 +101,6 @@ class Keyboard
   def before_report: () { () -> void } -> void
   def keys_include?: (Symbol) -> bool
   def action_on_release: (Integer | Array[Integer] | Proc | nil) -> void
-  def action_on_hold: (Integer | Symbol | Proc) -> void
   def send_key: (Symbol) -> void
   def start!: -> void
   def raise_layer: -> void

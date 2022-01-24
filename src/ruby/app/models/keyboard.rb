@@ -833,20 +833,6 @@ class Keyboard
     end
   end
 
-  def action_on_hold(mode_key)
-    case mode_key.class
-    when Integer
-      # @type var mode_key: Integer
-      @modifier |= mode_key
-    when Symbol
-      # @type var mode_key: Symbol
-      @layer = mode_key
-    when Proc
-      # @type var mode_key: Proc
-      mode_key.call
-    end
-  end
-
   # for Encoders
   def send_key(symbol)
     keycode = KEYCODE.index(symbol)
@@ -943,18 +929,25 @@ class Keyboard
         @mode_keys.each do |mode_key|
           next if mode_key[:layer] != @layer
           if @switches.include?(mode_key[:switch])
+            on_hold = mode_key[:on_hold]
             case mode_key[:prev_state]
             when :released
               mode_key[:pushed_at] = now
               mode_key[:prev_state] = :pushed
-              on_hold = mode_key[:on_hold]
               if on_hold.is_a?(Symbol) &&
                   @layer_names.index(desired_layer).to_i < @layer_names.index(on_hold).to_i
                 desired_layer = on_hold
               end
             when :pushed
-              if !mode_key[:on_hold].is_a?(Symbol) && (now - mode_key[:pushed_at] > mode_key[:release_threshold])
-                action_on_hold(mode_key[:on_hold])
+              if !on_hold.is_a?(Symbol) && (now - mode_key[:pushed_at] > mode_key[:release_threshold])
+                case on_hold.class
+                when Integer
+                  # @type var on_hold: Integer
+                  @modifier |= on_hold
+                when Proc
+                  # @type var on_hold: Proc
+                  on_hold.call
+                end
               end
             when :pushed_then_released
               if now - mode_key[:released_at] <= mode_key[:repush_threshold]
@@ -987,7 +980,7 @@ class Keyboard
 
         if @layer != desired_layer
           prev_layer = @layer if prev_layer != :default
-          action_on_hold(desired_layer)
+          @layer = desired_layer
         end
 
         keymap = @keymaps[@locked_layer || @layer]
