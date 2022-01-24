@@ -926,6 +926,9 @@ class Keyboard
             action_on_release(composite_key[:keycodes])
           end
         end
+
+        right_after_layer_key_pushed = false
+
         @mode_keys.each do |mode_key|
           next if mode_key[:layer] != @layer
           if @switches.include?(mode_key[:switch])
@@ -936,6 +939,7 @@ class Keyboard
               mode_key[:prev_state] = :pushed
               if on_hold.is_a?(Symbol)
                 desired_layer = on_hold
+                right_after_layer_key_pushed = true
               end
             when :pushed
               if !on_hold.is_a?(Symbol) && (now - mode_key[:pushed_at] > mode_key[:release_threshold])
@@ -982,8 +986,15 @@ class Keyboard
           @layer = desired_layer
         end
 
+        # To fix https://github.com/picoruby/prk_firmware/issues/49
+        if right_after_layer_key_pushed
+          sleep_ms 20
+          next # Skip reporting keycodes
+        end
+
         keymap = @keymaps[@locked_layer || @layer]
-        @switches.each do |switch|
+        modifier_switch_positions = Array.new
+        @switches.each_with_index do |switch, i|
           keycode = keymap[switch[0]][switch[1]]
           next unless keycode.is_a?(Integer)
           if keycode < -255 # Key with SHIFT
@@ -993,9 +1004,14 @@ class Keyboard
             @keycodes << (keycode * -1).chr
           elsif keycode > 0x100
             rgb_message = $rgb.invoke_anchor KEYCODE_RGB.key(keycode)
-          else # Modifier keys
+          else # Should be a modifier key
             @modifier |= keycode
+            modifier_switch_positions << i
           end
+        end
+        # To fix https://github.com/picoruby/prk_firmware/issues/49
+        modifier_switch_positions.each do |i|
+          @switches.delete_at(i)
         end
 
         # Macro
@@ -1046,11 +1062,11 @@ class Keyboard
         end
         report_hid(@modifier, @keycodes.join)
 
-        if @switches.empty? && @locked_layer.nil?
-          @layer = :default
-        elsif @locked_layer
+        if @locked_layer
           # @type ivar @locked_layer: Symbol
           @layer = @locked_layer
+        elsif @switches.empty?
+          @layer = :default
         end
       else
         # Partner
