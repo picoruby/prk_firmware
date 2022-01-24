@@ -882,6 +882,7 @@ class Keyboard
   def start!
     puts "Starting keyboard task ..."
     @keycodes = Array.new
+    prev_layer = :default
 
     # To avoid unintentional report on startup
     # which happens only on Sparkfun Pro Micro RP2040
@@ -972,8 +973,8 @@ class Keyboard
                 mode_key[:prev_state] = :released
               end
               mode_key[:released_at] = now
-              @layer = @prev_layer || :default
-              @prev_layer = nil
+              @layer = prev_layer
+              prev_layer = :default
             when :pushed_then_released
               if now - mode_key[:released_at] > mode_key[:release_threshold]
                 mode_key[:prev_state] = :released
@@ -985,7 +986,7 @@ class Keyboard
         end
 
         if @layer != desired_layer
-          @prev_layer ||= @layer
+          prev_layer = @layer if prev_layer != :default
           action_on_hold(desired_layer)
         end
 
