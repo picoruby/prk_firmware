@@ -463,9 +463,10 @@ class Keyboard
     @buffer = Buffer.new("picoirb")
     @scan_mode = :matrix
     @skip_positions = Array.new
+    @layer_changed_delay = 20
   end
 
-  attr_accessor :split, :uart_pin
+  attr_accessor :split, :uart_pin, :layer_changed_delay
   attr_reader :layer, :split_style
 
   # TODO: OLED, SDCard
@@ -833,20 +834,6 @@ class Keyboard
     end
   end
 
-  def action_on_hold(mode_key)
-    case mode_key.class
-    when Integer
-      # @type var mode_key: Integer
-      @modifier |= mode_key
-    when Symbol
-      # @type var mode_key: Symbol
-      @layer = mode_key
-    when Proc
-      # @type var mode_key: Proc
-      mode_key.call
-    end
-  end
-
   # for Encoders
   def send_key(symbol)
     keycode = KEYCODE.index(symbol)
@@ -882,6 +869,7 @@ class Keyboard
   def start!
     puts "Starting keyboard task ..."
     @keycodes = Array.new
+    prev_layer = :default
 
     # To avoid unintentional report on startup
     # which happens only on Sparkfun Pro Micro RP2040
@@ -939,21 +927,31 @@ class Keyboard
             action_on_release(composite_key[:keycodes])
           end
         end
+
+        right_after_layer_key_pushed = false
+
         @mode_keys.each do |mode_key|
           next if mode_key[:layer] != @layer
           if @switches.include?(mode_key[:switch])
+            on_hold = mode_key[:on_hold]
             case mode_key[:prev_state]
             when :released
               mode_key[:pushed_at] = now
               mode_key[:prev_state] = :pushed
-              on_hold = mode_key[:on_hold]
-              if on_hold.is_a?(Symbol) &&
-                  @layer_names.index(desired_layer).to_i < @layer_names.index(on_hold).to_i
+              if on_hold.is_a?(Symbol)
                 desired_layer = on_hold
+                right_after_layer_key_pushed = true
               end
             when :pushed
-              if !mode_key[:on_hold].is_a?(Symbol) && (now - mode_key[:pushed_at] > mode_key[:release_threshold])
-                action_on_hold(mode_key[:on_hold])
+              if !on_hold.is_a?(Symbol) && (now - mode_key[:pushed_at] > mode_key[:release_threshold])
+                case on_hold.class
+                when Integer
+                  # @type var on_hold: Integer
+                  @modifier |= on_hold
+                when Proc
+                  # @type var on_hold: Proc
+                  on_hold.call
+                end
               end
             when :pushed_then_released
               if now - mode_key[:released_at] <= mode_key[:repush_threshold]
@@ -972,8 +970,8 @@ class Keyboard
                 mode_key[:prev_state] = :released
               end
               mode_key[:released_at] = now
-              @layer = @prev_layer || :default
-              @prev_layer = nil
+              @layer = prev_layer
+              prev_layer = :default
             when :pushed_then_released
               if now - mode_key[:released_at] > mode_key[:release_threshold]
                 mode_key[:prev_state] = :released
@@ -985,12 +983,19 @@ class Keyboard
         end
 
         if @layer != desired_layer
-          @prev_layer ||= @layer
-          action_on_hold(desired_layer)
+          prev_layer = @layer if prev_layer != :default
+          @layer = desired_layer
+        end
+
+        # To fix https://github.com/picoruby/prk_firmware/issues/49
+        if right_after_layer_key_pushed
+          sleep_ms @layer_changed_delay
+          next # Skip reporting keycodes
         end
 
         keymap = @keymaps[@locked_layer || @layer]
-        @switches.each do |switch|
+        modifier_switch_positions = Array.new
+        @switches.each_with_index do |switch, i|
           keycode = keymap[switch[0]][switch[1]]
           next unless keycode.is_a?(Integer)
           if keycode < -255 # Key with SHIFT
@@ -1000,9 +1005,14 @@ class Keyboard
             @keycodes << (keycode * -1).chr
           elsif keycode > 0x100
             rgb_message = $rgb.invoke_anchor KEYCODE_RGB.key(keycode)
-          else # Modifier keys
+          else # Should be a modifier key
             @modifier |= keycode
+            modifier_switch_positions << i
           end
+        end
+        # To fix https://github.com/picoruby/prk_firmware/issues/49
+        modifier_switch_positions.each do |i|
+          @switches.delete_at(i)
         end
 
         # Macro
@@ -1053,11 +1063,11 @@ class Keyboard
         end
         report_hid(@modifier, @keycodes.join)
 
-        if @switches.empty? && @locked_layer.nil?
-          @layer = :default
-        elsif @locked_layer
+        if @locked_layer
           # @type ivar @locked_layer: Symbol
           @layer = @locked_layer
+        elsif @switches.empty?
+          @layer = :default
         end
       else
         # Partner

@@ -1,5 +1,10 @@
 # Change log
 
+## 0.9.12 on 2022/01/27
+### Bug fix 🐛
+- Fixed some bugs that relate to mode key.
+  See [issue/49](https://github.com/picoruby/prk_firmware/issues/49) for details
+
 ## 0.9.11 on 2022/01/21
 ### Duplex matrix 😎
 - Now we encourage you to make a duplex matrix keyboard with Seeed XIAO RP2040  
