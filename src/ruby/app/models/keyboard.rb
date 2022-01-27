@@ -463,9 +463,10 @@ class Keyboard
     @buffer = Buffer.new("picoirb")
     @scan_mode = :matrix
     @skip_positions = Array.new
+    @layer_changed_delay = 20
   end
 
-  attr_accessor :split, :uart_pin
+  attr_accessor :split, :uart_pin, :layer_changed_delay
   attr_reader :layer, :split_style
 
   # TODO: OLED, SDCard
@@ -988,7 +989,7 @@ class Keyboard
 
         # To fix https://github.com/picoruby/prk_firmware/issues/49
         if right_after_layer_key_pushed
-          sleep_ms 20
+          sleep_ms @layer_changed_delay
           next # Skip reporting keycodes
         end
 
