@@ -14,6 +14,7 @@ while true
   cdc_task
   if autoreload_ready?
     if autoreload_tick == 0
+      report_hid(0, "\000\000\000\000\000\000")
       puts "Autoreload is ready."
       puts "Suspending keymap."
       suspend_keymap
