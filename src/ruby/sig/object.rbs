@@ -11,6 +11,7 @@ class Object
   def suspend_keymap: () -> void
   def resume_keymap: () -> void
   def reload_keymap: () -> void
+  def report_hid : (Integer, String) -> void
 
   # Raspi
   def board_millis : -> Integer

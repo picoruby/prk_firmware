@@ -17,6 +17,7 @@ while true
       puts "Autoreload is ready."
       puts "Suspending keymap."
       suspend_keymap
+      report_hid(0, "\000\000\000\000\000\000")
       $rgb.turn_off if $rgb
       autoreload_tick = 500
     elsif autoreload_tick == 1
