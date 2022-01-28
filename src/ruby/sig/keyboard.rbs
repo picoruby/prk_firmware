@@ -24,6 +24,15 @@ class Keyboard
 
   STANDARD_SPLIT: Symbol
   RIGHT_SIDE_FLIPPED_SPLIT: Symbol
+  
+  #VIA
+  VIA_FILENAME: String
+  VIA_IDs : Array[Symbol]
+  VIA_PROTOCOL_VERSION : Integer
+  REPORT_RAW_MAX_LEN : Integer
+  KEYBOARD_VALUES : Array[Symbol]
+  ID_UNHANDLED : Integer
+  @via_layer_count : Integer
 
   @SHIFT_LETTER_OFFSET_A: Integer
   @SHIFT_LETTER_OFFSET_UNDS: Integer
@@ -48,6 +57,10 @@ class Keyboard
     pushed_at:         Integer,
     released_at:       Integer
   }]
+  @mode_keys_via: Hash[Symbol, [ Symbol | Array[Symbol] | Proc | nil, Symbol | Proc, Integer | nil, Integer| nil ] ]
+  @enable_via: bool
+  @keymap_saved: bool
+  
   @switches: Array[Array[Integer]]
   @layer_names: Array[Symbol]
   @layer: Symbol
@@ -82,6 +95,33 @@ class Keyboard
   def uart_anchor : (Integer) -> Integer
   def uart_anchor_init : (Integer) -> void
   def uart_partner_init : (Integer) -> void
+  def report_hid : (Integer, String) -> void
+
+  # VIA Ruby
+  def raw_hid_report_received?: -> bool
+  def set_raw_hid_report_read: -> void
+  def get_last_received_raw_hid_report: -> Array[Integer]
+  def report_raw_hid : (Array[Integer]) -> bool
+  def save_keymap_via: -> void
+  def eval_val : (String) -> untyped
+  def raw_hid_receive : (Array[Integer]) -> Array[Integer]
+  def raw_hid_receive_kb : (Array[Integer]) -> Array[Integer]
+  def via_get_layer_name : (Integer) -> Symbol
+  def dynamic_keymap_set_buffer : (Array[Integer]) -> void
+  def dynamic_keymap_get_buffer : (Array[Integer]) -> Array[Integer]
+  def dynamic_keymap_get_keycode : (Integer, Integer, Integer) -> Integer
+  def dynamic_keymap_set_keycode : (Integer, Integer, Integer, Integer) -> void
+  def via_task: -> void
+  def prk_keycode_into_keysymbol : (Integer | Symbol | Proc) -> Symbol
+  def via_keycode_into_prk_keycode : (Integer) -> ( [Integer, Integer] | Symbol | Integer )
+  def get_composite_key : (Symbol) -> Array[Symbol]
+  def get_via_composite_keycode : (Symbol) -> Integer
+  def prk_keycode_into_via_keycode : (Integer | Symbol | Proc) -> Integer
+  def get_modifier_name : (Integer) -> String
+  def load_mode_keys_via: -> void
+  def define_mode_key_via : (Symbol key_name, [Symbol | Array[Symbol] | Proc | nil, Symbol | Proc, Integer?, Integer?] param) -> void
+  def convert_to_uint8_array : (String) -> Array[Integer]
+  
   def initialize: -> void
   def layer: () -> Symbol
   def set_anchor: (Symbol val) -> void

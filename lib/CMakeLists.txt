@@ -32,7 +32,7 @@ add_library(picoruby STATIC
   ./picoruby/src/mrubyc/src/symbol.c
   ./picoruby/src/mrubyc/src/value.c
   ./picoruby/src/mrubyc/src/vm.c
-  ./picoruby/src/mrubyc/src/hal_user_reserved/hal.c
+  ./picoruby/src/mrubyc/src/hal_rp2040/hal.c
 
   ./picoruby/src/common.c
   ./picoruby/src/compiler.c
