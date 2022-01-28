@@ -868,8 +868,6 @@ class Keyboard
   # **************************************************************
   def start!
     puts "Starting keyboard task ..."
-    @keycodes = Array.new
-    prev_layer = :default
 
     # To avoid unintentional report on startup
     # which happens only on Sparkfun Pro Micro RP2040
@@ -881,7 +879,12 @@ class Keyboard
       end
     end
 
+    @keycodes = Array.new
+    prev_layer = :default
+    modifier_switch_positions = Array.new
     rgb_message = 0
+    earlier_report_size = 0
+
     while true
       cycle_time = 20
       now = board_millis
@@ -928,8 +931,6 @@ class Keyboard
           end
         end
 
-        right_after_layer_key_pushed = false
-
         @mode_keys.each do |mode_key|
           next if mode_key[:layer] != @layer
           if @switches.include?(mode_key[:switch])
@@ -938,13 +939,15 @@ class Keyboard
             when :released
               mode_key[:pushed_at] = now
               mode_key[:prev_state] = :pushed
-              if on_hold.is_a?(Symbol)
+              if on_hold.is_a?(Symbol) && earlier_report_size == 0
                 desired_layer = on_hold
-                right_after_layer_key_pushed = true
               end
             when :pushed
-              if !on_hold.is_a?(Symbol) && (now - mode_key[:pushed_at] > mode_key[:release_threshold])
+              if now - mode_key[:pushed_at] > mode_key[:release_threshold]
                 case on_hold.class
+                when Symbol
+                  # @type var on_hold: Symbol
+                  desired_layer = on_hold
                 when Integer
                   # @type var on_hold: Integer
                   @modifier |= on_hold
@@ -987,14 +990,8 @@ class Keyboard
           @layer = desired_layer
         end
 
-        # To fix https://github.com/picoruby/prk_firmware/issues/49
-        if right_after_layer_key_pushed
-          sleep_ms @layer_changed_delay
-          next # Skip reporting keycodes
-        end
-
         keymap = @keymaps[@locked_layer || @layer]
-        modifier_switch_positions = Array.new
+        modifier_switch_positions.clear
         @switches.each_with_index do |switch, i|
           keycode = keymap[switch[0]][switch[1]]
           next unless keycode.is_a?(Integer)
@@ -1027,7 +1024,8 @@ class Keyboard
           cycle_time = 40 # To avoid accidental skip
         end
 
-        (6 - @keycodes.size).times do
+        earlier_report_size = @keycodes.size
+        (6 - earlier_report_size).times do
           @keycodes << "\000"
         end
 
