@@ -15,7 +15,7 @@
 #include "uart.h"
 #include "ws2812.h"
 #include "rotary_encoder.h"
-#include "../lib/picoruby/cli/sandbox.h"
+#include <sandbox.h>
 
 /* ruby */
 /* models */
