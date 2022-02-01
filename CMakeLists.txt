@@ -48,26 +48,14 @@ add_executable(${PROJECT}
   src/uart.c
   src/ws2812.c
   src/rotary_encoder.c
-  lib/picoruby/cli/sandbox.c
+  lib/picoruby/build/repos/host/mruby-bin-picoirb/tools/picoirb/sandbox.c
 )
 
 pico_generate_pio_header(${PROJECT} ${CMAKE_CURRENT_LIST_DIR}/src/uart_tx.pio)
 pico_generate_pio_header(${PROJECT} ${CMAKE_CURRENT_LIST_DIR}/src/ws2812.pio)
 
-set(RBC ${CMAKE_CURRENT_SOURCE_DIR}/lib/picoruby/build/bin/host-production/alloc_libc/picorbc)
+set(RBC ${CMAKE_CURRENT_SOURCE_DIR}/lib/picoruby/bin/picorbc)
 #set(RBC RBENV_VERSION=mruby-3.0.0 mrbc) # In case of PicoRuby compiler enbugged 😵
-
-add_custom_target(steep
-  COMMAND bundle exec steep -h || bundle install
-  COMMAND ${CMAKE_COMMAND} -E env PROJECT_BINARY_DIR=${PROJECT_BINARY_DIR} rake steep
-  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src/ruby
-)
-
-add_custom_target(mrubyc-test
-  COMMAND bundle exec mrubyc-test version || bundle install
-  COMMAND ${CMAKE_COMMAND} -E env PROJECT_BINARY_DIR=${PROJECT_BINARY_DIR} rake test
-  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src/ruby
-)
 
 if(PRK_NO_MSC)
   add_custom_target(keymap
@@ -97,21 +85,13 @@ add_custom_target(tasks
 add_custom_target(ruby
 )
 
-#add_custom_target(sandbox
-#  COMMAND ${RBC} -Bsandbox        sandbox.rb
-#  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/lib/picoruby/cli/ruby
-#)
-
 add_dependencies(ruby
   models
   tasks
-  steep
-  mrubyc-test
 )
 add_dependencies(${PROJECT}
   picoruby
   ruby
-  #  sandbox
 )
 if(PRK_NO_MSC)
   add_dependencies(${PROJECT}
@@ -131,11 +111,12 @@ target_link_libraries(${PROJECT}
   hardware_flash
 )
 
-include_directories(${PROJECT}
-  PRIVATE
-    ${CMAKE_CURRENT_LIST_DIR}
-    ${CMAKE_CURRENT_LIST_DIR}/include
-    ${CMAKE_CURRENT_LIST_DIR}/lib/picoruby/src/mrubyc/src
+include_directories(${PROJECT} PRIVATE
+  ${CMAKE_CURRENT_LIST_DIR}
+  ${CMAKE_CURRENT_LIST_DIR}/include
+  ${CMAKE_CURRENT_LIST_DIR}/lib/picoruby/build/repos/host/mruby-bin-picoirb/tools/picoirb
+  ${CMAKE_CURRENT_LIST_DIR}/lib/picoruby/build/repos/host/mruby-pico-compiler/include
+  ${CMAKE_CURRENT_LIST_DIR}/lib/picoruby/build/repos/host/mruby-mrubyc/repos/mrubyc/src
 )
 
 # create map/bin/hex/uf2 file in addition to ELF.
