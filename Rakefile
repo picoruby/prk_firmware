@@ -3,9 +3,9 @@ require "fileutils"
 task :default => :all
 
 desc "build PRK Firmware in build directory"
-task :all => %i(check_setup build)
+task :all => %i(check_setup test_all skip_test)
 
-task :build => :test_all do
+task :skip_test do
   FileUtils.cd "build" do
     sh "cmake .. && make"
   end
