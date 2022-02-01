@@ -676,8 +676,12 @@ class Keyboard
     end
   end
 
+  def resolve_key_alias(sym)
+    KC_ALIASES[sym] || sym
+  end
+
   def find_keycode_index(key)
-    key = KC_ALIASES[key] ? KC_ALIASES[key] : key
+    key = resolve_key_alias(key)
     keycode_index = KEYCODE.index(key)
 
     if keycode_index
@@ -695,6 +699,7 @@ class Keyboard
 
   def convert_composite_keys(keys)
     keys.map do |sym|
+      sym = resolve_key_alias(sym)
       keycode_index = KEYCODE.index(sym)
       if keycode_index
         keycode_index * -1
@@ -739,7 +744,7 @@ class Keyboard
             on_release_action = case on_release.class
             when Symbol
               # @type var on_release: Symbol
-              key = KC_ALIASES[on_release] ? KC_ALIASES[on_release] : on_release
+              key = resolve_key_alias(on_release)
               keycode_index = KEYCODE.index(key)
               if keycode_index
                 keycode_index * -1
