@@ -13,14 +13,7 @@ jobs:
       with:
         ruby-version: 3.0.1
         bundler-cache: true # runs 'bundle install' and caches installed gems automatically
-    - id: steep
-      run: BUNDLE_GEMFILE=Gemfile bundle exec steep check
-      working-directory: src/ruby
-      #- name: Setup tmate session
-      #  uses: mxschmitt/action-tmate@v3
-    - id: picorbc
-      run: make host_production_libc
-      working-directory: lib/picoruby
-    - id: test
-      run: BUNDLE_GEMFILE=Gemfile CFLAGS=-DMAX_SYMBOLS_COUNT=1000 bundle exec mrubyc-test
-      working-directory: src/ruby
+    - name: Setup tmate session
+      uses: mxschmitt/action-tmate@v3
+    - name: test_all
+      run: BUNDLE_GEMFILE=Gemfile rake test_all
