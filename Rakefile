@@ -11,6 +11,27 @@ task :build => :test_all do
   end
 end
 
+desc "build PRK Firmware inclusive of keymap.rb (without mass storage)"
+task :build_with_keymap, ['keyboard_name'] => :test_all do |_t, args|
+  unless args.keyboard_name
+    raise "Argument `keyboard_name` missing.\nUsage: rake build_with_keymap[prk_meishi2]"
+  end
+  dir = "keyboards/#{args.keyboard_name}/build"
+  FileUtils.mkdir_p dir
+  FileUtils.cd dir do
+    sh "cmake -DPRK_NO_MSC=1 ../../.. && make"
+  end
+end
+
+desc "clean built that includes keymap"
+task :clean_with_keymap , ['keyboard_name'] do |_t, args|
+  unless args.keyboard_name
+    raise "Argument `keyboard_name` missing.\nUsage: rake clean_with_keymap[prk_meishi2]"
+  end
+  FileUtils.rm_r Dir.glob("keyboards/#{args.keyboard_name}/build/*")
+end
+
+
 desc "run :steep_check and :mrubyc_test"
 task :test_all => %i(steep_check mrubyc_test)
 
@@ -59,7 +80,7 @@ task :setup do
   end
 end
 
-desc "clean all built"
+desc "clean built"
 task :clean do
   FileUtils.rm_r Dir.glob("build/*")
 end
