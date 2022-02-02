@@ -463,10 +463,9 @@ class Keyboard
     @buffer = Buffer.new("picoirb")
     @scan_mode = :matrix
     @skip_positions = Array.new
-    @layer_changed_delay = 20
   end
 
-  attr_accessor :split, :uart_pin, :layer_changed_delay
+  attr_accessor :split, :uart_pin
   attr_reader :layer, :split_style
 
   # TODO: OLED, SDCard

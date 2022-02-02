@@ -72,7 +72,6 @@ class Keyboard
 
   attr_accessor split: bool
   attr_accessor uart_pin: Integer
-  attr_accessor layer_changed_delay: Integer
 
   def append: (RGB | RotaryEncoder feature) -> void
   def start_features: -> void
