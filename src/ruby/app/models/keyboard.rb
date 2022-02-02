@@ -437,7 +437,6 @@ class Keyboard
 
   def initialize
     puts "Initializing Keyboard."
-    sleep_ms 500
     # mruby/c VM doesn't work with a CONSTANT to make another CONSTANT
     # steep doesn't allow dynamic assignment of CONSTANT
     @SHIFT_LETTER_THRESHOLD_A    = LETTER.index('A').to_i
@@ -530,18 +529,15 @@ class Keyboard
     @anchor = tud_mounted?
     if @anchor
       puts " Anchor"
-      sleep_ms 500
       uart_anchor_init(@uart_pin)
     else
       puts " Partner"
       uart_partner_init(@uart_pin)
     end
-    sleep_ms 500
   end
 
   def init_matrix_pins(matrix)
     puts "Initializing GPIO."
-    sleep_ms 500
     init_uart
     @cols_size = 0
     @matrix = Hash.new
