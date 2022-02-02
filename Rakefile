@@ -69,7 +69,7 @@ end
 desc "you have to run this task once before build"
 task :setup do
   FileUtils.cd "src/ruby" do
-    sh "bundle install"
+    sh "bundle exec steep -h || bundle install"
   end
   FileUtils.cd "lib/picoruby" do
     sh "rake all"
@@ -82,11 +82,14 @@ end
 
 desc "clean built"
 task :clean do
-  FileUtils.rm_r Dir.glob("build/*")
+  FileUtils.cd "build" do
+    sh "make clean"
+  end
 end
 
 desc "clean everything (Then you'll need to do `rake setup`"
-task :deep_clean => :clean do
+task :deep_clean do
+  FileUtils.rm_r Dir.glob("build/*")
   FileUtils.cd "lib/picoruby" do
     sh "rake deep_clean"
   end
