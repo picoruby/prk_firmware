@@ -970,7 +970,9 @@ class Keyboard
           else
             case mode_key[:prev_state]
             when :pushed
-              if now - mode_key[:pushed_at] <= mode_key[:release_threshold]
+              if (now - mode_key[:pushed_at] <= mode_key[:release_threshold]) &&
+                  # To fix https://github.com/picoruby/prk_firmware/issues/49#issuecomment-1027603747
+                  (earlier_report_size == 0)
                 action_on_release(mode_key[:on_release])
                 mode_key[:prev_state] = :pushed_then_released
               else
