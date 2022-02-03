@@ -937,13 +937,9 @@ class Keyboard
             on_hold = mode_key[:on_hold]
             case mode_key[:prev_state]
             when :released
-              mode_key[:pushed_at] = now
-              mode_key[:prev_state] = :pushed
-              if on_hold.is_a?(Symbol) && earlier_report_size == 0
-                desired_layer = on_hold
-              end
-            when :pushed
-              if now - mode_key[:pushed_at] > mode_key[:release_threshold]
+              if earlier_report_size == 0
+                mode_key[:pushed_at] = now
+                mode_key[:prev_state] = :pushed
                 case on_hold.class
                 when Symbol
                   # @type var on_hold: Symbol
@@ -956,6 +952,8 @@ class Keyboard
                   on_hold.call
                 end
               end
+            when :pushed
+              mode_key[:pushed_at] = 0 if earlier_report_size > 0
             when :pushed_then_released
               if now - mode_key[:released_at] <= mode_key[:repush_threshold]
                 mode_key[:prev_state] = :pushed_then_released_then_pushed
@@ -966,11 +964,7 @@ class Keyboard
           else
             case mode_key[:prev_state]
             when :pushed
-              if (now - mode_key[:pushed_at] <= mode_key[:release_threshold]) &&
-                  # To suppress a behavior described below
-                  # https://github.com/picoruby/prk_firmware/issues/49#issuecomment-1027603747
-                  # (Could not fix completely)
-                  (earlier_report_size == 0)
+              if (now - mode_key[:pushed_at] <= mode_key[:release_threshold])
                 action_on_release(mode_key[:on_release])
                 mode_key[:prev_state] = :pushed_then_released
               else
