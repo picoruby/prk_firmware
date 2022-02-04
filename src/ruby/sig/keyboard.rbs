@@ -60,6 +60,7 @@ class Keyboard
   @mode_keys_via: Hash[Symbol, [ Symbol | Array[Symbol] | Proc | nil, Symbol | Proc, Integer | nil, Integer| nil ] ]
   @enable_via: bool
   @keymap_saved: bool
+  @map_size: Integer
   
   @switches: Array[Array[Integer]]
   @layer_names: Array[Symbol]

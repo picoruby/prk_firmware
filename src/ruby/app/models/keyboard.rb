@@ -469,6 +469,7 @@ class Keyboard
     @scan_mode = :matrix
     @skip_positions = Array.new
     @layer_changed_delay = 20
+    @map_size = 0
   end
 
   attr_accessor :split, :uart_pin, :layer_changed_delay
@@ -567,6 +568,7 @@ class Keyboard
           gpio_set_dir(cell[0], GPIO_IN_PULLUP)
           gpio_init(cell[1])
           gpio_set_dir(cell[1], GPIO_IN_PULLUP)
+          @map_size += 1;
         else # should be nil
           @skip_positions << [row_index, col_index]
         end
@@ -595,6 +597,7 @@ class Keyboard
       gpio_set_dir(pin, GPIO_IN_PULLUP)
     end
     @direct_pins = pins
+    @map_size = pins.size
   end
 
   def skip_position?(row, col)
@@ -1635,16 +1638,15 @@ class Keyboard
     # @type var data: Array[Integer]
     offset = (data[1]<<8) | data[2]
     size   = data[3]
-    map_size = @entire_cols_size * @rows.size
-    layer_num = offset/2/map_size
-    key_index = offset/2 - layer_num * map_size
+    layer_num = offset/2/@map_size
+    key_index = offset/2 - layer_num * @map_size
     
     layer_name = via_get_layer_name layer_num
     
     (data.size/2).times do |i|
       next if i<2 #header
       keycode = data[i*2] << 8 | data[i*2+1]
-      if key_index==map_size
+      if key_index==@map_size
         layer_num += 1
         layer_name = via_get_layer_name layer_num
       end
@@ -1683,16 +1685,15 @@ class Keyboard
   def dynamic_keymap_get_buffer(data)
     offset = (data[1]<<8) | data[2]
     size   = data[3]
-    map_size = @entire_cols_size * @rows.size
-    layer_num = (offset/2/map_size).to_i
-    key_index = (offset/2 - layer_num * map_size).to_i
+    layer_num = (offset/2/@map_size).to_i
+    key_index = (offset/2 - layer_num * @map_size).to_i
     
     layer_name = via_get_layer_name layer_num
     
     (data.size/2).times do |i|
       next if i<2 #header
       
-      if key_index==map_size
+      if key_index==@map_size
         layer_num += 1
         layer_name = via_get_layer_name layer_num
         key_index = 0
