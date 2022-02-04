@@ -2,75 +2,52 @@ cmake_minimum_required(VERSION 3.13)
 include(../pico_sdk_import.cmake)
 project(picoruby
   VERSION 0.0.1
-  DESCRIPTION "mruby/c VM implementation"
+  DESCRIPTION "PicoRuby"
   LANGUAGES C
 )
 
-#execute_process (
-#  COMMAND ln -sf ../../../../../../lib/hal/hal.c
-#  COMMAND ln -sf ../../../../../../lib/hal/hal.h
-#  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/picoruby/src/mrubyc/src/hal_user_reserved
-#)
+set(MRUBYC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/picoruby/build/repos/host/mruby-mrubyc/repos/mrubyc)
+set(PICO_COMPILER_DIR ${CMAKE_CURRENT_SOURCE_DIR}/picoruby/build/repos/host/mruby-pico-compiler)
 
 add_library(picoruby STATIC
-  ./picoruby/src/mrubyc/src/alloc.c
-  ./picoruby/src/mrubyc/src/c_array.c
-  ./picoruby/src/mrubyc/src/c_hash.c
-  ./picoruby/src/mrubyc/src/c_math.c
-  ./picoruby/src/mrubyc/src/c_numeric.c
-  ./picoruby/src/mrubyc/src/c_object.c
-  ./picoruby/src/mrubyc/src/c_range.c
-  ./picoruby/src/mrubyc/src/c_string.c
-  ./picoruby/src/mrubyc/src/class.c
-  ./picoruby/src/mrubyc/src/console.c
-  ./picoruby/src/mrubyc/src/error.c
-  ./picoruby/src/mrubyc/src/global.c
-  ./picoruby/src/mrubyc/src/keyvalue.c
-  ./picoruby/src/mrubyc/src/load.c
-  ./picoruby/src/mrubyc/src/mrblib.c
-  ./picoruby/src/mrubyc/src/rrt0.c
-  ./picoruby/src/mrubyc/src/symbol.c
-  ./picoruby/src/mrubyc/src/value.c
-  ./picoruby/src/mrubyc/src/vm.c
-  ./picoruby/src/mrubyc/src/hal_rp2040/hal.c
-
-  ./picoruby/src/common.c
-  ./picoruby/src/compiler.c
-  ./picoruby/src/dump.c
-  ./picoruby/src/generator.c
-  ./picoruby/src/regex_light/src/regex.c
-  ./picoruby/src/my_regex.c
-  ./picoruby/src/node.c
-  ./picoruby/src/scope.c
-  ./picoruby/src/stream.c
-  ./picoruby/src/token.c
-  ./picoruby/src/tokenizer.c
+  ${MRUBYC_DIR}/src/alloc.c
+  ${MRUBYC_DIR}/src/c_array.c
+  ${MRUBYC_DIR}/src/c_hash.c
+  ${MRUBYC_DIR}/src/c_math.c
+  ${MRUBYC_DIR}/src/c_numeric.c
+  ${MRUBYC_DIR}/src/c_object.c
+  ${MRUBYC_DIR}/src/c_range.c
+  ${MRUBYC_DIR}/src/c_string.c
+  ${MRUBYC_DIR}/src/class.c
+  ${MRUBYC_DIR}/src/console.c
+  ${MRUBYC_DIR}/src/error.c
+  ${MRUBYC_DIR}/src/global.c
+  ${MRUBYC_DIR}/src/keyvalue.c
+  ${MRUBYC_DIR}/src/load.c
+  ${MRUBYC_DIR}/src/mrblib.c
+  ${MRUBYC_DIR}/src/rrt0.c
+  ${MRUBYC_DIR}/src/symbol.c
+  ${MRUBYC_DIR}/src/value.c
+  ${MRUBYC_DIR}/src/vm.c
+  ${MRUBYC_DIR}/src/hal_user_reserved/hal.c
+  ${PICO_COMPILER_DIR}/src/common.c
+  ${PICO_COMPILER_DIR}/src/compiler.c
+  ${PICO_COMPILER_DIR}/src/dump.c
+  ${PICO_COMPILER_DIR}/src/generator.c
+  ${PICO_COMPILER_DIR}/src/regex.c
+  ${PICO_COMPILER_DIR}/src/my_regex.c
+  ${PICO_COMPILER_DIR}/src/node.c
+  ${PICO_COMPILER_DIR}/src/scope.c
+  ${PICO_COMPILER_DIR}/src/stream.c
+  ${PICO_COMPILER_DIR}/src/token.c
+  ${PICO_COMPILER_DIR}/src/tokenizer.c
 )
-
-add_custom_target(picorbc
-  COMMAND make
-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/picoruby
-)
-add_custom_target(hal_posix
-  COMMAND ln -sf ../../../../cli/picoshell_lib/hal_posix/hal.c
-  COMMAND ln -sf ../../../../cli/picoshell_lib/hal_posix/hal.h
-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/picoruby/src/mrubyc/src/hal_user_reserved
-)
-add_custom_target(hal_user_reserved
-  COMMAND ln -sf ../../../../../../lib/hal/hal.c
-  COMMAND ln -sf ../../../../../../lib/hal/hal.h
-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/picoruby/src/mrubyc/src/hal_user_reserved
-)
-add_dependencies(picoruby hal_user_reserved picorbc)
-add_dependencies(picorbc hal_posix)
 
 target_link_libraries(picoruby pico_stdlib)
 target_compile_features(picoruby PRIVATE)
-target_include_directories(picoruby INTERFACE
-  ./picoruby/src
-  ./picoruby/src/ruby-lemon-parse
-  ./picoruby/src/mrubyc/src
-  ./picoruby/src/mrubyc/src/hal_rp2040
+target_include_directories(picoruby PRIVATE
+  ${MRUBYC_DIR}/src
+  ${PICO_COMPILER_DIR}/include
 )
 
 # For hal.c

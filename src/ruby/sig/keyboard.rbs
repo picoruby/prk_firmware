@@ -155,4 +155,5 @@ class Keyboard
   def switch_exists?: (Integer row, Integer col) -> bool
   def entire_cols_size: () -> Integer
   def skip_position?: (Integer row_index, Integer col_index) -> bool
+  def resolve_key_alias: (Symbol) -> Symbol
 end
