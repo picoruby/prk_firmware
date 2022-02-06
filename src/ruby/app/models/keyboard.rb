@@ -446,7 +446,7 @@ class Keyboard
     @before_filters = Array.new
     @keymaps = Hash.new
     @composite_keys = Array.new
-    @mode_keys = Array.new
+    @mode_keys = Hash.new
     @switches = Array.new
     @layer_names = Array.new
     @layer = :default
@@ -761,16 +761,20 @@ class Keyboard
               # @type var on_hold: Proc
               on_hold
             end
-            @mode_keys << {
-              layer:             layer,
+            switch = [row_index, col_index]
+            unless @mode_keys[switch]
+              @mode_keys[switch] = {
+                prev_state:        :released,
+                pushed_at:         0,
+                released_at:       0,
+                layers:            Hash.new
+              }
+            end
+            @mode_keys[switch][:layers][layer] = {
               on_release:        on_release_action,
               on_hold:           on_hold_action,
               release_threshold: (release_threshold || 0),
-              repush_threshold:  (repush_threshold || 0),
-              switch:            [row_index, col_index],
-              prev_state:        :released,
-              pushed_at:         0,
-              released_at:       0,
+              repush_threshold:  (repush_threshold || 0)
             }
           end
         end
@@ -931,41 +935,50 @@ class Keyboard
           end
         end
 
-        @mode_keys.each do |mode_key|
-          next if mode_key[:layer] != @layer
-          if @switches.include?(mode_key[:switch])
-            on_hold = mode_key[:on_hold]
+        @mode_keys.each do |switch, mode_key|
+          if @switches.include?(switch)
+            layer_action = mode_key[:layers][@layer]
+            next unless layer_action
+            on_hold = layer_action[:on_hold]
             case mode_key[:prev_state]
-            when :released
-              if earlier_report_size == 0
-                mode_key[:pushed_at] = now
-                mode_key[:prev_state] = :pushed
-                case on_hold.class
-                when Symbol
-                  # @type var on_hold: Symbol
-                  desired_layer = on_hold
-                when Integer
-                  # @type var on_hold: Integer
-                  @modifier |= on_hold
-                when Proc
-                  # @type var on_hold: Proc
-                  on_hold.call
+            when :released, :pushed, :pushed_interrupted
+              if mode_key[:prev_state] == :released
+                if earlier_report_size == 0
+                  mode_key[:pushed_at] = now
+                  mode_key[:prev_state] = :pushed
+                else
+                  on_hold = nil # To skip hold
                 end
+              elsif earlier_report_size > 0
+                # To prevent from invoking action_on_release
+                mode_key[:prev_state] = :pushed_interrupted
               end
-            when :pushed
-              mode_key[:pushed_at] = 0 if earlier_report_size > 0
+              case on_hold.class
+              when Symbol
+                # @type var on_hold: Symbol
+                desired_layer = on_hold
+              when Integer
+                # @type var on_hold: Integer
+                @modifier |= on_hold
+              when Proc
+                # @type var on_hold: Proc
+                on_hold.call
+              end
             when :pushed_then_released
-              if now - mode_key[:released_at] <= mode_key[:repush_threshold]
+              if now - mode_key[:released_at] <= layer_action[:repush_threshold]
                 mode_key[:prev_state] = :pushed_then_released_then_pushed
               end
             when :pushed_then_released_then_pushed
-              action_on_release(mode_key[:on_release])
+              action_on_release(layer_action[:on_release])
             end
           else
+            layer_action = mode_key[:layers][@layer]
+            next unless layer_action
             case mode_key[:prev_state]
             when :pushed
-              if (now - mode_key[:pushed_at] <= mode_key[:release_threshold])
-                action_on_release(mode_key[:on_release])
+              if (earlier_report_size == 0) &&
+                  (now - mode_key[:pushed_at] <= layer_action[:release_threshold])
+                action_on_release(layer_action[:on_release])
                 mode_key[:prev_state] = :pushed_then_released
               else
                 mode_key[:prev_state] = :released
@@ -973,12 +986,12 @@ class Keyboard
               mode_key[:released_at] = now
               @layer = prev_layer
               prev_layer = :default
+            when :pushed_interrupted, :pushed_then_released_then_pushed
+              mode_key[:prev_state] = :released
             when :pushed_then_released
-              if now - mode_key[:released_at] > mode_key[:release_threshold]
+              if now - mode_key[:released_at] > layer_action[:release_threshold]
                 mode_key[:prev_state] = :released
               end
-            when :pushed_then_released_then_pushed
-              mode_key[:prev_state] = :released
             end
           end
         end
