@@ -1015,7 +1015,7 @@ class Keyboard
             rgb_message = $rgb.invoke_anchor KEYCODE_RGB.key(keycode)
           else # Should be a modifier key
             @modifier |= keycode
-            modifier_switch_positions << i
+            modifier_switch_positions.unshift i
           end
         end
         # To fix https://github.com/picoruby/prk_firmware/issues/49
