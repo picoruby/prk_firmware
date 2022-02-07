@@ -70,6 +70,7 @@ endif()
 add_custom_target(models
   COMMAND ${RBC} -Bfloat_ext      float_ext.rb
   COMMAND ${RBC} -Bkeyboard       keyboard.rb
+  COMMAND ${RBC} -Bvia            via.rb
   COMMAND ${RBC} -Brgb            rgb.rb
   COMMAND ${RBC} -Brotary_encoder rotary_encoder.rb
   COMMAND ${RBC} -Bbuffer         buffer.rb

@@ -12,7 +12,10 @@ class Object
   def resume_keymap: () -> void
   def reload_keymap: () -> void
   def report_hid : (Integer, String) -> void
-
+  def raw_hid_report_received?: -> bool
+  def set_raw_hid_report_read: -> void
+  def get_last_received_raw_hid_report: -> Array[Integer]
+  
   # Raspi
   def board_millis : -> Integer
   def cdc_task : -> void
