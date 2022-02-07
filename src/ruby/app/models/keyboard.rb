@@ -763,6 +763,8 @@ class Keyboard
             end
             switch = [row_index, col_index]
             unless @mode_keys[switch]
+              # `@ivar ||= {}` doesn't work as of now
+              # https://github.com/picoruby/picoruby/issues/78
               @mode_keys[switch] = {
                 prev_state:        :released,
                 pushed_at:         0,
@@ -936,9 +938,9 @@ class Keyboard
         end
 
         @mode_keys.each do |switch, mode_key|
+          layer_action = mode_key[:layers][@layer]
+          next unless layer_action
           if @switches.include?(switch)
-            layer_action = mode_key[:layers][@layer]
-            next unless layer_action
             on_hold = layer_action[:on_hold]
             case mode_key[:prev_state]
             when :released, :pushed, :pushed_interrupted
@@ -972,8 +974,6 @@ class Keyboard
               action_on_release(layer_action[:on_release])
             end
           else
-            layer_action = mode_key[:layers][@layer]
-            next unless layer_action
             case mode_key[:prev_state]
             when :pushed
               if (earlier_report_size == 0) &&
