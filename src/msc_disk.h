@@ -37,6 +37,8 @@ void msc_init(void);
 
 void msc_findDirEnt(const char *filename, DirEnt *entry);
 
+void msc_loadFile(uint8_t *file, DirEnt *entry);
+
 void c_cdc_task(mrb_vm *vm, mrb_value *v, int argc);
 
 #define CDC_INIT() do { \

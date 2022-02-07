@@ -60,9 +60,9 @@ int autoreload_state; /* from msc_disk.h */
 mrbc_tcb *tcb_keymap;
 
 #define KEYMAP_PREFIX      "puts;" /* Somehow scapegoat... */
-#define KEYMAP_PREFIX_SIZE sizeof(KEYMAP_PREFIX)
-#define MAX_KEYMAP_SIZE    (SECTOR_SIZE - KEYMAP_PREFIX_SIZE)
+#define KEYMAP_PREFIX_SIZE (sizeof(KEYMAP_PREFIX) - 1)
 #define SUSPEND_TASK       "suspend_task"
+#define MAX_KEYMAP_SIZE    (1024 * 10)
 
 void
 create_keymap_task(mrbc_tcb *tcb)
@@ -74,19 +74,18 @@ create_keymap_task(mrbc_tcb *tcb)
   msc_findDirEnt("KEYMAP  RB ", &entry);
   uint8_t *keymap_rb = NULL;
   if (entry.Name[0] != '\0') {
+    RotaryEncoder_reset();
     uint32_t fileSize = entry.FileSize;
     console_printf("Size of keymap.rb: %u\n", fileSize);
-    if (fileSize >= MAX_KEYMAP_SIZE) {
+    if (fileSize < MAX_KEYMAP_SIZE) {
+      keymap_rb = malloc(KEYMAP_PREFIX_SIZE + fileSize + 1);
+      keymap_rb[KEYMAP_PREFIX_SIZE + fileSize] = '\0';
+      memcpy(keymap_rb, KEYMAP_PREFIX, KEYMAP_PREFIX_SIZE);
+      msc_loadFile(keymap_rb + KEYMAP_PREFIX_SIZE, &entry);
+      si = StreamInterface_new((char *)keymap_rb, STREAM_TYPE_MEMORY);
+    } else {
       console_printf("Must be less than %d bytes!\n", MAX_KEYMAP_SIZE);
       si = StreamInterface_new(SUSPEND_TASK, STREAM_TYPE_MEMORY);
-    } else {
-      keymap_rb = malloc(fileSize + KEYMAP_PREFIX_SIZE + 1);
-      memset(keymap_rb, 0, fileSize + KEYMAP_PREFIX_SIZE + 1);
-      RotaryEncoder_reset();
-      memcpy(keymap_rb, KEYMAP_PREFIX, KEYMAP_PREFIX_SIZE);
-      const uint8_t *addr = (const uint8_t *)(FLASH_MMAP_ADDR + SECTOR_SIZE * (1 + entry.FstClusLO));
-      memcpy(keymap_rb + KEYMAP_PREFIX_SIZE - 1, addr, entry.FileSize);
-      si = StreamInterface_new((char *)keymap_rb, STREAM_TYPE_MEMORY);
     }
   } else {
     console_printf("No keymap.rb found.\n");
