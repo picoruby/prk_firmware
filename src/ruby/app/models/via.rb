@@ -262,11 +262,11 @@ class VIA
       layer_name = via_get_layer_name(layer)
       @kbd.delete_mode_keys(layer_name)
       
-      map = []
-      @keymaps[layer].each_with_index do |rows, row|
-        map[row] = []
-        rows.each_with_index do |cell, col|
-          keyname = via_keycode_into_prk_keycode(cell || 0)
+      map = Array.new(@rows_size)
+      @rows_size.times do |row|
+        map[row] = Array.new(@cols_size)
+        @cols_size.times do |col|
+          keyname = via_keycode_into_prk_keycode(@keymaps[layer][row][col] || 0)
           
           case keyname.class
           when Array
@@ -275,7 +275,7 @@ class VIA
             keysymbol = (
               get_modifier_name(keyname[0]) + "_" + 
               via_keycode_into_keysymbol(keyname[1]).to_s.split("_")[1] ).intern
-            @composite_keys << keysymbol
+            @composite_keys << keysymbol unless @composite_keys.include?(keysymbol)
             map[row][col] = keysymbol
           else
             # @type var keyname: ( Symbol | Integer )
