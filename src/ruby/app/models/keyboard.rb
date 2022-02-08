@@ -668,7 +668,7 @@ class Keyboard
     end
 
     if @layer_names.size>num
-      @keymaps[@layer_names[num]]
+      return @keymaps[@layer_names[num]]
     end
 
     return nil

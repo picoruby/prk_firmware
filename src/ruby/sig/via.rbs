@@ -39,4 +39,6 @@ class VIA
   def start!: -> void
   def sync_keymap : (?bool)-> void
   def init_keymap: -> void
+  def save_on_keyboard: -> void
+  def save_on_flash: -> void
 end

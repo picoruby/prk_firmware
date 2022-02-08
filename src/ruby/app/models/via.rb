@@ -65,7 +65,7 @@ class VIA
     ary.each do |n|
       keynames << ("KC_"+n).intern
     end
-
+    
     return keynames
   end
 
@@ -142,7 +142,19 @@ class VIA
     case key.class
     when Integer
       # @type var key: Integer
-      if key<-255
+      if key>0
+        if key < 0x100
+          ret = 0
+          8.times do |i|
+            unless (key&(1<<i)) == 0
+              ret = 0xE0 + i
+            end
+          end
+          return ret
+        else
+          return 0
+        end
+      elsif key<-255
         key = key * (-1) - 0x100
         return (0x12<<8) | key
       else
@@ -170,13 +182,19 @@ class VIA
 
   def via_keycode_into_keysymbol(keycode)
     if (keycode>>8)==0
-      if 0x00C0 <= keycode && keycode <= 0x00DF
+      if keycode<0xE0
+        return @kbd.keycode_to_keysym(keycode & 0x00FF)
+      elsif 0x00C0 <= keycode && keycode <= 0x00DF
         c = keycode - 0x00C0
         cs = c.to_s
         s = "VIA_FUNC" + cs
         return s.intern
+      else
+        i = keycode - 0xE0
+        return :KC_NO if i>8
+        bits = 1<<i
+        return ( "KC_"+get_modifier_name(bits) ).intern
       end
-      return @kbd.keycode_to_keysym(keycode & 0x00FF)
     else
       case (keycode>>12) & 0x0F
       when 0x0
@@ -235,36 +253,11 @@ class VIA
   end
 
   def save_keymap
-    keymap_strs = []
-    
-    @layer_count.times do |i|
-      map = @keymaps[i]
-      next unless map
+    save_on_keyboard
+    save_on_flash
+  end
 
-      keymap = []
-      map.each do |row|
-        keycodes_row = []
-        
-        @rows_size.times do |i|
-          key = row[i]
-          keycodes_row << via_keycode_into_keysymbol(key).to_s
-        end
-
-        (@cols_size - row.size).times do |i|
-          keycodes_row << "KC_NO"
-        end
-        keymap << keycodes_row.join(" ")
-      end
-      keymap_strs << keymap.join(" \n    ")
-    end
-
-    data = "keymap = [ \n%i[ "
-    data << keymap_strs.join("], \n\n%i[ ")
-    data << " ] \n]\n"
-    binary = convert_to_uint8_array(data)
-    
-    write_file_internal(VIA_FILENAME, binary);
-    
+  def save_on_keyboard
     @layer_count.times do |layer|
       layer_name = via_get_layer_name(layer)
       @kbd.delete_mode_keys(layer_name)
@@ -295,6 +288,36 @@ class VIA
     end
     load_mode_keys
   end
+
+  def save_on_flash
+    keymap_strs = []
+    
+    @layer_count.times do |i|
+      map = @keymaps[i]
+      next unless map
+
+      keymap = []
+      @rows_size.times do |j|
+        row = map[j]
+        keycodes_row = []
+        
+        @cols_size.times do |k|
+          key = row[k] || 0
+          keycodes_row << via_keycode_into_keysymbol(key)
+        end
+
+        keymap << keycodes_row.join(" ")
+      end
+      keymap_strs << keymap.join(" \n    ")
+    end
+
+    data = "keymap = [ \n%i[ "
+    data << keymap_strs.join("], \n\n%i[ ")
+    data << " ] \n]\n"
+    binary = convert_to_uint8_array(data)
+    
+    write_file_internal(VIA_FILENAME, binary)
+  end
   
   def start!
     init_keymap
@@ -322,16 +345,15 @@ class VIA
             @composite_keys << kc
           end
         end
+        
         sync_keymap(false)
       else
         sync_keymap(true)
       end
     else
       sync_keymap(true)
-      save_keymap
+      save_on_keyboard
     end
-
-    load_mode_keys
   end
 
   def raw_hid_receive_kb(data)
@@ -382,7 +404,6 @@ class VIA
         data[5]  = keycode & 0xFF
       when :ID_VIA_SET_KEYCODE
         dynamic_keymap_set_keycode(data[1], data[2], data[3], (data[4] << 8) | data[5])
-        @keymap_saved = false
       when :ID_VIA_MACRO_GET_COUNT
         data[1] = 0
       when :ID_VIA_MACRO_GET_BUFFER_SIZE
@@ -471,6 +492,7 @@ class VIA
 
   def dynamic_keymap_set_keycode(layer, row, col, keycode)
     @keymaps[layer][row][col] = keycode
+    @keymap_saved = false
   end
   
   def eval_val(script)
