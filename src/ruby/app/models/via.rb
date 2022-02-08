@@ -272,9 +272,7 @@ class VIA
           when Array
             # composite key
             # @type var keyname: [Integer, Integer]
-            keysymbol = (
-              get_modifier_name(keyname[0]) + "_" + 
-              via_keycode_into_keysymbol(keyname[1]).to_s.split("_")[1] ).intern
+            keysymbol = via_keycode_into_keysymbol(@keymaps[layer][row][col])
             @composite_keys << keysymbol unless @composite_keys.include?(keysymbol)
             map[row][col] = keysymbol
           else
