@@ -501,17 +501,23 @@ msc_write_file(const char *filename, const uint8_t *data, uint16_t length)
 }
 
 void c_write_file_internal(mrb_vm *vm, mrb_value *v, int argc) {
-  uint8_t c_data[FLASH_SECTOR_SIZE];
+  uint16_t limit;
   uint8_t *rb_filename = GET_STRING_ARG(1);
-  mrbc_array rb_ary = *( GET_ARY_ARG(2).array );
-
-  uint16_t limit = rb_ary.n_stored>FLASH_SECTOR_SIZE ? FLASH_SECTOR_SIZE : rb_ary.n_stored ;
-  memset(c_data, 0, FLASH_SECTOR_SIZE);
-
-  for(uint16_t i=0; i<limit; i++) {
-    c_data[i] = mrbc_integer(rb_ary.data[i]);
+  uint8_t *c_data;
+  mrbc_object value = GET_ARG(2);
+  
+  if(value.tt == MRBC_TT_STRING) {
+    mrbc_string* str = value.string;
+    c_data = str->data;
+    limit = str->size;
+  } else {
+    return;
   }
 
+  if(limit>FLASH_SECTOR_SIZE) {
+    limit = FLASH_SECTOR_SIZE;
+  }
+  
   msc_write_file(rb_filename, c_data, limit);
 }
 

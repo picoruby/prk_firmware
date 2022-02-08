@@ -290,33 +290,24 @@ class VIA
   end
 
   def save_on_flash
-    keymap_strs = []
-    
-    @layer_count.times do |i|
-      map = @keymaps[i]
-      next unless map
+    data = "keymap = [ \n%i[ "
 
-      keymap = []
+    @layer_count.times do |i|
       @rows_size.times do |j|
-        row = map[j]
-        keycodes_row = []
-        
         @cols_size.times do |k|
-          key = row[k] || 0
-          keycodes_row << via_keycode_into_keysymbol(key)
+          key = via_keycode_into_keysymbol(@keymaps[i][j][k] || 0)
+          data << key.to_s + " "
         end
 
-        keymap << keycodes_row.join(" ")
+        data << " \n    "
       end
-      keymap_strs << keymap.join(" \n    ")
+
+      data << "], \n\n%i[ "
     end
 
-    data = "keymap = [ \n%i[ "
-    data << keymap_strs.join("], \n\n%i[ ")
-    data << " ] \n]\n"
-    binary = convert_to_uint8_array(data)
+    data << "KC_NO ] \n]\n"
     
-    write_file_internal(VIA_FILENAME, binary)
+    write_file_internal(VIA_FILENAME, data)
   end
   
   def start!
@@ -325,6 +316,7 @@ class VIA
     fileinfo = find_file(VIA_FILENAME)
     
     if fileinfo
+      puts "via_map.rb found"
       script = ""
       ary = read_file(fileinfo[0], fileinfo[1])
       ary.each do |i|
@@ -332,8 +324,9 @@ class VIA
       end
 
       ret = eval_val(script)
-      
+    
       if ret.class == Array
+        puts "loading VIA map"
         # @type var ret: Array[Array[Symbol]]
         ret.each_with_index do |map,i|
           layer_name = via_get_layer_name i
@@ -510,6 +503,7 @@ class VIA
         return sandbox_result
       end
     else
+      puts "Error: Compile failed"
       return nil
     end
   end
