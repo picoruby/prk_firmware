@@ -1,1 +1,1 @@
-../../../../lib/picoruby/build/repos/host/mruby-bin-picoirb/tools/picoirb/buffer.rb
+../../../../lib/picoruby/mrbgems/mruby-bin-picoirb/tools/picoirb/buffer.rb

@@ -57,7 +57,7 @@ task :check_setup do
       sh "bundle exec steep -h > /dev/null 2>&1", verbose: false
       sh "bundle exec mrubyc-test -h > /dev/null 2>&1", verbose: false
     end
-    dir = "lib/picoruby/build/repos/host/mruby-mrubyc/repos/mrubyc/src/hal_user_reserved"
+    dir = "lib/picoruby/mrbgems/mruby-mrubyc/repos/mrubyc/src/hal_user_reserved"
     sh "ls #{dir} > /dev/null 2>&1", verbose: false
     sh "ls #{dir}/hal.c > /dev/null 2>&1", verbose: false
     sh "ls #{dir}/hal.h > /dev/null 2>&1", verbose: false
@@ -75,9 +75,9 @@ task :setup do
   FileUtils.cd "lib/picoruby" do
     sh "rake all"
   end
-  FileUtils.cd "lib/picoruby/build/repos/host/mruby-mrubyc/repos/mrubyc/src/hal_user_reserved" do
-    FileUtils.ln_sf "../../../../../../../../../hal/hal.c", "hal.c"
-    FileUtils.ln_sf "../../../../../../../../../hal/hal.h", "hal.h"
+  FileUtils.cd "lib/picoruby/mrbgems/mruby-mrubyc/repos/mrubyc/src/hal_user_reserved" do
+    FileUtils.ln_sf "../../../../../../../hal/hal.c", "hal.c"
+    FileUtils.ln_sf "../../../../../../../hal/hal.h", "hal.h"
   end
 end
 
