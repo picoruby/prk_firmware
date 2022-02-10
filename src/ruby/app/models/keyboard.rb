@@ -659,7 +659,7 @@ class Keyboard
       col_index += 1
     end
     @keymaps[name] = new_map
-    @layer_names << name
+    @layer_names << name unless @layer_names.include?(name)
   end
 
   def get_layer(name, num)

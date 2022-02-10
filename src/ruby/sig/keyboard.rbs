@@ -120,7 +120,6 @@ class Keyboard
   def skip_position?: (Integer row_index, Integer col_index) -> bool
   def resolve_key_alias: (Symbol) -> Symbol
   def get_layer: (Symbol | nil, Integer) -> ( Array[Array[Integer | Symbol | Proc]] | nil )
-  def set_layer: (Symbol, Array[Array[Integer | Symbol | Proc]]) -> void
   def delete_mode_keys: (Symbol) -> void
   def keycode_to_keysym: (Integer) -> Symbol
 end

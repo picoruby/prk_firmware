@@ -182,13 +182,13 @@ class VIA
 
   def via_keycode_into_keysymbol(keycode)
     if (keycode>>8)==0
-      if keycode<0xE0
-        return @kbd.keycode_to_keysym(keycode & 0x00FF)
-      elsif 0x00C0 <= keycode && keycode <= 0x00DF
+      if 0x00C0 <= keycode && keycode <= 0x00DF
         c = keycode - 0x00C0
         cs = c.to_s
         s = "VIA_FUNC" + cs
         return s.intern
+      elsif keycode<0xE0
+        return @kbd.keycode_to_keysym(keycode & 0x00FF)
       else
         i = keycode - 0xE0
         return :KC_NO if i>8
@@ -262,27 +262,23 @@ class VIA
       layer_name = via_get_layer_name(layer)
       @kbd.delete_mode_keys(layer_name)
       
-      map = Array.new(@rows_size)
+      map = Array.new(@rows_size * @cols_size)
       @rows_size.times do |row|
-        map[row] = Array.new(@cols_size)
         @cols_size.times do |col|
-          keyname = via_keycode_into_prk_keycode(@keymaps[layer][row][col] || 0)
+          keysymbol = via_keycode_into_keysymbol(@keymaps[layer][row][col] || 0)
+          map[row*@cols_size+col] = keysymbol
           
-          case keyname.class
-          when Array
-            # composite key
-            # @type var keyname: [Integer, Integer]
-            keysymbol = via_keycode_into_keysymbol(@keymaps[layer][row][col])
-            @composite_keys << keysymbol unless @composite_keys.include?(keysymbol)
-            map[row][col] = keysymbol
-          else
-            # @type var keyname: ( Symbol | Integer )
-            map[row][col] = keyname
-          end
+          keyname = keysymbol.to_s
+
+          next if keyname.start_with?("KC")
+          next if keyname.start_with?("VIA_FUNC")
+          # composite key
+          next if @composite_keys.include?(keysymbol)
+          @composite_keys << keysymbol
         end
       end
       
-      @kbd.set_layer( layer_name, map )
+      @kbd.add_layer layer_name, map
     end
     load_mode_keys
   end
