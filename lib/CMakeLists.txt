@@ -6,8 +6,8 @@ project(picoruby
   LANGUAGES C
 )
 
-set(MRUBYC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/picoruby/build/repos/host/mruby-mrubyc/repos/mrubyc)
-set(PICO_COMPILER_DIR ${CMAKE_CURRENT_SOURCE_DIR}/picoruby/build/repos/host/mruby-pico-compiler)
+set(MRUBYC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/picoruby/mrbgems/mruby-mrubyc/repos/mrubyc)
+set(PICO_COMPILER_DIR ${CMAKE_CURRENT_SOURCE_DIR}/picoruby/mrbgems/mruby-pico-compiler)
 
 add_library(picoruby STATIC
   ${MRUBYC_DIR}/src/alloc.c
@@ -24,12 +24,12 @@ add_library(picoruby STATIC
   ${MRUBYC_DIR}/src/global.c
   ${MRUBYC_DIR}/src/keyvalue.c
   ${MRUBYC_DIR}/src/load.c
-  ${MRUBYC_DIR}/src/mrblib.c
   ${MRUBYC_DIR}/src/rrt0.c
   ${MRUBYC_DIR}/src/symbol.c
   ${MRUBYC_DIR}/src/value.c
   ${MRUBYC_DIR}/src/vm.c
   ${MRUBYC_DIR}/src/hal_user_reserved/hal.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/picoruby/build/host/mrbgems/mruby-mrubyc/src/mrblib.c
   ${PICO_COMPILER_DIR}/src/common.c
   ${PICO_COMPILER_DIR}/src/compiler.c
   ${PICO_COMPILER_DIR}/src/dump.c
