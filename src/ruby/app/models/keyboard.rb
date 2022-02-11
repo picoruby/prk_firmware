@@ -504,7 +504,6 @@ class Keyboard
       # @type var feature: VIA
       feature.kbd = self
       @via = feature
-      @via.start!
     end
   end
 
@@ -921,6 +920,7 @@ class Keyboard
       end
     end
 
+    @via.start! if @via
     rgb_message = 0
     while true
       cycle_time = 20

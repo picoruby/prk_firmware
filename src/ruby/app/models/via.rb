@@ -334,8 +334,10 @@ class VIA
         end
         
         sync_keymap(false)
+        load_mode_keys
       else
         sync_keymap(true)
+        save_on_keyboard
       end
     else
       sync_keymap(true)
