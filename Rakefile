@@ -60,8 +60,9 @@ task :check_setup do
     sh "ls #{dir} > /dev/null 2>&1", verbose: false
     sh "ls #{dir}/hal.c > /dev/null 2>&1", verbose: false
     sh "ls #{dir}/hal.h > /dev/null 2>&1", verbose: false
-  rescue
+  rescue => e
     puts "You need to do `rake setup`!"
+    puts e.message
     exit 1
   end
 end
