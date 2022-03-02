@@ -1,6 +1,6 @@
 # Usage:
 # - Setup:
-#   docker build . -r prk
+#   docker build . -t prk
 # - Build:
 #   docker run --rm -v $PWD:/prk_firmware prk rake
 # - Clean built:
