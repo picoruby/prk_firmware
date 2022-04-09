@@ -31,7 +31,6 @@
 
 #include "msc_disk.h"
 #include <mrubyc.h>
-#include "value.h"
 
 // whether host does safe-eject
 static bool ejected = false;
@@ -55,6 +54,7 @@ https://github.com/picoruby/prk_firmware\n"
 #define README_LENGTH (sizeof(README_CONTENTS) - 1)
 #define FAT_START ( (uint8_t*)FLASH_MMAP_ADDR+FLASH_SECTOR_SIZE*1 )
 
+void msc_write_file(const char *filename, const uint8_t *data, uint16_t length);
 void c_find_file(mrb_vm *vm, mrb_value *v, int argc);
 void c_read_file(mrb_vm *vm, mrb_value *v, int argc);
 
@@ -75,7 +75,7 @@ uint8_t msc_disk[4][SECTOR_SIZE] =
     0x01, 0x00,             /*    BPB_RsvdSecCnt */
     0x01,                   /*    BPB_NumFATs */
     0x80, 0x00,             /* ** BPB_RootEntCnt ** */
-    0x80, 0x00,             /* ** BPB_TotSec16 ** */
+    0x00, 0x01,             /* ** BPB_TotSec16 ** */
     0xF8,                   /*    BPB_Media  */
     0x01, 0x00,             /*    BPB_FATSz16 */
     0x01, 0x00,             /*    BPB_SecPerTrk */
@@ -292,8 +292,6 @@ int32_t tud_msc_scsi_cb (uint8_t lun, uint8_t const scsi_cmd[16], void* buffer, 
   return resplen;
 }
 
-void
-msc_write_file(const char *filename, const uint8_t *data, uint16_t length);
 
 void msc_init(void)
 {
@@ -402,18 +400,13 @@ msc_write_file(const char *filename, const uint8_t *data, uint16_t length)
   Sector#3 : Cluster#2
   Sector#4 : Cluster#3
    */
-  //uint32_t cluster_usage_table[4] = {0,0,0,0}; // RootEntCount is 0x0080 (128)
   uint8_t dir_entry_index_to_write = 0;
   uint16_t cluster_id_to_write = 0;
   bool is_update = false;
   
-  // cluster0 and cluster1 is reserved
-  //cluster_usage_table[0] |= 1<<0 | 1<<1;
-  
   for (uint8_t i=1; i<128; i++ )
   {
     addr = (void *)(FLASH_MMAP_ADDR + (SECTOR_SIZE * 2) + 32*i);
-    //entry.Name[0] = '\0';
     memcpy(&entry, addr, 32);
     if (strncmp(entry.Name, filename, 11)==0)
     {
@@ -424,9 +417,11 @@ msc_write_file(const char *filename, const uint8_t *data, uint16_t length)
     }
     else if (entry.Name[0] == 0xe5 && dir_entry_index_to_write == 0)
     {
+      // keep deleted entry not to split FAT chains of >4096B file
       dir_entry_index_to_write = i;
       continue; 
-    } else if (entry.Name[0] == '\0')
+    }
+    else if (entry.Name[0] == '\0')
     {
       if(dir_entry_index_to_write==0) {
         dir_entry_index_to_write = i;
@@ -453,15 +448,15 @@ msc_write_file(const char *filename, const uint8_t *data, uint16_t length)
   }
 
   if(cluster_id_to_write && dir_entry_index_to_write) {
-    uint8_t buf[FLASH_SECTOR_SIZE];
+    uint8_t buf_rootdir[FLASH_SECTOR_SIZE];
     uint8_t buf_fat[FLASH_SECTOR_SIZE];
     // There are (1) Reserved Sector
     // copy RootDir to erase
-    memcpy(buf, (void*)(FLASH_MMAP_ADDR+FLASH_SECTOR_SIZE*2), FLASH_SECTOR_SIZE);
+    memcpy(buf_rootdir, (void*)(FLASH_MMAP_ADDR+FLASH_SECTOR_SIZE*2), FLASH_SECTOR_SIZE);
 
     // copy DirEntry from README.TXT
     if(is_update) {
-      memcpy(&entry, buf+32*dir_entry_index_to_write, 32);
+      memcpy(&entry, buf_rootdir+32*dir_entry_index_to_write, 32);
     } else {
       // copy FAT to erase
       memcpy(buf_fat, (void*)(FLASH_MMAP_ADDR+FLASH_SECTOR_SIZE*1), FLASH_SECTOR_SIZE);
@@ -474,19 +469,19 @@ msc_write_file(const char *filename, const uint8_t *data, uint16_t length)
         buf_fat[cluster_id_to_write/2*3+2] = 0xFF;
       }
 
-      memcpy(&entry, buf+32, 32);
+      memcpy(&entry, buf_rootdir+32, 32);
       entry.FstClusLO = cluster_id_to_write;
       entry.NTRes = 0x18; // Filename is small-case
       memcpy(&entry.Name, filename, 11);
     }
     entry.FileSize = length;
-    memcpy(buf+32*dir_entry_index_to_write, &entry, 32);
+    memcpy(buf_rootdir+32*dir_entry_index_to_write, &entry, 32);
 
     uint32_t ints = save_and_disable_interrupts();
     // write RootDir
     // RootDirSector is Sector#1
     flash_range_erase(FLASH_TARGET_OFFSET+FLASH_SECTOR_SIZE*2, FLASH_SECTOR_SIZE);
-    flash_range_program(FLASH_TARGET_OFFSET+FLASH_SECTOR_SIZE*2, buf, FLASH_SECTOR_SIZE);
+    flash_range_program(FLASH_TARGET_OFFSET+FLASH_SECTOR_SIZE*2, buf_rootdir, FLASH_SECTOR_SIZE);
 
     // write data
     flash_range_erase(FLASH_TARGET_OFFSET+FLASH_SECTOR_SIZE*(1+cluster_id_to_write), FLASH_SECTOR_SIZE);

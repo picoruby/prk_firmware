@@ -273,7 +273,7 @@ void tud_hid_set_report_cb(uint8_t instance, uint8_t report_id, hid_report_type_
     return;
 }
 
-void c_raw_hid_report_received_Q(mrb_vm *vm, mrb_value *v, int argc) {
+void c_raw_hid_report_received_q(mrb_vm *vm, mrb_value *v, int argc) {
   if(raw_hid_report_received) {
     SET_TRUE_RETURN();
   } else {

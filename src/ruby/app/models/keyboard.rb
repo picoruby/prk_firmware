@@ -673,11 +673,6 @@ class Keyboard
     return nil
   end
 
-  def set_layer(name, map)
-    @layer_names << name unless @keymaps[name]
-    @keymaps[name] = map
-  end
-
   def delete_mode_keys(layer_name)
     @composite_keys.delete_if { |item| item[:layer]==layer_name }
     @mode_keys.delete_if { |item| item[:layer]==layer_name }
@@ -1125,7 +1120,7 @@ class Keyboard
         $rgb.invoke_partner rgb_message if $rgb
       end
       
-      @via.task() if @via
+      @via.task if @via
 
       time = cycle_time - (board_millis - now)
       sleep_ms(time) if time > 0
