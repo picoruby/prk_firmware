@@ -91,9 +91,7 @@ end
 desc "clean everything (Then you'll need to do `rake setup`"
 task :deep_clean do
   FileUtils.rm_r Dir.glob("build/*")
-  FileUtils.cd "lib/picoruby" do
-    sh "rake deep_clean"
-  end
+  FileUtils.rm_r "lib/picoruby"
 end
 
 # Add a new tag then push it
