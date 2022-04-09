@@ -73,12 +73,13 @@ create_keymap_task(mrbc_tcb *tcb)
   ParserState *p = Compiler_parseInitState(NODE_BOX_SIZE);
   msc_findDirEnt("KEYMAP  RB ", &entry);
   uint8_t *keymap_rb = NULL;
+  picorbc_context *cxt = picorbc_context_new();
   if (entry.Name[0] != '\0') {
     uint32_t fileSize = entry.FileSize;
     console_printf("Size of keymap.rb: %u\n", fileSize);
     if (fileSize >= MAX_KEYMAP_SIZE) {
       console_printf("Must be less than %d bytes!\n", MAX_KEYMAP_SIZE);
-      si = StreamInterface_new(SUSPEND_TASK, STREAM_TYPE_MEMORY);
+      si = StreamInterface_new(NULL, SUSPEND_TASK, STREAM_TYPE_MEMORY);
     } else {
       keymap_rb = malloc(fileSize + KEYMAP_PREFIX_SIZE + 1);
       memset(keymap_rb, 0, fileSize + KEYMAP_PREFIX_SIZE + 1);
@@ -86,19 +87,19 @@ create_keymap_task(mrbc_tcb *tcb)
       memcpy(keymap_rb, KEYMAP_PREFIX, KEYMAP_PREFIX_SIZE);
       const uint8_t *addr = (const uint8_t *)(FLASH_MMAP_ADDR + SECTOR_SIZE * (1 + entry.FstClusLO));
       memcpy(keymap_rb + KEYMAP_PREFIX_SIZE - 1, addr, entry.FileSize);
-      si = StreamInterface_new((char *)keymap_rb, STREAM_TYPE_MEMORY);
+      si = StreamInterface_new(NULL, (char *)keymap_rb, STREAM_TYPE_MEMORY);
     }
   } else {
     console_printf("No keymap.rb found.\n");
-    si = StreamInterface_new(SUSPEND_TASK, STREAM_TYPE_MEMORY);
+    si = StreamInterface_new(NULL, SUSPEND_TASK, STREAM_TYPE_MEMORY);
   }
-  if (!Compiler_compile(p, si)) {
+  if (!Compiler_compile(p, si, cxt)) {
     console_printf("Compiling keymap.rb failed!\n");
     Compiler_parserStateFree(p);
     StreamInterface_free(si);
     p = Compiler_parseInitState(NODE_BOX_SIZE);
-    si = StreamInterface_new(SUSPEND_TASK, STREAM_TYPE_MEMORY);
-    Compiler_compile(p, si);
+    si = StreamInterface_new(NULL, SUSPEND_TASK, STREAM_TYPE_MEMORY);
+    Compiler_compile(p, si, cxt);
   }
   if (keymap_rb) free(keymap_rb);
   if (tcb == NULL) {
