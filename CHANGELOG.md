@@ -7,6 +7,8 @@
 ### Bug fix 🐛
 - Fixed a bug that aliased keys like KC_SPC don't work in Keyboard#define_composite_key [https://github.com/picoruby/prk_firmware/issues/52](#52)
 
+### Improvements
+- The limitation of the maximum size of keymap.rb is lifted. Now it's 10KB (used to be 4KB)
 
 ## ~~0.9.12 on 2022/01/27~~ revoked
 ### ~~Bug fix 🐛~~
