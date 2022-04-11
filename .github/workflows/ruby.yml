@@ -22,5 +22,7 @@ jobs:
       run: BUNDLE_GEMFILE=Gemfile bundle exec steep check
       working-directory: src/ruby
     - name: mrubyc-test
-      run: BUNDLE_GEMFILE=Gemfile CFLAGS=-DMAX_SYMBOLS_COUNT=1000 bundle exec mrubyc-test
+      run: |
+        cp ../../lib/picoruby/build/host/mrbgems/mruby-mrubyc/src/mrblib.c ../../lib/picoruby/mrbgems/mruby-mrubyc/repos/mrubyc/src/
+        BUNDLE_GEMFILE=Gemfile CFLAGS=-DMAX_SYMBOLS_COUNT=1000 bundle exec mrubyc-test
       working-directory: src/ruby

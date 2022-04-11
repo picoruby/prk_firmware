@@ -14,5 +14,13 @@ namespace :steep do
 end
 
 task :test do
+  mrblib_dst = "../../lib/picoruby/mrbgems/mruby-mrubyc/repos/mrubyc/src/mrblib.c"
+  mrblib_src = "../../lib/picoruby/build/host/mrbgems/mruby-mrubyc/src/mrblib.c"
+  unless File.exists? mrblib_dst
+    unless File.exists? mrblib_src
+      raise "No mrblib.c found!\nYou probably need to `rake setup`"
+    end
+    FileUtils.cp mrblib_src, mrblib_dst
+  end
   exec %q(CFLAGS=-DMAX_SYMBOLS_COUNT=1000 bundle exec mrubyc-test)
 end
