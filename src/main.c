@@ -73,7 +73,6 @@ create_keymap_task(mrbc_tcb *tcb)
   ParserState *p = Compiler_parseInitState(NODE_BOX_SIZE);
   msc_findDirEnt("KEYMAP  RB ", &entry);
   uint8_t *keymap_rb = NULL;
-  picorbc_context *cxt = picorbc_context_new();
   if (entry.Name[0] != '\0') {
     RotaryEncoder_reset();
     uint32_t fileSize = entry.FileSize;
@@ -92,13 +91,13 @@ create_keymap_task(mrbc_tcb *tcb)
     console_printf("No keymap.rb found.\n");
     si = StreamInterface_new(NULL, SUSPEND_TASK, STREAM_TYPE_MEMORY);
   }
-  if (!Compiler_compile(p, si, cxt)) {
+  if (!Compiler_compile(p, si, NULL)) {
     console_printf("Compiling keymap.rb failed!\n");
     Compiler_parserStateFree(p);
     StreamInterface_free(si);
     p = Compiler_parseInitState(NODE_BOX_SIZE);
     si = StreamInterface_new(NULL, SUSPEND_TASK, STREAM_TYPE_MEMORY);
-    Compiler_compile(p, si, cxt);
+    Compiler_compile(p, si, NULL);
   }
   if (keymap_rb) free(keymap_rb);
   if (tcb == NULL) {
