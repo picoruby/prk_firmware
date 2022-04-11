@@ -15,10 +15,10 @@ while true
   if autoreload_ready?
     if autoreload_tick == 0
       puts "Autoreload is ready."
+      $rgb.turn_off if $rgb
       puts "Suspending keymap."
       suspend_keymap
       report_hid(0, "\000\000\000\000\000\000")
-      $rgb.turn_off if $rgb
       autoreload_tick = 500
     elsif autoreload_tick == 1
       puts "Trying to reload keymap."
@@ -31,6 +31,8 @@ while true
       resume_keymap
     end
     autoreload_tick -= 1
+    tud_task
+    cdc_task
     sleep_ms 2
   end
 end

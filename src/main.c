@@ -59,31 +59,49 @@ int autoreload_state; /* from msc_disk.h */
 
 mrbc_tcb *tcb_keymap;
 
+#define KEYMAP_PREFIX      "puts;" /* Somehow scapegoat... */
+#define KEYMAP_PREFIX_SIZE sizeof(KEYMAP_PREFIX)
+#define MAX_KEYMAP_SIZE    (SECTOR_SIZE - KEYMAP_PREFIX_SIZE)
+#define SUSPEND_TASK       "suspend_task"
+
 void
 create_keymap_task(mrbc_tcb *tcb)
 {
   hal_disable_irq();
   DirEnt entry;
-  char *program;
   StreamInterface *si;
   ParserState *p = Compiler_parseInitState(NODE_BOX_SIZE);
   msc_findDirEnt("KEYMAP  RB ", &entry);
+  uint8_t *keymap_rb = NULL;
+  picorbc_context *cxt = picorbc_context_new();
   if (entry.Name[0] != '\0') {
-    RotaryEncoder_reset();
-    console_printf("keymap.rb found.\n");
-    program = (char *)(FLASH_MMAP_ADDR + SECTOR_SIZE * (1 + entry.FstClusLO));
-    si = StreamInterface_new(program, STREAM_TYPE_MEMORY);
+    uint32_t fileSize = entry.FileSize;
+    console_printf("Size of keymap.rb: %u\n", fileSize);
+    if (fileSize >= MAX_KEYMAP_SIZE) {
+      console_printf("Must be less than %d bytes!\n", MAX_KEYMAP_SIZE);
+      si = StreamInterface_new(NULL, SUSPEND_TASK, STREAM_TYPE_MEMORY);
+    } else {
+      keymap_rb = malloc(fileSize + KEYMAP_PREFIX_SIZE + 1);
+      memset(keymap_rb, 0, fileSize + KEYMAP_PREFIX_SIZE + 1);
+      RotaryEncoder_reset();
+      memcpy(keymap_rb, KEYMAP_PREFIX, KEYMAP_PREFIX_SIZE);
+      const uint8_t *addr = (const uint8_t *)(FLASH_MMAP_ADDR + SECTOR_SIZE * (1 + entry.FstClusLO));
+      memcpy(keymap_rb + KEYMAP_PREFIX_SIZE - 1, addr, entry.FileSize);
+      si = StreamInterface_new(NULL, (char *)keymap_rb, STREAM_TYPE_MEMORY);
+    }
   } else {
     console_printf("No keymap.rb found.\n");
-    si = StreamInterface_new("suspend_task", STREAM_TYPE_MEMORY);
+    si = StreamInterface_new(NULL, SUSPEND_TASK, STREAM_TYPE_MEMORY);
   }
-  if (!Compiler_compile(p, si)) {
+  if (!Compiler_compile(p, si, cxt)) {
+    console_printf("Compiling keymap.rb failed!\n");
     Compiler_parserStateFree(p);
     StreamInterface_free(si);
     p = Compiler_parseInitState(NODE_BOX_SIZE);
-    si = StreamInterface_new("suspend_task", STREAM_TYPE_MEMORY);
-    Compiler_compile(p, si);
+    si = StreamInterface_new(NULL, SUSPEND_TASK, STREAM_TYPE_MEMORY);
+    Compiler_compile(p, si, cxt);
   }
+  if (keymap_rb) free(keymap_rb);
   if (tcb == NULL) {
     tcb = mrbc_create_task(p->scope->vm_code, 0);
   } else {
