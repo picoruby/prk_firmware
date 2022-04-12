@@ -1,0 +1,18 @@
+
+class Debouncer
+  DEBOUNCE_TYPES: Array[Symbol]
+  DEFAULT_THRESHOLD: Integer
+
+  @table: Hash[Integer, {state: bool, time: Integer}]
+  @now: Integer
+  @threshold: Integer
+  @type: Symbol
+
+  def initialize: (?Symbol `type_val`) -> void
+  def resolve: (bool pin_val, Integer row, Integer col) -> bool
+  def resolve_sym_eager_pk: (bool pin_val, Integer row, Integer col) -> bool
+  def resolve_asym_eager_none_pr: (bool pin_val, Integer row, Integer col) -> bool
+  def type=: (Symbol) -> void
+  def threshold=: (Integer) -> void
+  def set_time: () -> void
+end

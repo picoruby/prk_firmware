@@ -73,6 +73,7 @@ add_custom_target(models
   COMMAND ${RBC} -Brgb            rgb.rb
   COMMAND ${RBC} -Brotary_encoder rotary_encoder.rb
   COMMAND ${RBC} -Bbuffer         buffer.rb
+  COMMAND ${RBC} -Bdebouncer      debouncer.rb
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src/ruby/app/models
 )
 

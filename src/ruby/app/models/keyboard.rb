@@ -470,6 +470,9 @@ class Keyboard
   # TODO: OLED, SDCard
   def append(feature)
     case feature.class
+    when Debouncer
+      # @type var feature: Debouncer
+      @debouncer = feature
     when RGB
       # @type var feature: RGB
       $rgb = feature
@@ -875,6 +878,10 @@ class Keyboard
   def start!
     puts "Starting keyboard task ..."
 
+    # If keymap.rb didn't append any debouncer,
+    # default debounce algorithm will be applied
+    @debouncer ||= Debouncer.new
+
     # To avoid unintentional report on startup
     # which happens only on Sparkfun Pro Micro RP2040
     if @split && @anchor
@@ -1101,11 +1108,12 @@ class Keyboard
   end
 
   def scan_matrix!
-    # detect physical switches that are pushed
+    @debouncer.set_time
     @matrix.each do |out_pin, in_pins|
       gpio_set_dir(out_pin, GPIO_OUT_LO)
       in_pins.each do |in_pin, switch|
-        unless gpio_get(in_pin)
+        row = switch[0]
+        unless @debouncer.resolve(gpio_get(in_pin), row, switch[1])
           col = if @anchor_left
             if @anchor
               # left
@@ -1123,7 +1131,7 @@ class Keyboard
               (switch[1] - @offset_a) * -1 + @offset_b
             end
           end
-          @switches << [switch[0], col]
+          @switches << [row, col]
         end
       end
       gpio_set_dir(out_pin, GPIO_IN_PULLUP)
@@ -1131,8 +1139,9 @@ class Keyboard
   end
 
   def scan_direct!
+    @debouncer.set_time
     @direct_pins.each_with_index do |col_pin, col|
-      if gpio_get(col_pin)
+      if @debouncer.resolve(!gpio_get(col_pin), col, 0)
         @switches << [0, col]
       end
     end
