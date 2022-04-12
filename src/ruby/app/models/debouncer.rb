@@ -46,9 +46,10 @@ class Debouncer
 
   # When pin_val==true, the GPIO pin stays `on`
   # which means the keyswitch is NOT pushed.
-  def resolve(pin_val, row, col)
+  def resolve(in_pin, out_pin)
+    pin_val = gpio_get(in_pin)
     return pin_val if @type == :none
-    key = row << 8 | col
+    key = in_pin << 8 | out_pin
     status = @pk_table[key]
     unless status
       @pk_table[key] = { pin_val: pin_val, time: @now }

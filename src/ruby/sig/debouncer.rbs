@@ -9,7 +9,7 @@ class Debouncer
   @type: Symbol
 
   def initialize: (?Symbol `type_val`) -> void
-  def resolve: (bool pin_val, Integer row, Integer col) -> bool
+  def resolve: (Integer in_pin, Integer out_pin) -> bool
   def type=: (Symbol) -> void
   def threshold=: (Integer) -> void
   def set_time: () -> void

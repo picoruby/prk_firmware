@@ -1113,7 +1113,7 @@ class Keyboard
       gpio_set_dir(out_pin, GPIO_OUT_LO)
       in_pins.each do |in_pin, switch|
         row = switch[0]
-        unless @debouncer.resolve(gpio_get(in_pin), row, switch[1])
+        unless @debouncer.resolve(in_pin, out_pin)
           col = if @anchor_left
             if @anchor
               # left
@@ -1141,7 +1141,7 @@ class Keyboard
   def scan_direct!
     @debouncer.set_time
     @direct_pins.each_with_index do |col_pin, col|
-      if @debouncer.resolve(!gpio_get(col_pin), col, 0)
+      if !@debouncer.resolve(col_pin, 0)
         @switches << [0, col]
       end
     end
