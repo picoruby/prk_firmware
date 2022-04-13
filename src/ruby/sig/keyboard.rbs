@@ -77,7 +77,12 @@ class Keyboard
   attr_accessor split: bool
   attr_accessor uart_pin: Integer
 
-  def append: (RGB | RotaryEncoder feature) -> void
+  attr_reader layer: Symbol
+  attr_reader split_style: Symbol
+
+  def set_debounce: (Symbol) -> void
+  def set_debounce_threshold: (Integer) -> void
+  def append: (RGB | RotaryEncoder | DebounceNone | DebouncePerRow | DebouncePerKey feature) -> void
   def start_features: -> void
   def mutual_uart_at_my_own_risk= : (bool) -> void
   def uart_partner_push8 : (Integer) -> void
@@ -86,7 +91,6 @@ class Keyboard
   def uart_anchor_init : (Integer) -> void
   def uart_partner_init : (Integer) -> void
   def initialize: -> void
-  def layer: () -> Symbol
   def set_anchor: (Symbol val) -> void
   def set_scan_mode: (Symbol val) -> void
   def split_style=: (Symbol style) -> void

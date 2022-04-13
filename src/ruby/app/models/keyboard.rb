@@ -467,6 +467,28 @@ class Keyboard
   attr_accessor :split, :uart_pin
   attr_reader :layer, :split_style
 
+  def set_debounce(type)
+    @debouncer = case type
+    when :none
+      DebounceNone.new
+    when :per_row
+      if @scan_mode == :direct
+        puts "Warning: Debouncer :per_row won't work where :direct scan mode."
+      end
+      DebouncePerRow.new
+    when :per_key
+      DebouncePerKey.new
+    else
+      puts "Error: Unknown debouncer type :#{type}."
+      puts "Using :none instead."
+      DebounceNone.new
+    end
+  end
+
+  def set_debounce_threshold(val)
+    @debouncer.threshold = val if @debouncer
+  end
+
   # TODO: OLED, SDCard
   def append(feature)
     case feature.class
@@ -516,7 +538,12 @@ class Keyboard
 
   def set_scan_mode(mode)
     case mode
-    when :matrix, :direct
+    when :matrix
+      @scan_mode = mode
+    when :direct
+      if @debouncer.is_a?(DebouncePerRow)
+        puts "Warning: Scan mode :direct won't work with :per_row debouncer."
+      end
       @scan_mode = mode
     else
       puts 'Scan mode only support :matrix and :direct. (default: :matrix)'
@@ -873,7 +900,11 @@ class Keyboard
   #   Please refrain from "refactoring" for a while.
   # **************************************************************
   def start!
-    puts "Starting keyboard task ..."
+    # If keymap.rb didn't set any debouncer,
+    # default debounce algorithm will be applied
+    self.set_debounce(@scan_mode == :direct ? :per_key : :per_row) unless @debouncer
+
+    puts "Keyboard task started."
 
     # To avoid unintentional report on startup
     # which happens only on Sparkfun Pro Micro RP2040
@@ -1101,11 +1132,12 @@ class Keyboard
   end
 
   def scan_matrix!
-    # detect physical switches that are pushed
+    @debouncer.set_time
     @matrix.each do |out_pin, in_pins|
       gpio_set_dir(out_pin, GPIO_OUT_LO)
       in_pins.each do |in_pin, switch|
-        unless gpio_get(in_pin)
+        row = switch[0]
+        unless @debouncer.resolve(in_pin, out_pin)
           col = if @anchor_left
             if @anchor
               # left
@@ -1123,7 +1155,7 @@ class Keyboard
               (switch[1] - @offset_a) * -1 + @offset_b
             end
           end
-          @switches << [switch[0], col]
+          @switches << [row, col]
         end
       end
       gpio_set_dir(out_pin, GPIO_IN_PULLUP)
@@ -1131,8 +1163,9 @@ class Keyboard
   end
 
   def scan_direct!
+    @debouncer.set_time
     @direct_pins.each_with_index do |col_pin, col|
-      if gpio_get(col_pin)
+      if !@debouncer.resolve(col_pin, 0)
         @switches << [0, col]
       end
     end
