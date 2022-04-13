@@ -470,8 +470,8 @@ class Keyboard
   # TODO: OLED, SDCard
   def append(feature)
     case feature.class
-    when Debouncer
-      # @type var feature: Debouncer
+    when DebounceNone, DebouncePerRow, DebouncePerKey
+      # @type var feature: DebounceNone | DebouncePerRow | DebouncePerKey
       @debouncer = feature
     when RGB
       # @type var feature: RGB
@@ -880,7 +880,7 @@ class Keyboard
 
     # If keymap.rb didn't append any debouncer,
     # default debounce algorithm will be applied
-    @debouncer ||= Debouncer.new
+    @debouncer ||= DebouncePerRow.new
 
     # To avoid unintentional report on startup
     # which happens only on Sparkfun Pro Micro RP2040

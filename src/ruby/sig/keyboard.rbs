@@ -73,12 +73,12 @@ class Keyboard
   @offset_b: Integer
   @entire_cols_size: Integer
   @skip_positions: Array[Array[Integer]]
-  @debouncer: Debouncer
+  @debouncer: DebounceNone | DebouncePerRow | DebouncePerKey
 
   attr_accessor split: bool
   attr_accessor uart_pin: Integer
 
-  def append: (RGB | RotaryEncoder | Debouncer feature) -> void
+  def append: (RGB | RotaryEncoder | DebounceNone | DebouncePerRow | DebouncePerKey feature) -> void
   def start_features: -> void
   def mutual_uart_at_my_own_risk= : (bool) -> void
   def uart_partner_push8 : (Integer) -> void
