@@ -611,6 +611,7 @@ class Keyboard
       gpio_init(pin)
       gpio_set_dir(pin, GPIO_IN_PULLUP)
     end
+    @cols_size = pins.count
     @direct_pins = pins
   end
 
