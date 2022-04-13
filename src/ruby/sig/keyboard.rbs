@@ -79,9 +79,9 @@ class Keyboard
 
   attr_reader layer: Symbol
   attr_reader split_style: Symbol
-  attr_reader debouncer: DebounceNone | DebouncePerRow | DebouncePerKey
 
-  def set_debouncer: (Symbol) -> void
+  def set_debounce: (Symbol) -> void
+  def set_debounce_threshold: (Integer) -> void
   def append: (RGB | RotaryEncoder | DebounceNone | DebouncePerRow | DebouncePerKey feature) -> void
   def start_features: -> void
   def mutual_uart_at_my_own_risk= : (bool) -> void

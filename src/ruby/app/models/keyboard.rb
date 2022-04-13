@@ -465,9 +465,9 @@ class Keyboard
   end
 
   attr_accessor :split, :uart_pin
-  attr_reader :layer, :split_style, :debouncer
+  attr_reader :layer, :split_style
 
-  def set_debouncer(type)
+  def set_debounce(type)
     @debouncer = case type
     when :none
       DebounceNone.new
@@ -483,6 +483,10 @@ class Keyboard
       puts "Using :none instead."
       DebounceNone.new
     end
+  end
+
+  def set_debounce_threshold(val)
+    @debouncer.threshold = val if @debouncer
   end
 
   # TODO: OLED, SDCard
@@ -896,11 +900,11 @@ class Keyboard
   #   Please refrain from "refactoring" for a while.
   # **************************************************************
   def start!
-    puts "Starting keyboard task ..."
-
     # If keymap.rb didn't set any debouncer,
     # default debounce algorithm will be applied
-    self.set_debouncer(:per_row) unless @debouncer
+    self.set_debounce(@scan_mode == :direct ? :per_key : :per_row) unless @debouncer
+
+    puts "Keyboard task started."
 
     # To avoid unintentional report on startup
     # which happens only on Sparkfun Pro Micro RP2040

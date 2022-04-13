@@ -27,7 +27,7 @@ end
 # If you are confident your switches never bounce mechanically
 # and you are a PC game enthusiast, use DebounceNone which
 # doesn't cancel any bounce and performs maximum.
-# - Usage: `kbd.append(DebounceNone.new)`
+# - Usage: `kbd.set_debounce(:none)`
 class DebounceNone < DebounceBase
   def set_time
   end
@@ -41,7 +41,7 @@ end
 # because it'll be appended by default
 # - Algorithm: Symmetric eager debounce per row
 # - RAM consumption: Smaller than DebouncePerKey
-# - Usage: `kbd.append(DebouncePerRow.new)`
+# - Usage: `kbd.set_debounce(:per_row)`
 class DebouncePerRow < DebounceBase
   def initialize
     @pr_table = {}
@@ -85,7 +85,7 @@ end
 # The most recommended one unless out of memory
 # - Algorithm: Symmetric eager debounce per key
 # - RAM consumption: Bigger than DebouncePerRow
-# - Usage: `kbd.append(DebouncePerKey.new)`
+# - Usage: `kbd.set_debounce(:per_key)`
 class DebouncePerKey < DebounceBase
   def initialize
     @pk_table = {}
