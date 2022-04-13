@@ -10,7 +10,8 @@
 
 ### Bug fix (again) 🤞
 - Fixed the issue on 0.9.12 again
-- Fixed a bug that aliased keys like KC_SPC don't work in Keyboard#define_composite_key [issues/52](#52)
+- Fixed [issues/52](#52): Aliased keys like KC_SPC don't work in Keyboard#define_composite_key
+- Fixed [issues/66](#66): `init_direct_pins` was broken in 0.9.11
 
 ## ~~0.9.12 on 2022/01/27~~ revoked
 ### ~~Bug fix 🐛~~
