@@ -1,14 +1,16 @@
 # Change log
 
 ## 0.9.13 on 2022/02/xx
-### Bug fix  again 🤞
-- Fixed the issue on 0.9.12 again
 
-### Bug fix 🐛
-- Fixed a bug that aliased keys like KC_SPC don't work in Keyboard#define_composite_key [https://github.com/picoruby/prk_firmware/issues/52](#52)
+### Debounce 🤹
+- Introduces debounce feature. See [wiki/Debounce](https://github.com/picoruby/prk_firmware/wiki/Debounce) for details
 
-### Improvements
+### 4KB limitation lifted 🤸
 - The limitation of the maximum size of keymap.rb is lifted. Now it's 10KB (used to be 4KB)
+
+### Bug fix (again) 🤞
+- Fixed the issue on 0.9.12 again
+- Fixed a bug that aliased keys like KC_SPC don't work in Keyboard#define_composite_key [issues/52](#52)
 
 ## ~~0.9.12 on 2022/01/27~~ revoked
 ### ~~Bug fix 🐛~~
