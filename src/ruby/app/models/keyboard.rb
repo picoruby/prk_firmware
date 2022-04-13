@@ -465,14 +465,29 @@ class Keyboard
   end
 
   attr_accessor :split, :uart_pin
-  attr_reader :layer, :split_style
+  attr_reader :layer, :split_style, :debouncer
+
+  def set_debouncer(type)
+    @debouncer = case type
+    when :none
+      DebounceNone.new
+    when :per_row
+      if @scan_mode == :direct
+        puts "Warning: Debouncer :per_row won't work where :direct scan mode."
+      end
+      DebouncePerRow.new
+    when :per_key
+      DebouncePerKey.new
+    else
+      puts "Error: Unknown debouncer type :#{type}."
+      puts "Using :none instead."
+      DebounceNone.new
+    end
+  end
 
   # TODO: OLED, SDCard
   def append(feature)
     case feature.class
-    when DebounceNone, DebouncePerRow, DebouncePerKey
-      # @type var feature: DebounceNone | DebouncePerRow | DebouncePerKey
-      @debouncer = feature
     when RGB
       # @type var feature: RGB
       $rgb = feature
@@ -519,7 +534,12 @@ class Keyboard
 
   def set_scan_mode(mode)
     case mode
-    when :matrix, :direct
+    when :matrix
+      @scan_mode = mode
+    when :direct
+      if @debouncer.is_a?(DebouncePerRow)
+        puts "Warning: Scan mode :direct won't work with :per_row debouncer."
+      end
       @scan_mode = mode
     else
       puts 'Scan mode only support :matrix and :direct. (default: :matrix)'
@@ -878,9 +898,9 @@ class Keyboard
   def start!
     puts "Starting keyboard task ..."
 
-    # If keymap.rb didn't append any debouncer,
+    # If keymap.rb didn't set any debouncer,
     # default debounce algorithm will be applied
-    @debouncer ||= DebouncePerRow.new
+    self.set_debouncer(:per_row) unless @debouncer
 
     # To avoid unintentional report on startup
     # which happens only on Sparkfun Pro Micro RP2040

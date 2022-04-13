@@ -73,11 +73,15 @@ class Keyboard
   @offset_b: Integer
   @entire_cols_size: Integer
   @skip_positions: Array[Array[Integer]]
-  @debouncer: DebounceNone | DebouncePerRow | DebouncePerKey
 
   attr_accessor split: bool
   attr_accessor uart_pin: Integer
 
+  attr_reader layer: Symbol
+  attr_reader split_style: Symbol
+  attr_reader debouncer: DebounceNone | DebouncePerRow | DebouncePerKey
+
+  def set_debouncer: (Symbol) -> void
   def append: (RGB | RotaryEncoder | DebounceNone | DebouncePerRow | DebouncePerKey feature) -> void
   def start_features: -> void
   def mutual_uart_at_my_own_risk= : (bool) -> void
@@ -87,7 +91,6 @@ class Keyboard
   def uart_anchor_init : (Integer) -> void
   def uart_partner_init : (Integer) -> void
   def initialize: -> void
-  def layer: () -> Symbol
   def set_anchor: (Symbol val) -> void
   def set_scan_mode: (Symbol val) -> void
   def split_style=: (Symbol style) -> void
