@@ -2,6 +2,9 @@
 
 ## 0.9.13 on 2022/02/xx
 
+### Software rebooting into BOOTSEL mode 😍
+- Now you can reboot RP2040 into BOOTSEL mode by pressing a key where you planted! See [wiki/BOOTSEL mode of RP2040](https://github.com/picoruby/prk_firmware/wiki/BOOTSEL-mode-of-RP2040#software-rebooting)
+
 ### Debounce 🤹
 - Introduces debounce feature. See [wiki/Debounce](https://github.com/picoruby/prk_firmware/wiki/Debounce) for details
 
