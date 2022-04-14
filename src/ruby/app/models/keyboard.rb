@@ -462,6 +462,9 @@ class Keyboard
     @buffer = Buffer.new("picoirb")
     @scan_mode = :matrix
     @skip_positions = Array.new
+    @sandbox = Sandbox.new
+    @sandbox.compile("_ = nil")
+    @sandbox.resume
   end
 
   attr_accessor :split, :uart_pin
@@ -1238,18 +1241,18 @@ class Keyboard
   end
 
   def eval(script)
-    if sandbox_picorbc(script)
-      if sandbox_resume
+    if @sandbox.compile(script)
+      if @sandbox.resume
         n = 0
-        while sandbox_state != 0 do # 0: TASKSTATE_DORMANT == finished(?)
+        while @sandbox.state != 0 do # 0: TASKSTATE_DORMANT == finished(?)
           sleep_ms 50
           n += 50
           if n > 10000
-            puts "Error: Timeout (sandbox_state: #{sandbox_state})"
+            puts "Error: Timeout (@sandbox.state: #{@sandbox.state})"
             break;
           end
         end
-        macro("=> #{sandbox_result.inspect}")
+        macro("=> #{@sandbox.result.inspect}")
       end
     else
       macro("Error: Compile failed")
