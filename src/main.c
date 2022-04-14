@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "pico/stdlib.h"
+#include "pico/bootrom.h"
 #include "bsp/board.h"
 #include "hardware/clocks.h"
 
@@ -31,6 +32,12 @@
 #ifdef PRK_NO_MSC
 #include "ruby/app/keymap.c"
 #endif
+
+void
+c___reset_usb_boot(mrb_vm *vm, mrb_value *v, int argc)
+{
+  reset_usb_boot(0, 0);
+}
 
 void
 c_board_millis(mrb_vm *vm, mrb_value *v, int argc)
@@ -184,6 +191,7 @@ int main() {
   mrbc_define_method(0, mrbc_class_object, "board_millis", c_board_millis);
   mrbc_define_method(0, mrbc_class_object, "rand",         c_rand);
   mrbc_define_method(0, mrbc_class_object, "srand",        c_srand);
+  mrbc_define_method(0, mrbc_class_object, "__reset_usb_boot", c___reset_usb_boot);
 #ifndef PRK_NO_MSC
   msc_init();
 #endif

@@ -12,6 +12,7 @@ class Object
   def resume_keymap: () -> void
   def reload_keymap: () -> void
   def report_hid : (Integer, String) -> void
+  def __reset_usb_boot: () -> void
 
   # Raspi
   def board_millis : -> Integer

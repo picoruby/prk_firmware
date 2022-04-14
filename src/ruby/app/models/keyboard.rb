@@ -467,6 +467,12 @@ class Keyboard
   attr_accessor :split, :uart_pin
   attr_reader :layer, :split_style
 
+  def bootsel!
+    puts "Rebooting into BOOTSEL mode!"
+    sleep 0.1
+    __reset_usb_boot
+  end
+
   def set_debounce(type)
     @debouncer = case type
     when :none
