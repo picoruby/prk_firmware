@@ -799,16 +799,12 @@ class Keyboard
               on_hold
             end
             switch = [row_index, col_index]
-            unless @mode_keys[switch]
-              # `@ivar ||= {}` doesn't work as of now
-              # https://github.com/picoruby/picoruby/issues/78
-              @mode_keys[switch] = {
-                prev_state:        :released,
-                pushed_at:         0,
-                released_at:       0,
-                layers:            Hash.new
-              }
-            end
+            @mode_keys[switch] ||= {
+              prev_state:        :released,
+              pushed_at:         0,
+              released_at:       0,
+              layers:            Hash.new
+            }
             @mode_keys[switch][:layers][layer] = {
               on_release:        on_release_action,
               on_hold:           on_hold_action,
