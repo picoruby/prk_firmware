@@ -404,6 +404,7 @@ msc_write_file(const char *filename, const uint8_t *data, uint16_t length)
   uint16_t cluster_id_to_write = 0;
   bool is_update = false;
   
+  // search empty entry
   for (uint8_t i=1; i<128; i++ )
   {
     addr = (void *)(FLASH_MMAP_ADDR + (SECTOR_SIZE * 2) + 32*i);
@@ -417,8 +418,9 @@ msc_write_file(const char *filename, const uint8_t *data, uint16_t length)
     }
     else if (entry.Name[0] == 0xe5 && dir_entry_index_to_write == 0)
     {
-      // keep deleted entry not to split FAT chains of >4096B file
       dir_entry_index_to_write = i;
+
+      // continue to search exist "update" entry
       continue; 
     }
     else if (entry.Name[0] == '\0')
