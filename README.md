@@ -4,12 +4,16 @@
 
 PRK Firmware is an award-winning DIY-keyboard firmware framework written and configured in PicoRuby which is an alternative mruby implementation targeting one-chip microcontrollers.
 
+<div>
 <a href="https://rubyprize.jp/21_rubyprize/21_iv-nominees02-en.html" target="_blank">
   <img src="https://hasumikin.com/assets/images/finalnominees-awa-2021.png" width="350" title="Ruby Prize 2021">
 </a>
+</div>
+<div>
 <a href="https://www.digitalfukuoka.jp/topics/187" target="_blank">
   <img src="https://github.com/picoruby/picoruby/blob/master/docs/logos/fukuokarubyaward.png?raw=true" width="212" title="Fukuoka Ruby Award 2022">
 </a>
+</div>
 
 ### Features
 
