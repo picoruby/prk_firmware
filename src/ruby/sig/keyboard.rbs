@@ -82,7 +82,7 @@ class Keyboard
 
   def set_debounce: (Symbol) -> void
   def set_debounce_threshold: (Integer) -> void
-  def append: (RGB | RotaryEncoder | VIA feature | DebounceNone | DebouncePerRow | DebouncePerKey feature) -> void
+  def append: (RGB | RotaryEncoder | VIA | DebounceNone | DebouncePerRow | DebouncePerKey feature) -> void
   def start_features: -> void
   def mutual_uart_at_my_own_risk= : (bool) -> void
   def uart_partner_push8 : (Integer) -> void
