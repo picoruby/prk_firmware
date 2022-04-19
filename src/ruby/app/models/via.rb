@@ -45,6 +45,16 @@ class VIA
 
   attr_accessor :layer_count, :kbd, :cols_size, :rows_size
 
+  def expand_composite_key(name)
+    keynames = []
+    ary = name.to_s.split("_")
+    ary.each do |n|
+      keynames << ("KC_"+n).intern
+    end
+    
+    return keynames
+  end
+
   def load_mode_keys
     @mode_keys.each do |key_name, param|
       @kbd.define_mode_key(key_name, param)
@@ -57,16 +67,6 @@ class VIA
 
   def define_mode_key(key_name, param)
     @mode_keys[key_name] = param
-  end
-
-  def expand_composite_key(name)
-    keynames = []
-    ary = name.to_s.split("_")
-    ary.each do |n|
-      keynames << ("KC_"+n).intern
-    end
-    
-    return keynames
   end
 
   def get_modifier_name(bits)
@@ -217,14 +217,6 @@ class VIA
     return :KC_NO
   end
 
-  def convert_to_uint8_array(str)
-    data = []
-    str.each_char do |c|
-      data << c.ord
-    end
-    return data
-  end
-  
   def init_keymap
     @layer_count.times do |layer|
       @keymaps[layer] = []
@@ -379,44 +371,42 @@ class VIA
         data = raw_hid_receive_kb(data)
       end
 
-      when :ID_SET_KEYBOARD_VALUE
-        case KEYBOARD_VALUES[data[1]]
-        when :ID_LAYOUT_OPTIONS
-          value = (data[2] << 24) | (data[3] << 16)  | (data[4] << 8) | data[5]
-          #via_set_layout_options(value);
-        else
-          data = raw_hid_receive_kb(data)
-        end
-      when :ID_VIA_GET_KEYCODE
-        keycode = dynamic_keymap_get_keycode(data[1], data[2], data[3])
-        data[4]  = keycode >> 8
-        data[5]  = keycode & 0xFF
-      when :ID_VIA_SET_KEYCODE
-        dynamic_keymap_set_keycode(data[1], data[2], data[3], (data[4] << 8) | data[5])
-      when :ID_VIA_MACRO_GET_COUNT
-        data[1] = 0
-      when :ID_VIA_MACRO_GET_BUFFER_SIZE
-        size   = 0x0 #dynamic_keymap_macro_get_buffer_size()
-        data[1] = size >> 8
-        data[2] = size & 0xFF
-      when :ID_VIA_GET_LAYER_COUNT
-        data[1] = @layer_count
-      when :ID_VIA_GET_BUFFER
-        data = dynamic_keymap_get_buffer(data)
-        
-        unless @keymap_saved
-          save_keymap
-          @keymap_saved = true
-        end
-      when :ID_VIA_SET_BUFFER
-        dynamic_keymap_set_buffer(data)
-        
-        keymap_saved = false;
+    when :ID_SET_KEYBOARD_VALUE
+      case KEYBOARD_VALUES[data[1]]
+      when :ID_LAYOUT_OPTIONS
+        value = (data[2] << 24) | (data[3] << 16)  | (data[4] << 8) | data[5]
+        #via_set_layout_options(value);
       else
-
+        data = raw_hid_receive_kb(data)
       end
+    when :ID_VIA_GET_KEYCODE
+      keycode = dynamic_keymap_get_keycode(data[1], data[2], data[3])
+      data[4]  = keycode >> 8
+      data[5]  = keycode & 0xFF
+    when :ID_VIA_SET_KEYCODE
+      dynamic_keymap_set_keycode(data[1], data[2], data[3], (data[4] << 8) | data[5])
+    when :ID_VIA_MACRO_GET_COUNT
+      data[1] = 0
+    when :ID_VIA_MACRO_GET_BUFFER_SIZE
+      size   = 0x0 #dynamic_keymap_macro_get_buffer_size()
+      data[1] = size >> 8
+      data[2] = size & 0xFF
+    when :ID_VIA_GET_LAYER_COUNT
+      data[1] = @layer_count
+    when :ID_VIA_GET_BUFFER
+      data = dynamic_keymap_get_buffer(data)
+      
+      unless @keymap_saved
+        save_keymap
+        @keymap_saved = true
+      end
+    when :ID_VIA_SET_BUFFER
+      dynamic_keymap_set_buffer(data)
+    else
 
-      return data
+    end
+
+    return data
   end
 
   def via_get_layer_name(i)
@@ -424,28 +414,6 @@ class VIA
     
     s = "VIA_LAYER"+i.to_s
     return s.intern
-  end
-
-  def dynamic_keymap_set_buffer(data)
-    # @type var data: Array[Integer]
-    offset = (data[1]<<8) | data[2]
-    size   = data[3]
-    layer_num = ( offset/2/(@cols_size*@rows_size) ).to_i
-    key_index = ( offset/2 - layer_num * (@cols_size*@rows_size) ).to_i
-    
-    (size/2).times do |i|
-      keycode = data[i*2+4] << 8 | data[i*2+5]
-      if key_index==(@cols_size*@rows_size)
-        layer_num += 1
-        key_index = 0
-      end
-      row = (key_index / @rows_size).to_i
-      col = (key_index % @rows_size).to_i
-      
-      dynamic_keymap_set_keycode(layer_num, row, col, keycode);
-
-      key_index += 1
-    end
   end
 
   def dynamic_keymap_get_buffer(data)
@@ -473,6 +441,28 @@ class VIA
     end
     
     return data
+  end
+
+  def dynamic_keymap_set_buffer(data)
+    # @type var data: Array[Integer]
+    offset = (data[1]<<8) | data[2]
+    size   = data[3]
+    layer_num = ( offset/2/(@cols_size*@rows_size) ).to_i
+    key_index = ( offset/2 - layer_num * (@cols_size*@rows_size) ).to_i
+    
+    (size/2).times do |i|
+      keycode = data[i*2+4] << 8 | data[i*2+5]
+      if key_index==(@cols_size*@rows_size)
+        layer_num += 1
+        key_index = 0
+      end
+      row = (key_index / @rows_size).to_i
+      col = (key_index % @rows_size).to_i
+      
+      dynamic_keymap_set_keycode(layer_num, row, col, keycode);
+
+      key_index += 1
+    end
   end
 
   def dynamic_keymap_get_keycode(layer, row, col)

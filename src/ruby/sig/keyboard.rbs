@@ -48,8 +48,6 @@ class Keyboard
     pushed_at:         Integer,
     released_at:       Integer
   }]
-  @map_size: Integer
-
   @switches: Array[Array[Integer]]
   @layer_names: Array[Symbol]
   @layer: Symbol

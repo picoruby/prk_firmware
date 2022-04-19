@@ -244,6 +244,10 @@ const uint16_t string_desc_product[] = { // Index: 1
   'P', 'R', 'K', 'f', 'i', 'r', 'm'
 };
 
+uint8_t raw_hid_last_received_report[REPORT_RAW_MAX_LEN];
+uint8_t raw_hid_last_received_report_length;
+bool raw_hid_report_received = false;
+
 uint8_t const *tud_hid_descriptor_report_cb(uint8_t instance) {
     return hid_report_desc;
 }
@@ -251,11 +255,7 @@ uint16_t tud_hid_get_report_cb(uint8_t instance, uint8_t report_id, hid_report_t
     return 0;
 }
 
-uint8_t raw_hid_last_received_report[REPORT_RAW_MAX_LEN];
-uint8_t raw_hid_last_received_report_length;
-bool raw_hid_report_received = false;
 void tud_hid_set_report_cb(uint8_t instance, uint8_t report_id, hid_report_type_t report_type, uint8_t const* buffer, uint16_t bufsize) {
-
     if (report_type == HID_REPORT_TYPE_INVALID) {
         report_id = buffer[0];
         buffer++;
@@ -281,10 +281,6 @@ void c_raw_hid_report_received_q(mrb_vm *vm, mrb_value *v, int argc) {
   }
 }
 
-void c_set_raw_hid_report_read(mrb_vm *vm, mrb_value *v, int argc) {
-  raw_hid_report_received = false;
-}
-
 void c_get_last_received_raw_hid_report(mrb_vm *vm, mrb_value *v, int argc) {
   mrbc_value rb_val_array = mrbc_array_new(vm, REPORT_RAW_MAX_LEN);
   mrbc_array *rb_array = rb_val_array.array;
@@ -300,10 +296,9 @@ void c_get_last_received_raw_hid_report(mrb_vm *vm, mrb_value *v, int argc) {
 
 bool report_raw_hid(uint8_t* data, uint8_t len)
 {
-  uint32_t const btn = 1;
   bool ret;
   // Remote wakeup
-  if (tud_suspended() && btn) {
+  if (tud_suspended()) {
     // Wake up host if we are in suspend mode
     // and REMOTE_WAKEUP feature is enabled by host
     tud_remote_wakeup();

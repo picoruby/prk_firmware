@@ -464,7 +464,6 @@ class Keyboard
     @scan_mode = :matrix
     @skip_positions = Array.new
     @layer_changed_delay = 20
-    @map_size = 0
     @via = nil
   end
 
@@ -568,7 +567,6 @@ class Keyboard
           gpio_set_dir(cell[0], GPIO_IN_PULLUP)
           gpio_init(cell[1])
           gpio_set_dir(cell[1], GPIO_IN_PULLUP)
-          @map_size += 1;
         else # should be nil
           @skip_positions << [row_index, col_index]
         end
@@ -597,7 +595,6 @@ class Keyboard
       gpio_set_dir(pin, GPIO_IN_PULLUP)
     end
     @direct_pins = pins
-    @map_size = pins.size
   end
 
   def skip_position?(row, col)
