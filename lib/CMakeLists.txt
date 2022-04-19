@@ -32,6 +32,7 @@ add_library(picoruby STATIC
   ${CMAKE_CURRENT_SOURCE_DIR}/picoruby/build/host/mrbgems/mruby-mrubyc/src/mrblib.c
   ${PICO_COMPILER_DIR}/src/common.c
   ${PICO_COMPILER_DIR}/src/compiler.c
+  ${PICO_COMPILER_DIR}/src/context.c
   ${PICO_COMPILER_DIR}/src/dump.c
   ${PICO_COMPILER_DIR}/src/generator.c
   ${PICO_COMPILER_DIR}/src/regex.c

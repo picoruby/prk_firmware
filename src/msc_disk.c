@@ -144,7 +144,8 @@ uint8_t msc_disk[4][SECTOR_SIZE] =
 
 // Invoked when received SCSI_CMD_INQUIRY
 // Application fill vendor id, product id and revision with string up to 8, 16, 4 characters respectively
-void tud_msc_inquiry_cb(uint8_t lun, uint8_t vendor_id[8], uint8_t product_id[16], uint8_t product_rev[4])
+void
+tud_msc_inquiry_cb(uint8_t lun, uint8_t vendor_id[8], uint8_t product_id[16], uint8_t product_rev[4])
 {
   (void) lun;
 
@@ -159,7 +160,8 @@ void tud_msc_inquiry_cb(uint8_t lun, uint8_t vendor_id[8], uint8_t product_id[16
 
 // Invoked when received Test Unit Ready command.
 // return true allowing host to read/write this LUN e.g SD card inserted
-bool tud_msc_test_unit_ready_cb(uint8_t lun)
+bool
+tud_msc_test_unit_ready_cb(uint8_t lun)
 {
   (void) lun;
 
@@ -174,7 +176,8 @@ bool tud_msc_test_unit_ready_cb(uint8_t lun)
 
 // Invoked when received SCSI_CMD_READ_CAPACITY_10 and SCSI_CMD_READ_FORMAT_CAPACITY to determine the disk size
 // Application update block count and block size
-void tud_msc_capacity_cb(uint8_t lun, uint32_t* block_count, uint16_t* block_size)
+void
+tud_msc_capacity_cb(uint8_t lun, uint32_t* block_count, uint16_t* block_size)
 {
   (void) lun;
 
@@ -185,7 +188,8 @@ void tud_msc_capacity_cb(uint8_t lun, uint32_t* block_count, uint16_t* block_siz
 // Invoked when received Start Stop Unit command
 // - Start = 0 : stopped power mode, if load_eject = 1 : unload disk storage
 // - Start = 1 : active mode, if load_eject = 1 : load disk storage
-bool tud_msc_start_stop_cb(uint8_t lun, uint8_t power_condition, bool start, bool load_eject)
+bool
+tud_msc_start_stop_cb(uint8_t lun, uint8_t power_condition, bool start, bool load_eject)
 {
   (void) lun;
   (void) power_condition;
@@ -208,7 +212,8 @@ bool tud_msc_start_stop_cb(uint8_t lun, uint8_t power_condition, bool start, boo
 
 // Callback invoked when received READ10 command.
 // Copy disk's data to buffer (up to bufsize) and return number of copied bytes.
-int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buffer, uint32_t bufsize)
+int32_t
+tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buffer, uint32_t bufsize)
 {
   (void) lun;
   // out of ramdisk
@@ -217,7 +222,8 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buff
   return bufsize;
 }
 
-bool tud_msc_is_writable_cb (uint8_t lun)
+bool
+tud_msc_is_writable_cb (uint8_t lun)
 {
   (void) lun;
 #ifdef PICORUBY_MSC_READONLY
@@ -229,7 +235,8 @@ bool tud_msc_is_writable_cb (uint8_t lun)
 
 // Callback invoked when received WRITE10 command.
 // Process data in buffer to disk's storage and return number of written bytes
-int32_t tud_msc_write10_cb(uint8_t lun, uint32_t lba, uint32_t offset, uint8_t* buffer, uint32_t bufsize)
+int32_t
+tud_msc_write10_cb(uint8_t lun, uint32_t lba, uint32_t offset, uint8_t* buffer, uint32_t bufsize)
 /*
  * TODO: Cache coherency problem can be avoided if bufsize == SECTOR_SIZE(4094)
  */
@@ -249,7 +256,8 @@ int32_t tud_msc_write10_cb(uint8_t lun, uint32_t lba, uint32_t offset, uint8_t* 
 // Callback invoked when received an SCSI command not in built-in list below
 // - READ_CAPACITY10, READ_FORMAT_CAPACITY, INQUIRY, MODE_SENSE6, REQUEST_SENSE
 // - READ10 and WRITE10 has their own callbacks
-int32_t tud_msc_scsi_cb (uint8_t lun, uint8_t const scsi_cmd[16], void* buffer, uint16_t bufsize)
+int32_t
+tud_msc_scsi_cb (uint8_t lun, uint8_t const scsi_cmd[16], void* buffer, uint16_t bufsize)
 {
   // read10 & write10 has their own callback and MUST not be handled here
 
@@ -292,8 +300,8 @@ int32_t tud_msc_scsi_cb (uint8_t lun, uint8_t const scsi_cmd[16], void* buffer, 
   return resplen;
 }
 
-
-void msc_init(void)
+void
+msc_init(void)
 {
 #ifndef FORCE_FORMAT_FLASH
   if (
@@ -516,6 +524,39 @@ void c_write_file_internal(mrb_vm *vm, mrb_value *v, int argc) {
   }
   
   msc_write_file(rb_filename, c_data, limit);
+
+/*
+ * FAT12 cluster chain structure: Each entry consists of 12 bit data
+ * 0  00000000  LSB of FAT[0]
+ * 1  11110000  LSB of FAT[1] and MSB of FAT[0]
+ * 2  11111111  MSB of FAT[1]
+ * 3  22222222  LSB of FAT[2]
+ * 4  33332222  LSB of FAT[3] and MSB of FAT[2]
+ * 5  33333333  MSB of FAT[3]
+ * ^  ^^^^^^^^
+ * |  entry data
+ * byte offset
+ */
+void
+msc_loadFile(uint8_t *file, DirEnt *entry)
+{
+  uint16_t clusNum = entry->FstClusLO;
+  uint16_t nextClusNum;
+  uint8_t *lsb, *clusAddr;
+  uint16_t copySize;
+  for (int i = 0; clusNum < 0xFF8; i++) {
+    if (clusNum & 1) { // Odd number in FAT12
+      lsb = (uint8_t *)(FLASH_MMAP_ADDR + SECTOR_SIZE + (clusNum - 1) / 2 * 3 + 1);
+      nextClusNum = (uint16_t)((*(lsb + 1) << 4) + (uint16_t)((*lsb >> 4) & 0b1111));
+    } else {           // Even number in FAT12
+      lsb = (uint8_t *)(FLASH_MMAP_ADDR + SECTOR_SIZE + clusNum / 2 * 3);
+      nextClusNum = (uint16_t)((*(lsb + 1) & 0b1111) << 8) + (uint16_t)*lsb;
+    }
+    clusAddr = (uint8_t *)(FLASH_MMAP_ADDR + SECTOR_SIZE * (1 + clusNum));
+    copySize = (nextClusNum < 0xFF8) ? SECTOR_SIZE : (entry->FileSize % SECTOR_SIZE);
+    memcpy(file + i * SECTOR_SIZE, clusAddr, copySize);
+    clusNum = nextClusNum;
+  }
 }
 
 //volatile char ppp;
@@ -556,7 +597,8 @@ c_cdc_task(mrb_vm *vm, mrb_value *v, int argc)
 }
 
 // Invoked when cdc when line state changed e.g connected/disconnected
-void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts)
+void
+tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts)
 {
   (void) itf;
   (void) rts;
@@ -572,7 +614,8 @@ void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts)
 }
 
 // Invoked when CDC interface received data from host
-void tud_cdc_rx_cb(uint8_t itf)
+void
+tud_cdc_rx_cb(uint8_t itf)
 {
   (void) itf;
 }

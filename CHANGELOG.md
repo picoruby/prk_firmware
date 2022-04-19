@@ -1,8 +1,24 @@
 # Change log
 
-## 0.9.12 on 2022/01/27
-### Bug fix 🐛
-- Fixed some bugs that relate to mode key.
+## 0.9.13 on 2022/04/16
+
+### Software rebooting into BOOTSEL mode 😍
+- Now you can reboot RP2040 into BOOTSEL mode by pressing a key where you planted! See [wiki/BOOTSEL mode of RP2040](https://github.com/picoruby/prk_firmware/wiki/BOOTSEL-mode-of-RP2040#software-rebooting)
+
+### Debounce 🤹
+- Introduces debounce feature. See [wiki/Debounce](https://github.com/picoruby/prk_firmware/wiki/Debounce) for details
+
+### 4KB limitation lifted 🤸
+- The limitation of the maximum size of keymap.rb is lifted. Now it's 10KB (used to be 4KB)
+
+### Bug fix (again) 🤞
+- Fixed the issue on 0.9.12 again
+- Fixed [issues/52](#52): Aliased keys like KC_SPC don't work in Keyboard#define_composite_key
+- Fixed [issues/66](#66): `init_direct_pins` was broken in 0.9.11
+
+## ~~0.9.12 on 2022/01/27~~ revoked
+### ~~Bug fix 🐛~~
+- ~~Fixed some bugs that relate to mode key.~~
   See [issue/49](https://github.com/picoruby/prk_firmware/issues/49) for details
 
 ## 0.9.11 on 2022/01/21

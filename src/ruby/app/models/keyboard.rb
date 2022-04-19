@@ -437,7 +437,6 @@ class Keyboard
 
   def initialize
     puts "Initializing Keyboard."
-    sleep_ms 500
     # mruby/c VM doesn't work with a CONSTANT to make another CONSTANT
     # steep doesn't allow dynamic assignment of CONSTANT
     @SHIFT_LETTER_THRESHOLD_A    = LETTER.index('A').to_i
@@ -447,7 +446,7 @@ class Keyboard
     @before_filters = Array.new
     @keymaps = Hash.new
     @composite_keys = Array.new
-    @mode_keys = Array.new
+    @mode_keys = Hash.new
     @switches = Array.new
     @layer_names = Array.new
     @layer = :default
@@ -465,10 +464,41 @@ class Keyboard
     @skip_positions = Array.new
     @layer_changed_delay = 20
     @via = nil
+    @sandbox = Sandbox.new
+    @sandbox.compile("_ = nil")
+    @sandbox.resume
   end
 
-  attr_accessor :split, :uart_pin, :layer_changed_delay
+  attr_accessor :split, :uart_pin
   attr_reader :layer, :split_style
+
+  def bootsel!
+    puts "Rebooting into BOOTSEL mode!"
+    sleep 0.1
+    __reset_usb_boot
+  end
+
+  def set_debounce(type)
+    @debouncer = case type
+    when :none
+      DebounceNone.new
+    when :per_row
+      if @scan_mode == :direct
+        puts "Warning: Debouncer :per_row won't work where :direct scan mode."
+      end
+      DebouncePerRow.new
+    when :per_key
+      DebouncePerKey.new
+    else
+      puts "Error: Unknown debouncer type :#{type}."
+      puts "Using :none instead."
+      DebounceNone.new
+    end
+  end
+
+  def set_debounce_threshold(val)
+    @debouncer.threshold = val if @debouncer
+  end
 
   # TODO: OLED, SDCard
   def append(feature)
@@ -523,7 +553,12 @@ class Keyboard
 
   def set_scan_mode(mode)
     case mode
-    when :matrix, :direct
+    when :matrix
+      @scan_mode = mode
+    when :direct
+      if @debouncer.is_a?(DebouncePerRow)
+        puts "Warning: Scan mode :direct won't work with :per_row debouncer."
+      end
       @scan_mode = mode
     else
       puts 'Scan mode only support :matrix and :direct. (default: :matrix)'
@@ -536,18 +571,15 @@ class Keyboard
     @anchor = tud_mounted?
     if @anchor
       puts " Anchor"
-      sleep_ms 500
       uart_anchor_init(@uart_pin)
     else
       puts " Partner"
       uart_partner_init(@uart_pin)
     end
-    sleep_ms 500
   end
 
   def init_matrix_pins(matrix)
     puts "Initializing GPIO."
-    sleep_ms 500
     init_uart
     @cols_size = 0
     @matrix = Hash.new
@@ -594,6 +626,7 @@ class Keyboard
       gpio_init(pin)
       gpio_set_dir(pin, GPIO_IN_PULLUP)
     end
+    @cols_size = pins.count
     @direct_pins = pins
   end
 
@@ -792,16 +825,18 @@ class Keyboard
               # @type var on_hold: Proc
               on_hold
             end
-            @mode_keys << {
-              layer:             layer,
-              on_release:        on_release_action,
-              on_hold:           on_hold_action,
-              release_threshold: (release_threshold || 0),
-              repush_threshold:  (repush_threshold || 0),
-              switch:            [row_index, col_index],
+            switch = [row_index, col_index]
+            @mode_keys[switch] ||= {
               prev_state:        :released,
               pushed_at:         0,
               released_at:       0,
+              layers:            Hash.new
+            }
+            @mode_keys[switch][:layers][layer] = {
+              on_release:        on_release_action,
+              on_hold:           on_hold_action,
+              release_threshold: (release_threshold || 0),
+              repush_threshold:  (repush_threshold || 0)
             }
           end
         end
@@ -898,9 +933,11 @@ class Keyboard
   #   Please refrain from "refactoring" for a while.
   # **************************************************************
   def start!
-    puts "Starting keyboard task ..."
-    @keycodes = Array.new
-    prev_layer = :default
+    # If keymap.rb didn't set any debouncer,
+    # default debounce algorithm will be applied
+    self.set_debounce(@scan_mode == :direct ? :per_key : :per_row) unless @debouncer
+
+    puts "Keyboard task started."
 
     # To avoid unintentional report on startup
     # which happens only on Sparkfun Pro Micro RP2040
@@ -913,7 +950,13 @@ class Keyboard
     end
 
     @via.start! if @via
+
+    @keycodes = Array.new
+    prev_layer = :default
+    modifier_switch_positions = Array.new
     rgb_message = 0
+    earlier_report_size = 0
+
     while true
       cycle_time = 20
       now = board_millis
@@ -960,43 +1003,48 @@ class Keyboard
           end
         end
 
-        right_after_layer_key_pushed = false
-
-        @mode_keys.each do |mode_key|
-          next if mode_key[:layer] != @layer
-          if @switches.include?(mode_key[:switch])
-            on_hold = mode_key[:on_hold]
+        @mode_keys.each do |switch, mode_key|
+          layer_action = mode_key[:layers][@layer]
+          next unless layer_action
+          if @switches.include?(switch)
+            on_hold = layer_action[:on_hold]
             case mode_key[:prev_state]
-            when :released
-              mode_key[:pushed_at] = now
-              mode_key[:prev_state] = :pushed
-              if on_hold.is_a?(Symbol)
-                desired_layer = on_hold
-                right_after_layer_key_pushed = true
-              end
-            when :pushed
-              if !on_hold.is_a?(Symbol) && (now - mode_key[:pushed_at] > mode_key[:release_threshold])
-                case on_hold.class
-                when Integer
-                  # @type var on_hold: Integer
-                  @modifier |= on_hold
-                when Proc
-                  # @type var on_hold: Proc
-                  on_hold.call
+            when :released, :pushed, :pushed_interrupted
+              if mode_key[:prev_state] == :released
+                if earlier_report_size == 0
+                  mode_key[:pushed_at] = now
+                  mode_key[:prev_state] = :pushed
+                else
+                  on_hold = nil # To skip hold
                 end
+              elsif earlier_report_size > 0
+                # To prevent from invoking action_on_release
+                mode_key[:prev_state] = :pushed_interrupted
+              end
+              case on_hold.class
+              when Symbol
+                # @type var on_hold: Symbol
+                desired_layer = on_hold
+              when Integer
+                # @type var on_hold: Integer
+                @modifier |= on_hold
+              when Proc
+                # @type var on_hold: Proc
+                on_hold.call
               end
             when :pushed_then_released
-              if now - mode_key[:released_at] <= mode_key[:repush_threshold]
+              if now - mode_key[:released_at] <= layer_action[:repush_threshold]
                 mode_key[:prev_state] = :pushed_then_released_then_pushed
               end
             when :pushed_then_released_then_pushed
-              action_on_release(mode_key[:on_release])
+              action_on_release(layer_action[:on_release])
             end
           else
             case mode_key[:prev_state]
             when :pushed
-              if now - mode_key[:pushed_at] <= mode_key[:release_threshold]
-                action_on_release(mode_key[:on_release])
+              if (earlier_report_size == 0) &&
+                  (now - mode_key[:pushed_at] <= layer_action[:release_threshold])
+                action_on_release(layer_action[:on_release])
                 mode_key[:prev_state] = :pushed_then_released
               else
                 mode_key[:prev_state] = :released
@@ -1004,12 +1052,12 @@ class Keyboard
               mode_key[:released_at] = now
               @layer = prev_layer
               prev_layer = :default
+            when :pushed_interrupted, :pushed_then_released_then_pushed
+              mode_key[:prev_state] = :released
             when :pushed_then_released
-              if now - mode_key[:released_at] > mode_key[:release_threshold]
+              if now - mode_key[:released_at] > layer_action[:release_threshold]
                 mode_key[:prev_state] = :released
               end
-            when :pushed_then_released_then_pushed
-              mode_key[:prev_state] = :released
             end
           end
         end
@@ -1019,14 +1067,8 @@ class Keyboard
           @layer = desired_layer
         end
 
-        # To fix https://github.com/picoruby/prk_firmware/issues/49
-        if right_after_layer_key_pushed
-          sleep_ms @layer_changed_delay
-          next # Skip reporting keycodes
-        end
-
         keymap = @keymaps[@locked_layer || @layer]
-        modifier_switch_positions = Array.new
+        modifier_switch_positions.clear
         @switches.each_with_index do |switch, i|
           keycode = keymap[switch[0]][switch[1]]
           next unless keycode.is_a?(Integer)
@@ -1039,7 +1081,7 @@ class Keyboard
             rgb_message = $rgb.invoke_anchor KEYCODE_RGB.key(keycode)
           else # Should be a modifier key
             @modifier |= keycode
-            modifier_switch_positions << i
+            modifier_switch_positions.unshift i
           end
         end
         # To fix https://github.com/picoruby/prk_firmware/issues/49
@@ -1059,7 +1101,8 @@ class Keyboard
           cycle_time = 40 # To avoid accidental skip
         end
 
-        (6 - @keycodes.size).times do
+        earlier_report_size = @keycodes.size
+        (6 - earlier_report_size).times do
           @keycodes << "\000"
         end
 
@@ -1126,11 +1169,12 @@ class Keyboard
   end
 
   def scan_matrix!
-    # detect physical switches that are pushed
+    @debouncer.set_time
     @matrix.each do |out_pin, in_pins|
       gpio_set_dir(out_pin, GPIO_OUT_LO)
       in_pins.each do |in_pin, switch|
-        unless gpio_get(in_pin)
+        row = switch[0]
+        unless @debouncer.resolve(in_pin, out_pin)
           col = if @anchor_left
             if @anchor
               # left
@@ -1148,7 +1192,7 @@ class Keyboard
               (switch[1] - @offset_a) * -1 + @offset_b
             end
           end
-          @switches << [switch[0], col]
+          @switches << [row, col]
         end
       end
       gpio_set_dir(out_pin, GPIO_IN_PULLUP)
@@ -1156,8 +1200,9 @@ class Keyboard
   end
 
   def scan_direct!
+    @debouncer.set_time
     @direct_pins.each_with_index do |col_pin, col|
-      if gpio_get(col_pin)
+      if !@debouncer.resolve(col_pin, 0)
         @switches << [0, col]
       end
     end
@@ -1223,18 +1268,18 @@ class Keyboard
   end
 
   def eval(script)
-    if sandbox_picorbc(script)
-      if sandbox_resume
+    if @sandbox.compile(script)
+      if @sandbox.resume
         n = 0
-        while sandbox_state != 0 do # 0: TASKSTATE_DORMANT == finished(?)
+        while @sandbox.state != 0 do # 0: TASKSTATE_DORMANT == finished(?)
           sleep_ms 50
           n += 50
           if n > 10000
-            puts "Error: Timeout (sandbox_state: #{sandbox_state})"
+            puts "Error: Timeout (@sandbox.state: #{@sandbox.state})"
             break;
           end
         end
-        macro("=> #{sandbox_result.inspect}")
+        macro("=> #{@sandbox.result.inspect}")
       end
     else
       macro("Error: Compile failed")

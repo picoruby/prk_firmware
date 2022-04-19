@@ -2,19 +2,28 @@
 
 ## PRK Firmware
 
-PRK Firmware is a framework for DIY-keyboards written and configured in [PicoRuby](https://github.com/picoruby/picoruby) which is an alternative mruby implementation targeting on one-chip microcontrollers.
+PRK Firmware is an award-winning DIY-keyboard firmware framework written and configured in PicoRuby which is an alternative mruby implementation targeting one-chip microcontrollers.
 
-<img src="https://github.com/picoruby/picoruby/blob/master/docs/logos/fukuokarubyaward.png?raw=true" width="212">
+<div>
+<a href="https://rubyprize.jp/21_rubyprize/21_iv-nominees02-en.html" target="_blank">
+  <img src="https://hasumikin.com/assets/images/finalnominees-awa-2021.png" width="350" title="Ruby Prize 2021">
+</a>
+</div>
+<div>
+<a href="https://www.digitalfukuoka.jp/topics/187" target="_blank">
+  <img src="https://github.com/picoruby/picoruby/blob/master/docs/logos/fukuokarubyaward.png?raw=true" width="212" title="Fukuoka Ruby Award 2022">
+</a>
+</div>
 
 ### Features
 
 - A "keymap" can be configured in Ruby which is a concise, readable and happy language
 - RP2040 is the target platform microcontroller
-- You can write your own "action" which will be invoked when you tap or hold a key.
+- You can extend your keyboard with the power of Ruby (watch the presentation videos below)
 
-### Documents
+### Getting started
 
-See Wiki pages: [https://github.com/picoruby/prk_firmware/wiki](https://github.com/picoruby/prk_firmware/wiki)
+See [wiki/Tutorial](https://github.com/picoruby/prk_firmware/wiki/Tutorial)
 
 ### Presentations
 
@@ -24,34 +33,18 @@ See the video on [YouTube](https://www.youtube.com/watch?v=SLSwn41iJX4&t=12s).
 
 Japanese talk is available at [RubyKaigi Takeout 2021](https://rubykaigi.org/2021-takeout/presentations/hasumikin.html).
 
-### Roadmap
-
-- [x] Non-split-type keyboard
-- [ ] Split-type keyboard
-  - [x] Symmetrical type. eg) Crkbd
-  - [ ] Asymmetrical type. eg) ???
-  - [x] UART communication between left and right
-  - [ ] I2C communication between left and right
-- [x] Macros
-- [ ] Media keys
-- [x] RGBLED. An example on [picoruby/prk_crkbd](https://github.com/picoruby/prk_crkbd/blob/main/keymap.rb)
-- [ ] OLED display
-- [x] Rotary encoders. An example on [prk_helix_rev3/keymap.rb](https://github.com/picoruby/prk_helix_rev3/blob/master/keymap.rb)
-- [ ] Mouse / Trackball
-- [x] Debugging over a serial port
-- [x] Duplex matrix
-
 ### Contributing
 
 Fork, patch and send a pull request.
 
-#### For those who are willing to contribute to PRK or write your own keymaps:
+Unlike QMK Firmware, prk_firmware repository doesn't include individual keymaps.
 
-- It's possible that your Ruby code can't be compiled as you wish
-  - Remember that "Ruby" in PRK is neither CRuby nor even mruby
-  - [PicoRuby](https://github.com/picoruby/picoruby) doesn't support some Ruby syntax and may have bugs. It would be great if you send a patch, too!
-- Unlike QMK Firmware, prk_firmware repository doesn't include individual keymaps
+See also [wiki/README](https://github.com/picoruby/prk_firmware/wiki/README) if you are willing to help us with documentation.
 
 ### License
 
-Copyright © 2021-2022 HASUMI Hitoshi. See MIT-LICENSE for further details.
+Copyright © 2021-2022 HASUMI Hitoshi ([@hasumikin](https://twitter.com/hasumikin)). See MIT-LICENSE for further details.
+
+<a href="https://github.com/picoruby/picoruby">
+  <img src="https://github.com/picoruby/picoruby/blob/master/docs/logos/picoruby.png?raw=true" width="200" alt="PicoRuby" title="Check PicoRuby, too">
+</a>

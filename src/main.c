@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "pico/stdlib.h"
+#include "pico/bootrom.h"
 #include "bsp/board.h"
 #include "hardware/clocks.h"
 
@@ -25,12 +26,19 @@
 #include "ruby/app/models/rgb.c"
 #include "ruby/app/models/buffer.c"
 #include "ruby/app/models/via.c"
+#include "ruby/app/models/debounce.c"
 /* tasks */
 #include "ruby/app/tasks/usb_task.c"
 #include "ruby/app/tasks/rgb_task.c"
 #ifdef PRK_NO_MSC
 #include "ruby/app/keymap.c"
 #endif
+
+void
+c___reset_usb_boot(mrb_vm *vm, mrb_value *v, int argc)
+{
+  reset_usb_boot(0, 0);
+}
 
 void
 c_board_millis(mrb_vm *vm, mrb_value *v, int argc)
@@ -60,31 +68,47 @@ int autoreload_state; /* from msc_disk.h */
 
 mrbc_tcb *tcb_keymap;
 
+#define KEYMAP_PREFIX      "puts;" /* Somehow scapegoat... */
+#define KEYMAP_PREFIX_SIZE (sizeof(KEYMAP_PREFIX) - 1)
+#define SUSPEND_TASK       "suspend_task"
+#define MAX_KEYMAP_SIZE    (1024 * 10)
+
 void
 create_keymap_task(mrbc_tcb *tcb)
 {
   hal_disable_irq();
   DirEnt entry;
-  char *program;
   StreamInterface *si;
   ParserState *p = Compiler_parseInitState(NODE_BOX_SIZE);
   msc_findDirEnt("KEYMAP  RB ", &entry);
+  uint8_t *keymap_rb = NULL;
   if (entry.Name[0] != '\0') {
     RotaryEncoder_reset();
-    console_printf("keymap.rb found.\n");
-    program = (char *)(FLASH_MMAP_ADDR + SECTOR_SIZE * (1 + entry.FstClusLO));
-    si = StreamInterface_new(program, STREAM_TYPE_MEMORY);
+    uint32_t fileSize = entry.FileSize;
+    console_printf("Size of keymap.rb: %u\n", fileSize);
+    if (fileSize < MAX_KEYMAP_SIZE) {
+      keymap_rb = malloc(KEYMAP_PREFIX_SIZE + fileSize + 1);
+      keymap_rb[KEYMAP_PREFIX_SIZE + fileSize] = '\0';
+      memcpy(keymap_rb, KEYMAP_PREFIX, KEYMAP_PREFIX_SIZE);
+      msc_loadFile(keymap_rb + KEYMAP_PREFIX_SIZE, &entry);
+      si = StreamInterface_new(NULL, (char *)keymap_rb, STREAM_TYPE_MEMORY);
+    } else {
+      console_printf("Must be less than %d bytes!\n", MAX_KEYMAP_SIZE);
+      si = StreamInterface_new(NULL, SUSPEND_TASK, STREAM_TYPE_MEMORY);
+    }
   } else {
     console_printf("No keymap.rb found.\n");
-    si = StreamInterface_new("suspend_task", STREAM_TYPE_MEMORY);
+    si = StreamInterface_new(NULL, SUSPEND_TASK, STREAM_TYPE_MEMORY);
   }
-  if (!Compiler_compile(p, si)) {
+  if (!Compiler_compile(p, si, NULL)) {
+    console_printf("Compiling keymap.rb failed!\n");
     Compiler_parserStateFree(p);
     StreamInterface_free(si);
     p = Compiler_parseInitState(NODE_BOX_SIZE);
-    si = StreamInterface_new("suspend_task", STREAM_TYPE_MEMORY);
-    Compiler_compile(p, si);
+    si = StreamInterface_new(NULL, SUSPEND_TASK, STREAM_TYPE_MEMORY);
+    Compiler_compile(p, si, NULL);
   }
+  if (keymap_rb) free(keymap_rb);
   if (tcb == NULL) {
     tcb = mrbc_create_task(p->scope->vm_code, 0);
   } else {
@@ -168,6 +192,7 @@ int main() {
   mrbc_define_method(0, mrbc_class_object, "board_millis", c_board_millis);
   mrbc_define_method(0, mrbc_class_object, "rand",         c_rand);
   mrbc_define_method(0, mrbc_class_object, "srand",        c_srand);
+  mrbc_define_method(0, mrbc_class_object, "__reset_usb_boot", c___reset_usb_boot);
 #ifndef PRK_NO_MSC
   msc_init();
 #endif
@@ -181,6 +206,7 @@ int main() {
   mrbc_load_model(float_ext);
   mrbc_load_model(rgb);
   mrbc_load_model(buffer);
+  mrbc_load_model(debounce);
   mrbc_load_model(rotary_encoder);
   mrbc_load_model(keyboard);
   mrbc_load_model(via);

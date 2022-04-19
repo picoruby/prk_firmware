@@ -14,7 +14,7 @@ class RGB
   attr_accessor :action, :anchor
 
   def init_values
-    self.speed = @speed || 22
+    self.speed = @speed || 25
     @hue = 0
     @saturation = 100
     @value = 0.0

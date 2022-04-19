@@ -5,6 +5,9 @@ task :steep do
 end
 
 namespace :steep do
+  task :check do
+    exec %q(bundle exec steep check)
+  end
   task :stats do
     exec %q(bundle exec steep stats --log-level=error --format=table)
   end
