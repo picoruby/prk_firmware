@@ -524,6 +524,7 @@ void c_write_file_internal(mrb_vm *vm, mrb_value *v, int argc) {
   }
   
   msc_write_file(rb_filename, c_data, limit);
+}
 
 /*
  * FAT12 cluster chain structure: Each entry consists of 12 bit data
