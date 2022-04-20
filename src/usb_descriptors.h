@@ -1,8 +1,17 @@
+#ifndef USB_DESCRIPTORS_H_
+#define USB_DESCRIPTORS_H_
+
 /* mruby/c VM */
 #include <mrubyc.h>
 
-#ifndef USB_DESCRIPTORS_H_
-#define USB_DESCRIPTORS_H_
+/* TinyUSB */
+#include "tusb.h"
+
+extern tusb_desc_device_t desc_device;
+
+extern char *iProduct;
+
+extern char const *string_desc_arr[];
 
 enum {
   REPORT_ID_KEYBOARD = 1,
