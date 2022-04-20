@@ -25,6 +25,7 @@
 #include "ruby/app/models/rotary_encoder.c"
 #include "ruby/app/models/rgb.c"
 #include "ruby/app/models/buffer.c"
+#include "ruby/app/models/via.c"
 #include "ruby/app/models/debounce.c"
 /* tasks */
 #include "ruby/app/tasks/usb_task.c"
@@ -208,6 +209,7 @@ int main() {
   mrbc_load_model(debounce);
   mrbc_load_model(rotary_encoder);
   mrbc_load_model(keyboard);
+  mrbc_load_model(via);
   mrbc_create_task(usb_task, 0);
   mrbc_create_task(rgb_task, 0);
   create_sandbox();
