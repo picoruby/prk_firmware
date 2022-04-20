@@ -705,7 +705,9 @@ class Keyboard
 
   def delete_mode_keys(layer_name)
     @composite_keys.delete_if { |item| item[:layer]==layer_name }
-    @mode_keys.delete_if { |item| item[:layer]==layer_name }
+    @mode_keys.each do |switch, config|
+      config[:layers].delete(layer_name)
+    end
   end
 
   def keycode_to_keysym(keycode)
