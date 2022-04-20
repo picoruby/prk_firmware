@@ -179,6 +179,37 @@ mrbc_load_model(const uint8_t *mrb)
   mrbc_raw_free(vm);
 }
 
+typedef struct picogems {
+  char *name;
+  void (*initializer)(void);
+  const uint8_t *mrb;
+  const uint8_t *task;
+  bool required;
+} picogems;
+
+picogems gems[] = {
+  {"keyboard",        NULL,               keyboard,       NULL,     false},
+  {"debounce",        NULL,               debounce,       NULL,     false},
+  {"rotaryr-encoder", init_RotaryEncoder, rotary_encoder, NULL,     false},
+  {"rgb",             init_RGB,           rgb,            rgb_task, false},
+  {"", NULL, NULL, NULL, false}
+};
+
+void
+c_require(mrb_vm *vm, mrb_value *v, int argc)
+{
+  char *name = GET_STRING_ARG(1);
+  if (!name) return;
+  for (int i = 0; ; i++) {
+    if (!gems[i].mrb) break;
+    if (strcmp(name, gems[i].name)) {
+      if (gems[i].initializer) gems[i].initializer();
+      mrbc_load_model(gems[i].mrb);
+      if (gems[i].task) mrbc_create_task(gems[i].task, 0);
+    }
+  }
+}
+
 int loglevel;
 
 int main() {
