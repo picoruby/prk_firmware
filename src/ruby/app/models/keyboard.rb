@@ -532,6 +532,7 @@ class Keyboard
     when VIA
       # @type var feature: VIA
       feature.kbd = self
+      feature.sandbox = @sandbox
       @via = feature
     end
   end

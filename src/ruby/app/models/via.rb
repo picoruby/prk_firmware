@@ -43,7 +43,7 @@ class VIA
     @composite_keys = Array.new
   end
 
-  attr_accessor :layer_count, :kbd, :cols_size, :rows_size
+  attr_accessor :layer_count, :kbd, :cols_size, :rows_size, :sandbox
 
   def expand_composite_key(name)
     keynames = []
@@ -475,18 +475,18 @@ class VIA
   end
   
   def eval_val(script)
-    if sandbox_picorbc(script)
-      if sandbox_resume
+    if @sandbox.compile(script)
+      if @sandbox.resume
         n = 0
-        while sandbox_state != 0 do # 0: TASKSTATE_DORMANT == finished(?)
+        while @sandbox.state != 0 do # 0: TASKSTATE_DORMANT == finished(?)
           sleep_ms 50
           n += 50
           if n > 10000
-            puts "Error: Timeout (sandbox_state: #{sandbox_state})"
+            puts "Error: Timeout (@sandbox.state: #{@sandbox.state})"
             break;
           end
         end
-        return sandbox_result
+        return @sandbox.result
       end
     else
       puts "Error: Compile failed"
