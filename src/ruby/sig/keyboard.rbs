@@ -79,6 +79,7 @@ class Keyboard
 
   attr_reader layer: Symbol
   attr_reader split_style: Symbol
+  attr_reader sandbox: Sandbox
 
   def set_debounce: (Symbol) -> void
   def set_debounce_threshold: (Integer) -> void

@@ -4,16 +4,16 @@ class VIA
   VIA_PROTOCOL_VERSION : Integer
   KEYBOARD_VALUES : Array[Symbol]
   ID_UNHANDLED : Integer
-  @layer_count : Integer
   @mode_keys: Hash[Symbol, [ Symbol | Array[Symbol] | Proc | nil, Symbol | Proc, Integer | nil, Integer| nil ] ]
   @composite_keys: Array[Symbol]
   @kbd: Keyboard
-  @cols_size: Integer
-  @rows_size: Integer
   @keymaps: Array[Array[Array[Integer]]]
   @keymap_saved: bool
 
   attr_accessor kbd: Keyboard
+  attr_accessor layer_count: Integer
+  attr_accessor rows_size: Integer
+  attr_accessor cols_size: Integer
 
   def task: -> void
   def start!: -> void

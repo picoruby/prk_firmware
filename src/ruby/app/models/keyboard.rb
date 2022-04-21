@@ -470,7 +470,7 @@ class Keyboard
   end
 
   attr_accessor :split, :uart_pin
-  attr_reader :layer, :split_style
+  attr_reader :layer, :split_style, :sandbox
 
   def bootsel!
     puts "Rebooting into BOOTSEL mode!"
@@ -532,7 +532,6 @@ class Keyboard
     when VIA
       # @type var feature: VIA
       feature.kbd = self
-      feature.sandbox = @sandbox
       @via = feature
     end
   end
