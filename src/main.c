@@ -70,7 +70,7 @@ char const *string_desc_arr[STRING_DESC_ARR_SIZE] =
 {
   (const char[]) { 0x09, 0x04 }, // 0: is supported language is English (0x0409)
   "PRK Firmware developers",     // 1: Manufacturer
-  "Default VID/PID"              // 2: Product
+  "Default VID/PID",             // 2: Product
   PRK_SERIAL,                    // 3: Serial
   "PRK CDC",                     // 4: CDC Interface
   "PRK MSC",                     // 5: MSC Interface
