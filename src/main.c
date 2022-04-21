@@ -242,52 +242,83 @@ c_autoreload_ready_q(mrb_vm *vm, mrb_value *v, int argc)
 
 static uint8_t memory_pool[MEMORY_SIZE];
 
-void
+bool
 mrbc_load_model(const uint8_t *mrb)
 {
   mrbc_vm *vm = mrbc_vm_open(NULL);
   if( vm == 0 ) {
     console_printf("Error: Can't open VM.\n");
-    return;
+    return false;
   }
   if( mrbc_load_mrb(vm, mrb) != 0 ) {
     console_printf("Error: Illegal bytecode.\n");
-    return;
+    return false;
   }
   mrbc_vm_begin(vm);
   mrbc_vm_run(vm);
   mrbc_raw_free(vm);
+  return true;
 }
 
 typedef struct picogems {
-  char *name;
+  const char *name;
   void (*initializer)(void);
   const uint8_t *mrb;
   const uint8_t *task;
   bool required;
 } picogems;
 
+static void
+init_RotaryEncoder(void)
+{
+  ROTARY_ENCODER_INIT();
+}
+
+static void
+init_RGB(void)
+{
+  WS2812_INIT();
+}
+
 picogems gems[] = {
-  {"keyboard",        NULL,               keyboard,       NULL,     false},
-  {"debounce",        NULL,               debounce,       NULL,     false},
-  {"rotaryr-encoder", init_RotaryEncoder, rotary_encoder, NULL,     false},
-  {"rgb",             init_RGB,           rgb,            rgb_task, false},
-  {"", NULL, NULL, NULL, false}
+  {"keyboard",       NULL,               keyboard,       NULL,     false},
+  {"debounce",       NULL,               debounce,       NULL,     false},
+  {"rotary_encoder", init_RotaryEncoder, rotary_encoder, NULL,     false},
+  {"rgb",            init_RGB,           rgb,            rgb_task, false},
+  {"via",            NULL,               via,            NULL,     false},
+  {NULL, NULL, NULL, NULL, false}
 };
 
 void
 c_require(mrb_vm *vm, mrb_value *v, int argc)
 {
   char *name = GET_STRING_ARG(1);
+  bool result = false;
   if (!name) return;
   for (int i = 0; ; i++) {
-    if (!gems[i].mrb) break;
-    if (strcmp(name, gems[i].name)) {
-      if (gems[i].initializer) gems[i].initializer();
-      mrbc_load_model(gems[i].mrb);
-      if (gems[i].task) mrbc_create_task(gems[i].task, 0);
+    if (gems[i].name == NULL) {
+      console_printf("cannot load such mrb -- %s\n (LoadError)", name);
+      break;
+    } else if (strcmp(name, gems[i].name) == 0) {
+      if (!gems[i].required) {
+        if (gems[i].initializer) gems[i].initializer();
+        if (mrbc_load_model(gems[i].mrb)) {
+          if (gems[i].task) {
+            if (mrbc_create_task(gems[i].task, 0) != NULL) {
+              console_printf("failed to create task\n (LoadError)", name);
+              result = false; /* ToDo: Exception */
+            }
+          }
+          gems[i].required = true;
+        } else {
+          console_printf("failed to load mrb -- %s\n (LoadError)", name);
+          result = false; /* ToDo: Exception */
+        }
+      }
+      break;
     }
   }
+  if (result) { SET_TRUE_RETURN(); } else { SET_FALSE_RETURN(); }
 }
 
 int loglevel;
@@ -301,6 +332,7 @@ int main() {
   board_init();
   tusb_init();
   mrbc_init(memory_pool, MEMORY_SIZE);
+  mrbc_define_method(0, mrbc_class_object, "require",      c_require);
   mrbc_define_method(0, mrbc_class_object, "board_millis", c_board_millis);
   mrbc_define_method(0, mrbc_class_object, "rand",         c_rand);
   mrbc_define_method(0, mrbc_class_object, "srand",        c_srand);
@@ -312,18 +344,11 @@ int main() {
   GPIO_INIT();
   USB_INIT();
   UART_INIT();
-  WS2812_INIT();
-  ROTARY_ENCODER_INIT();
   SANDBOX_INIT();
   mrbc_load_model(float_ext);
-  mrbc_load_model(rgb);
   mrbc_load_model(buffer);
-  mrbc_load_model(debounce);
-  mrbc_load_model(rotary_encoder);
   mrbc_load_model(keyboard);
-  mrbc_load_model(via);
   mrbc_create_task(usb_task, 0);
-  mrbc_create_task(rgb_task, 0);
   create_sandbox();
   mrbc_define_method(0, mrbc_class_object, "autoreload_ready?", c_autoreload_ready_q);
 #ifdef PRK_NO_MSC

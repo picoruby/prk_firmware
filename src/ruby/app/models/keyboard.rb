@@ -1,3 +1,7 @@
+require "debounce"
+require "rgb"
+require "rotary_encoder"
+
 class Keyboard
   GPIO_IN          = 0b000
   GPIO_IN_PULLUP   = 0b010
