@@ -32,7 +32,6 @@
 #include "msc_disk.h"
 #include <mrubyc.h>
 
-
 // whether host does safe-eject
 static bool ejected = false;
 
@@ -53,6 +52,11 @@ Notice:\n\
 https://github.com/picoruby/prk_firmware\n"
 
 #define README_LENGTH (sizeof(README_CONTENTS) - 1)
+#define FAT_START ( (uint8_t*)FLASH_MMAP_ADDR+FLASH_SECTOR_SIZE*1 )
+
+void msc_write_file(const char *filename, const uint8_t *data, uint16_t length);
+void c_find_file(mrb_vm *vm, mrb_value *v, int argc);
+void c_read_file(mrb_vm *vm, mrb_value *v, int argc);
 
 uint8_t msc_disk[4][SECTOR_SIZE] =
 {
@@ -315,6 +319,18 @@ msc_init(void)
     flash_range_program(FLASH_TARGET_OFFSET, msc_disk[0], SECTOR_SIZE * 4);
     restore_interrupts(ints);
   }
+#ifdef DEBUG_FAT
+  uint8_t buf_rootdir[FLASH_SECTOR_SIZE], buf_fat[FLASH_SECTOR_SIZE];
+  memcpy(buf_rootdir, (uint8_t*)(FLASH_MMAP_ADDR+SECTOR_SIZE*2), FLASH_SECTOR_SIZE);
+  memcpy(buf_fat, (uint8_t*)(FLASH_MMAP_ADDR+SECTOR_SIZE*1), FLASH_SECTOR_SIZE);
+  uint32_t ints = save_and_disable_interrupts();
+  msc_write_file("FAT     BIN", buf_fat, FLASH_SECTOR_SIZE-1);
+  msc_write_file("ROOTDIR BIN", buf_rootdir, FLASH_SECTOR_SIZE-1);
+  restore_interrupts(ints);
+#endif
+  mrbc_define_method(0, mrbc_class_object, "write_file_internal", c_write_file_internal);
+  mrbc_define_method(0, mrbc_class_object, "find_file", c_find_file);
+  mrbc_define_method(0, mrbc_class_object, "read_file", c_read_file);
 }
 
 /*
@@ -337,6 +353,177 @@ msc_findDirEnt(const char *filename, DirEnt *entry)
     if (entry->Name[0] == '\0') return;
     if (strncmp(filename, entry->Name, 11) == 0 && entry->Attr == 0x20) return;
   }
+}
+
+void c_find_file(mrb_vm *vm, mrb_value *v, int argc) {
+  uint8_t *rb_filename = GET_STRING_ARG(1);
+  DirEnt entry;
+  mrbc_value return_val = mrbc_array_new(vm, 2);
+  mrbc_array *rb_array = return_val.array;
+
+  msc_findDirEnt(rb_filename, &entry);
+
+  if(strncmp(rb_filename, entry.Name, 11)==0) {
+    rb_array->n_stored = 2;
+    mrbc_set_integer( rb_array->data, entry.FstClusLO );
+    mrbc_set_integer( rb_array->data+1, entry.FileSize );
+    SET_RETURN(return_val);
+  } else {
+    SET_NIL_RETURN();
+  }
+}
+
+uint8_t*
+msc_read_sector(uint16_t sector)
+{
+  return (uint8_t*)(FLASH_MMAP_ADDR + (SECTOR_SIZE * (1+sector)));
+}
+
+void
+c_read_file(mrb_vm *vm, mrb_value *v, int argc) {
+  uint16_t sector = GET_INT_ARG(1);
+  uint16_t length = GET_INT_ARG(2);
+
+  mrbc_value rb_val_array = mrbc_array_new(vm, length);
+  mrbc_array *rb_array = rb_val_array.array;
+  uint8_t *data = msc_read_sector(sector);
+
+  rb_array->n_stored = length;
+  for(uint16_t i=0; i<length; i++) {
+    mrbc_set_integer( (rb_array->data)+i, data[i] );
+  }
+
+  SET_RETURN(rb_val_array);
+}
+
+void
+msc_write_file(const char *filename, const uint8_t *data, uint16_t length)
+{
+  DirEnt entry;
+  void* addr;
+  /*
+  Sector#0 : Boot (Reserved)
+  Sector#1 : FAT (Cluster#0)
+  Sector#2 : RootDirectory (Cluster#1)
+  Sector#3 : Cluster#2
+  Sector#4 : Cluster#3
+   */
+  uint8_t dir_entry_index_to_write = 0;
+  uint16_t cluster_id_to_write = 0;
+  bool is_update = false;
+  
+  // search empty entry
+  for (uint8_t i=1; i<128; i++ )
+  {
+    addr = (void *)(FLASH_MMAP_ADDR + (SECTOR_SIZE * 2) + 32*i);
+    memcpy(&entry, addr, 32);
+    if (strncmp(entry.Name, filename, 11)==0)
+    {
+      dir_entry_index_to_write = i;
+      cluster_id_to_write = entry.FstClusLO;
+      is_update = true;
+      break;
+    }
+    else if (entry.Name[0] == 0xe5 && dir_entry_index_to_write == 0)
+    {
+      dir_entry_index_to_write = i;
+
+      // continue to search exist "update" entry
+      continue; 
+    }
+    else if (entry.Name[0] == '\0')
+    {
+      if(dir_entry_index_to_write==0) {
+        dir_entry_index_to_write = i;
+      }
+      break;
+    }
+  }
+  
+  if(! is_update) {
+    for(uint8_t i=0; i<128; i++) {
+      uint16_t fatusage;
+
+      if(i%2==0) {
+        fatusage = ((uint16_t)*(FAT_START+i/2*3))<<4 | ((*(FAT_START+i/2*3+1)) & 0x0F);
+      } else {
+        fatusage = ( (uint16_t)(*(FAT_START+i/2*3+1)) &0xF0 )<<4 | (*(FAT_START+i/2*3+2));
+      }
+
+      if(fatusage==0) {
+        cluster_id_to_write = i;
+        break;
+      }
+    }
+  }
+
+  if(cluster_id_to_write && dir_entry_index_to_write) {
+    uint8_t buf_rootdir[FLASH_SECTOR_SIZE];
+    uint8_t buf_fat[FLASH_SECTOR_SIZE];
+    // There are (1) Reserved Sector
+    // copy RootDir to erase
+    memcpy(buf_rootdir, (void*)(FLASH_MMAP_ADDR+FLASH_SECTOR_SIZE*2), FLASH_SECTOR_SIZE);
+
+    // copy DirEntry from README.TXT
+    if(is_update) {
+      memcpy(&entry, buf_rootdir+32*dir_entry_index_to_write, 32);
+    } else {
+      // copy FAT to erase
+      memcpy(buf_fat, (void*)(FLASH_MMAP_ADDR+FLASH_SECTOR_SIZE*1), FLASH_SECTOR_SIZE);
+      
+      if(cluster_id_to_write%2==0) {
+        buf_fat[cluster_id_to_write/2*3] = 0xFF;
+        buf_fat[cluster_id_to_write/2*3+1] = 0x0F | (0xF0 & buf_fat[cluster_id_to_write/2*3+1]);  
+      } else {
+        buf_fat[cluster_id_to_write/2*3+1] = 0xF0 | (0x0F & buf_fat[cluster_id_to_write/2*3+1]); 
+        buf_fat[cluster_id_to_write/2*3+2] = 0xFF;
+      }
+
+      memcpy(&entry, buf_rootdir+32, 32);
+      entry.FstClusLO = cluster_id_to_write;
+      entry.NTRes = 0x18; // Filename is small-case
+      memcpy(&entry.Name, filename, 11);
+    }
+    entry.FileSize = length;
+    memcpy(buf_rootdir+32*dir_entry_index_to_write, &entry, 32);
+
+    uint32_t ints = save_and_disable_interrupts();
+    // write RootDir
+    // RootDirSector is Sector#1
+    flash_range_erase(FLASH_TARGET_OFFSET+FLASH_SECTOR_SIZE*2, FLASH_SECTOR_SIZE);
+    flash_range_program(FLASH_TARGET_OFFSET+FLASH_SECTOR_SIZE*2, buf_rootdir, FLASH_SECTOR_SIZE);
+
+    // write data
+    flash_range_erase(FLASH_TARGET_OFFSET+FLASH_SECTOR_SIZE*(1+cluster_id_to_write), FLASH_SECTOR_SIZE);
+    flash_range_program(FLASH_TARGET_OFFSET+FLASH_SECTOR_SIZE*(1+cluster_id_to_write), data, (length/FLASH_PAGE_SIZE+1)*FLASH_PAGE_SIZE);
+    if(! is_update) {
+      // write FAT
+      flash_range_erase(FLASH_TARGET_OFFSET+FLASH_SECTOR_SIZE*1, FLASH_SECTOR_SIZE);
+      flash_range_program(FLASH_TARGET_OFFSET+FLASH_SECTOR_SIZE*1, buf_fat, FLASH_SECTOR_SIZE);
+    }
+    restore_interrupts(ints);
+  }
+}
+
+void c_write_file_internal(mrb_vm *vm, mrb_value *v, int argc) {
+  uint16_t limit;
+  uint8_t *rb_filename = GET_STRING_ARG(1);
+  uint8_t *c_data;
+  mrbc_object value = GET_ARG(2);
+  
+  if(value.tt == MRBC_TT_STRING) {
+    mrbc_string* str = value.string;
+    c_data = str->data;
+    limit = str->size;
+  } else {
+    return;
+  }
+
+  if(limit>FLASH_SECTOR_SIZE) {
+    limit = FLASH_SECTOR_SIZE;
+  }
+  
+  msc_write_file(rb_filename, c_data, limit);
 }
 
 /*
