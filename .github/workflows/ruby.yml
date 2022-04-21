@@ -24,5 +24,5 @@ jobs:
     - name: mrubyc-test
       run: |
         cp ../../lib/picoruby/build/host/mrbgems/mruby-mrubyc/src/mrblib.c ../../lib/picoruby/mrbgems/mruby-mrubyc/repos/mrubyc/src/
-        BUNDLE_GEMFILE=Gemfile CFLAGS=-DMAX_SYMBOLS_COUNT=1000 bundle exec mrubyc-test
+        RUBYLIB=./app/models BUNDLE_GEMFILE=Gemfile CFLAGS=-DMAX_SYMBOLS_COUNT=1000 bundle exec mrubyc-test
       working-directory: src/ruby
