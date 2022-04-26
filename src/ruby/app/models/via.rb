@@ -30,7 +30,7 @@ class VIA
     ID_SWITCH_MATRIX_STATE
   ]
 
-  VIA_FILENAME = "VIA_MAP RB "
+  VIA_FILENAME = "VIA_MAP TXT"
 
   def initialize
     puts "Initializing VIA."
@@ -276,7 +276,7 @@ class VIA
   end
 
   def save_on_flash
-    data = "keymap = [ \n%i[ "
+    data = ""
 
     @layer_count.times do |i|
       @rows_size.times do |j|
@@ -285,13 +285,13 @@ class VIA
           data << key.to_s + " "
         end
 
-        data << " \n    "
+        data << " \n"
       end
 
-      data << "], \n\n%i[ "
+      data << ",\n"
     end
 
-    data << "KC_NO ] \n]\n"
+    data << ""
     
     write_file_internal(VIA_FILENAME, data)
   end
@@ -302,14 +302,20 @@ class VIA
     fileinfo = find_file(VIA_FILENAME)
     
     if fileinfo
-      puts "via_map.rb found"
-      script = ""
-      ary = read_file(fileinfo[0], fileinfo[1])
-      ary.each do |i|
-        script << i.chr;
+      puts "via_map.txt found"
+      script = read_file(fileinfo[0], fileinfo[1])
+      
+      ret = []
+      layers = script.split(",")
+      layers.size.times do |l|
+          ret[l] = []
+          rows = layers[l].split("\n")
+          rows.each do |row|
+              row.split(" ").each do |kc|
+                  ret[l] << kc.intern
+              end
+          end
       end
-
-      ret = eval_val(script)
     
       if ret.class == Array
         puts "loading VIA map"

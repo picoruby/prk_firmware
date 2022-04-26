@@ -28,5 +28,5 @@ class Object
   def gpio_get : (Integer) -> bool
   def write_file_internal : (String, String) -> void
   def find_file : (String) -> ( [Integer, Integer] | nil )
-  def read_file : (Integer, Integer) -> Array[Integer]
+  def read_file : (Integer, Integer) -> String
 end
