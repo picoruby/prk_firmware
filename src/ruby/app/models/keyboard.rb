@@ -506,12 +506,12 @@ class Keyboard
 
   # TODO: OLED, SDCard
   def append(feature)
-    case feature.class
-    when RGB
+    case feature.class.to_s
+    when "RGB"
       # @type var feature: RGB
       $rgb = feature
       $rgb.anchor = @anchor
-    when RotaryEncoder
+    when "RotaryEncoder"
       # @type var feature: RotaryEncoder
       if @split
         feature.create_keycodes(@partner_encoders.size)
@@ -533,10 +533,13 @@ class Keyboard
         feature.init_pins
         @encoders << feature
       end
-    when VIA
+    when "VIA"
       # @type var feature: VIA
       feature.kbd = self
       @via = feature
+    when "Gamepad"
+      # @type var feature: Gamepad
+      @gamepad = feature
     end
   end
 
@@ -1165,8 +1168,10 @@ class Keyboard
         rgb_message = uart_partner
         $rgb.invoke_partner rgb_message if $rgb
       end
-      
+
       @via.task if @via
+
+      @gamepad&.report_gamepad(0)
 
       time = cycle_time - (board_millis - now)
       sleep_ms(time) if time > 0

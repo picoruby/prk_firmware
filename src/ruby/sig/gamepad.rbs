@@ -1,0 +1,8 @@
+class Gamepad
+  BUTTON_CODE: Array[Symbol]
+
+  def initialize: (Hash[Symbol, Integer]) -> void
+  def init_adc_table: () -> void
+  def init_joystick: (String axis, Integer pin) -> void
+  def report_gamepad: (Integer buttons) -> void
+end

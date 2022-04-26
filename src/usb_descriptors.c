@@ -95,6 +95,7 @@ uint8_t const desc_hid_report[] =
 {
   TUD_HID_REPORT_DESC_KEYBOARD( HID_REPORT_ID(REPORT_ID_KEYBOARD         )),
   TUD_HID_REPORT_DESC_MOUSE   ( HID_REPORT_ID(REPORT_ID_MOUSE            )),
+  TUD_HID_REPORT_DESC_GAMEPAD ( HID_REPORT_ID(REPORT_ID_GAMEPAD          )),
   RAW_HID_REPORT_DESC(          HID_REPORT_ID(REPORT_ID_RAWHID           )),
 };
 
@@ -181,12 +182,6 @@ uint16_t const* tud_descriptor_string_cb(uint8_t index, uint16_t langid)
 // HID Descriptor
 //--------------------------------------------------------------------+
 
-const uint8_t hid_report_desc[] = {
-  TUD_HID_REPORT_DESC_KEYBOARD(HID_REPORT_ID(REPORT_ID_KEYBOARD)),
-  TUD_HID_REPORT_DESC_MOUSE(HID_REPORT_ID(REPORT_ID_MOUSE)),
-  RAW_HID_REPORT_DESC(HID_REPORT_ID(REPORT_ID_RAWHID)),
-};
-
 const uint16_t string_desc_product[] = { // Index: 1
   16 | (3 << 8),
   'P', 'R', 'K', 'f', 'i', 'r', 'm'
@@ -197,7 +192,7 @@ uint8_t raw_hid_last_received_report_length;
 bool raw_hid_report_received = false;
 
 uint8_t const *tud_hid_descriptor_report_cb(uint8_t instance) {
-    return hid_report_desc;
+    return desc_hid_report;
 }
 uint16_t tud_hid_get_report_cb(uint8_t instance, uint8_t report_id, hid_report_type_t report_type, uint8_t* buffer, uint16_t reqlen) {
     return 0;

@@ -16,6 +16,7 @@
 #include "uart.h"
 #include "ws2812.h"
 #include "rotary_encoder.h"
+#include "gamepad.h"
 #include <sandbox.h>
 
 /* ruby */
@@ -27,6 +28,7 @@
 #include "ruby/app/models/buffer.c"
 #include "ruby/app/models/via.c"
 #include "ruby/app/models/debounce.c"
+#include "ruby/app/models/gamepad.c"
 /* tasks */
 #include "ruby/app/tasks/usb_task.c"
 #include "ruby/app/tasks/rgb_task.c"
@@ -280,12 +282,19 @@ init_RGB(void)
   WS2812_INIT();
 }
 
+static void
+init_Gamepad(void)
+{
+  GAMEPAD_INIT();
+}
+
 picogems gems[] = {
   {"keyboard",       NULL,               keyboard,       NULL,     false},
   {"debounce",       NULL,               debounce,       NULL,     false},
   {"rotary_encoder", init_RotaryEncoder, rotary_encoder, NULL,     false},
   {"rgb",            init_RGB,           rgb,            rgb_task, false},
   {"via",            NULL,               via,            NULL,     false},
+  {"gamepad",        init_Gamepad,       gamepad,        NULL,     false},
   {NULL, NULL, NULL, NULL, false}
 };
 
