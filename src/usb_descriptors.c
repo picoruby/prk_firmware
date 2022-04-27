@@ -27,6 +27,7 @@
 
 #include "usb_descriptors.h"
 #include "raw_hid.h"
+#include "gamepad.h"
 
 // Invoked when received GET DEVICE DESCRIPTOR
 // Application return pointer to descriptor
@@ -95,6 +96,7 @@ uint8_t const desc_hid_report[] =
 {
   TUD_HID_REPORT_DESC_KEYBOARD( HID_REPORT_ID(REPORT_ID_KEYBOARD         )),
   TUD_HID_REPORT_DESC_MOUSE   ( HID_REPORT_ID(REPORT_ID_MOUSE            )),
+  TUD_HID_REPORT_DESC_CONSUMER( HID_REPORT_ID(REPORT_ID_CONSUMER_CONTROL )),
   TUD_HID_REPORT_DESC_GAMEPAD ( HID_REPORT_ID(REPORT_ID_GAMEPAD          )),
   RAW_HID_REPORT_DESC(          HID_REPORT_ID(REPORT_ID_RAWHID           )),
 };
@@ -276,6 +278,49 @@ void c_report_raw_hid(mrb_vm *vm, mrb_value *v, int argc) {
   }
 }
 
+static void
+send_hid_report(uint8_t report_id)
+{
+  if ( !tud_hid_ready() ) return;
+  switch(report_id)
+  {
+    case REPORT_ID_KEYBOARD:
+      /* Keyboard report was already sent in c_report_hid() */
+      break;
+    case REPORT_ID_MOUSE:
+      {
+        int8_t const delta = 0;
+        tud_hid_mouse_report(REPORT_ID_MOUSE, 0x00, delta, delta, 0, 0);
+      }
+      break;
+    case REPORT_ID_CONSUMER_CONTROL:
+      {
+        //uint16_t volume_down = HID_USAGE_CONSUMER_VOLUME_DECREMENT;
+        uint16_t empty = 0;
+        tud_hid_report(REPORT_ID_CONSUMER_CONTROL, &empty, 2);
+      }
+      break;
+    case REPORT_ID_GAMEPAD:
+      gamepad_report();
+      break;
+    default: break;
+  }
+}
+
+// Invoked when sent REPORT successfully to host
+// Application can use this to send the next report
+// Note: For composite reports, report[0] is report ID
+void
+tud_hid_report_complete_cb(uint8_t instance, uint8_t const* report, uint8_t len)
+{
+  (void) instance;
+  (void) len;
+  uint8_t next_report_id = report[0] + 1;
+  if (next_report_id < REPORT_ID_COUNT) {
+    send_hid_report(next_report_id);
+  }
+}
+
 //--------------------------------------------------------------------+
 // Ruby methods
 //--------------------------------------------------------------------+
@@ -289,22 +334,22 @@ c_tud_task(mrb_vm *vm, mrb_value *v, int argc)
 void
 c_report_hid(mrb_vm *vm, mrb_value *v, int argc)
 {
-  uint32_t const btn = 1;
-
-  // Remote wakeup
-  if (tud_suspended() && btn) {
-    // Wake up host if we are in suspend mode
-    // and REMOTE_WAKEUP feature is enabled by host
-    tud_remote_wakeup();
-  }
+//  // Remote wakeup
+//  if (tud_suspended()) {
+//    // Wake up host if we are in suspend mode
+//    // and REMOTE_WAKEUP feature is enabled by host
+//    tud_remote_wakeup();
+//  }
 
   uint8_t modifier = GET_INT_ARG(1);
   uint8_t *keycodes = GET_STRING_ARG(2);
 
   /*------------- Keyboard -------------*/
-  if (tud_hid_ready()) {
-    tud_hid_keyboard_report(REPORT_ID_KEYBOARD, modifier, keycodes);
-  }
+  tud_hid_keyboard_report(REPORT_ID_KEYBOARD, modifier, keycodes);
+  /*
+   * The rest of reports are going to be invoked in send_hid_report()
+   * that is invoked by tud_hid_report_complete_cb()
+   */
 }
 
 void

@@ -1,8 +1,8 @@
 class Gamepad
-  BUTTON_CODE: Array[Symbol]
+  VALID_PINS: Array[Integer]
 
   def initialize: (Hash[Symbol, Integer]) -> void
-  def init_adc_table: () -> void
-  def init_joystick: (String axis, Integer pin) -> void
-  def report_gamepad: (Integer buttons) -> void
+  def reset_axes: () -> nil
+  def init_axis_offset: (String axis, Integer pin) -> bool
+  def set_values: (Integer, Integer) -> nil
 end

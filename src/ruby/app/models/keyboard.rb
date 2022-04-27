@@ -760,6 +760,23 @@ class Keyboard
       MOD_KEYCODE[key]
     elsif KEYCODE_RGB[key]
       KEYCODE_RGB[key]
+    elsif key.to_s[0, 9] == "JS_BUTTON"
+      # JS_BUTTON0 - JS_BUTTON31
+      # You need to `require "gamepad"`
+      key.to_s[9, 10].to_i + 0x200
+    elsif key.to_s[0, 7] == "JS_HAT_"
+      case key
+      when :JS_HAT_RIGHT
+        0b0001 + 0x300
+      when :JS_HAT_UP
+        0b0010 + 0x300
+      when :JS_HAT_DOWN
+        0b0100 + 0x300
+      when :JS_HAT_LEFT
+        0b1000 + 0x300
+      else
+        0 #== :KC_NO
+      end
     else
       key
     end
@@ -973,6 +990,8 @@ class Keyboard
 
       @switches.clear
       @modifier = 0
+      gamepad_hat = 0
+      gamepad_buttons = 0
 
       @scan_mode == :matrix ? scan_matrix! : scan_direct!
 
@@ -1086,7 +1105,11 @@ class Keyboard
             @modifier |= 0b00100000
           elsif keycode < 0 # Normal keys
             @keycodes << (keycode * -1).chr
-          elsif keycode > 0x100
+          elsif keycode > 0x300 # Gamepad hat
+            gamepad_hat |= (keycode - 0x300)
+          elsif keycode >= 0x200 # Gamepad button
+            gamepad_buttons |= (1 << (keycode - 0x200))
+          elsif keycode > 0x100 # RGB
             rgb_message = $rgb.invoke_anchor KEYCODE_RGB.key(keycode)
           else # Should be a modifier key
             @modifier |= keycode
@@ -1145,6 +1168,8 @@ class Keyboard
             @buffer.refresh_screen
           end
         end
+
+        @gamepad.set_values(gamepad_buttons, gamepad_hat) if @gamepad
         report_hid(@modifier, @keycodes.join)
 
         if @locked_layer
@@ -1170,8 +1195,6 @@ class Keyboard
       end
 
       @via.task if @via
-
-      @gamepad&.report_gamepad(0)
 
       time = cycle_time - (board_millis - now)
       sleep_ms(time) if time > 0
