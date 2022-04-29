@@ -76,9 +76,9 @@ char const *string_desc_arr[STRING_DESC_ARR_SIZE] =
   "PRK MSC",                     // 5: MSC Interface
 };
 /*
- * If you want users to use the VIA feature, provide them `via-conf.txt`
+ * If you want users to use the VIA feature, provide the `prk-conf.txt`
  * file in order to VIA/Remap can determine the layout of the keyboard.
- * Format of the content `via-conf.txt`:
+ * Format of the content `prk-conf.txt` (at the very top of the file):
  *   0x1234:0xABCD:productName
  *   ^^^^^^ ^^^^^^ ^^^^^^^^^^^
  *    VID    PID      Name
@@ -86,18 +86,18 @@ char const *string_desc_arr[STRING_DESC_ARR_SIZE] =
  *   - Length of productName should be less than or equal 32 bytes
  * and any other letter must not be included in the file.
  */
-#define VIA_CONF_LENGTH (7 + 7 + 32)
+#define PRK_CONF_LENGTH (7 + 7 + 32)
 static void
-configure_vid_pid(void)
+configure_prk(void)
 {
   DirEnt entry;
-  uint8_t buf[VIA_CONF_LENGTH + 1] = {0};
+  uint8_t buf[PRK_CONF_LENGTH + 1] = {0};
   uint8_t vid[7] = {0};
   uint8_t pid[7] = {0};
-  static char name[VIA_CONF_LENGTH - 14] = {0};
-  msc_findDirEnt("VIA-CONFTXT", &entry);
+  static char name[PRK_CONF_LENGTH - 14] = {0};
+  msc_findDirEnt("PRK-CONFTXT", &entry);
   if (entry.Name[0] != '\0') {
-    if (entry.FileSize > VIA_CONF_LENGTH) return;
+    if (entry.FileSize > PRK_CONF_LENGTH) return;
     msc_loadFile(buf, &entry);
     if (strncmp("0x", buf, 2) || strncmp(":0x", buf + 6, 3)) return;
     memcpy(vid,  buf     , 6);
@@ -326,7 +326,7 @@ int loglevel;
 int main() {
   loglevel = LOGLEVEL_WARN;
 
-  configure_vid_pid();
+  configure_prk();
 
   stdio_init_all();
   board_init();
