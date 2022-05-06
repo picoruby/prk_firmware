@@ -144,13 +144,12 @@ class VIA
       # @type var key: Integer
       if key>0
         if key < 0x100
-          ret = 0
           8.times do |i|
-            unless (key&(1<<i)) == 0
-              ret = 0xE0 + i
+            if (key>>i) == 1
+              return 0xE0 + i
             end
           end
-          return ret
+          return 0
         else
           return 0
         end
