@@ -70,6 +70,7 @@ end
 
 desc "you have to run this task once before build"
 task :setup do
+  sh "git submodule update --recursive"
   FileUtils.cd "src/ruby" do
     sh "bundle exec steep -h || bundle install"
   end

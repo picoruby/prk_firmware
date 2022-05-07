@@ -120,6 +120,12 @@ c___reset_usb_boot(mrb_vm *vm, mrb_value *v, int argc)
 }
 
 void
+c_picorbc_ptr_size(mrb_vm *vm, mrb_value *v, int argc)
+{
+  SET_INT_RETURN(PICORBC_PTR_SIZE);
+}
+
+void
 c_board_millis(mrb_vm *vm, mrb_value *v, int argc)
 {
   SET_INT_RETURN(board_millis());
@@ -337,6 +343,7 @@ int main() {
   mrbc_define_method(0, mrbc_class_object, "rand",         c_rand);
   mrbc_define_method(0, mrbc_class_object, "srand",        c_srand);
   mrbc_define_method(0, mrbc_class_object, "__reset_usb_boot", c___reset_usb_boot);
+  mrbc_define_method(0, mrbc_class_object, "picorbc_ptr_size", c_picorbc_ptr_size);
 #ifndef PRK_NO_MSC
   msc_init();
 #endif

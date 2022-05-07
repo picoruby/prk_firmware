@@ -14,6 +14,7 @@ add_definitions(
   -DMAX_SYMBOLS_COUNT=700
   -DMAX_VM_COUNT=20
   -DMRBC_CONVERT_CRLF
+  -DPICORBC_PTR_SIZE=4
 )
 if(PRK_NO_MSC)
   add_definitions(-DPRK_NO_MSC)
