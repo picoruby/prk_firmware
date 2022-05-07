@@ -326,7 +326,7 @@ class VIA
             next if kc.to_s.start_with?("KC")
             next if kc.to_s.start_with?("VIA_FUNC")
             # composite keys
-            @composite_keys << kc
+            @composite_keys << kc unless @composite_keys.include?(kc)
           end
         end
         
