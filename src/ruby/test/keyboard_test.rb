@@ -213,9 +213,4 @@ class KeyboardTest < MrubycTestCase
     @kbd.ruby
     assert_equal true, @kbd.instance_variable_get("@ruby_mode")
   end
-
-  description "keycode translation"
-  def keycode_to_keysym
-    assert_equal(:KC_A, @kbd.keycode_to_keysym(4) )
-  end
 end

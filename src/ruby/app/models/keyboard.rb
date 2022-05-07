@@ -714,10 +714,6 @@ class Keyboard
     end
   end
 
-  def keycode_to_keysym(keycode)
-    return KEYCODE[keycode] || :KC_NO
-  end
-
   def entire_cols_size
     @entire_cols_size ||= @split ? @cols_size * 2 : @cols_size
   end
