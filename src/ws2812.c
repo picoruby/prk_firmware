@@ -4,13 +4,19 @@
 #include "hardware/pio.h"
 #include "ws2812.pio.h"
 #include "hardware/clocks.h"
+#include "hardware/dma.h"
+#include "hardware/sync.h"
 
 static PIO pio = pio1;
 static uint sm = 0;
 
-#define MAX_PIXEL_SIZE 72
+#define MAX_PIXEL_SIZE 150
 
 static int32_t pixels[MAX_PIXEL_SIZE + 1];
+static int32_t dma_ws2812_grb_pixels[MAX_PIXEL_SIZE];
+static int dma_ws2812_channel;
+static uint8_t dma_ws2812_last_append_index = 0;
+static uint32_t dma_ws2812_last_append_us = 0;
 
 static inline uint32_t
 rgb2grb(int32_t val) {
@@ -22,7 +28,41 @@ rgb2grb(int32_t val) {
 
 static inline void
 put_pixel(int32_t pixel_rgb) {
-  pio_sm_put_blocking(pio, sm, rgb2grb(pixel_rgb) << 8u);
+  uint32_t now = time_us_32();
+
+  dma_ws2812_grb_pixels[dma_ws2812_last_append_index++] = rgb2grb(pixel_rgb) << 8u;
+
+  // WS2812 signal chain is reset after 80 us
+  if( now-dma_ws2812_last_append_us > 100 ) {
+    dma_ws2812_grb_pixels[0] = dma_ws2812_grb_pixels[dma_ws2812_last_append_index-1];
+    dma_ws2812_last_append_index = 1;
+    // wait for dma_ws2812_grb_pixels[0]
+    __dmb();
+    dma_channel_set_read_addr(dma_ws2812_channel, dma_ws2812_grb_pixels, true);
+  }
+
+  dma_ws2812_last_append_us = now;
+}
+
+static void
+init_dma_ws2812(void)
+{
+  dma_ws2812_channel = dma_claim_unused_channel(true);
+
+  dma_channel_config c = dma_channel_get_default_config(dma_ws2812_channel);
+  channel_config_set_transfer_data_size(&c, DMA_SIZE_32);
+  channel_config_set_read_increment(&c, true);
+  channel_config_set_write_increment(&c, false);
+  channel_config_set_dreq(&c, DREQ_PIO1_TX0);
+
+  dma_channel_configure(
+    dma_ws2812_channel,  // Channel to be configured
+    &c,                  // The configuration we just created
+    pio->txf,            // The initial write address
+    dma_ws2812_grb_pixels,      // The initial read address
+    MAX_PIXEL_SIZE,      // Number of transfers; in this case each is 4 byte.
+    false                // Not start
+  );
 }
 
 void
@@ -36,6 +76,7 @@ c_ws2812_init(mrb_vm *vm, mrb_value *v, int argc)
     is_rgbw = false;
   }
   ws2812_program_init(pio, sm, offset, GET_INT_ARG(1), 800000, is_rgbw);
+  init_dma_ws2812();
 }
 
 void

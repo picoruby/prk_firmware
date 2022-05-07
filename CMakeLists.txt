@@ -110,6 +110,8 @@ target_link_libraries(${PROJECT}
   hardware_pwm
   pico_multicore
   hardware_flash
+  hardware_dma
+  hardware_sync
 )
 
 include_directories(${PROJECT} PRIVATE
