@@ -25,7 +25,7 @@ class VIA
   def dynamic_keymap_get_keycode : (Integer, Integer, Integer) -> Integer
   def dynamic_keymap_set_keycode : (Integer, Integer, Integer, Integer) -> void
   def via_get_layer_name : (Integer) -> Symbol
-  def via_keycode_into_prk_keycode : (Integer) -> ( [Integer, Integer] | Symbol | Integer )
+  def check_for_keycode_shift : (Integer) -> ( Symbol | nil )
   def via_keycode_into_keysymbol : (Integer) -> Symbol
   def prk_keycode_into_via_keycode : (Integer | Symbol | Proc) -> Integer
   def expand_composite_key : (Symbol) -> Array[Symbol]

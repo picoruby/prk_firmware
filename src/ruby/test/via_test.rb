@@ -11,13 +11,13 @@ class ViaTest < MrubycTestCase
     assert_equal(0x00E4, @via.prk_keycode_into_via_keycode(kc))
   end
 
-  description "via_keycode_into_keysymbol(0x121E) =>:RSFT_1"
-  def translate_to_RSFT_1
-    assert_equal(:RSFT_1, @via.via_keycode_into_keysymbol(0x121E))
+  description "translate to :KC_RPRN"
+  def translate_to_shifted_key
+    assert_equal(:KC_RPRN, @via.via_keycode_into_keysymbol(0x1227))
   end
 
-  description "expand :RSFT_1"
-  def expand_shifted_key
-    assert_equal(%i[KC_RSFT KC_1], @via.expand_composite_key(:RSFT_1) )
+  description "expand :RCTL_1"
+  def expand_key_with_modifier
+    assert_equal(%i[KC_RCTL KC_1], @via.expand_composite_key(:RCTL_1) )
   end
 end

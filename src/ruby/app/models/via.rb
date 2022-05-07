@@ -111,32 +111,6 @@ class VIA
     return via_keycode
   end
 
-  # VIA_Keycode -> :VIA_FUNCn | PRK_Keycode
-  def via_keycode_into_prk_keycode(keycode)
-    if (keycode>>8)==0
-      if 0x00C0 <= keycode && keycode <= 0x00DF
-        c = keycode - 0x00C0
-        cs = c.to_s
-        s = "VIA_FUNC" + cs
-        return s.intern
-      end
-      return -(keycode & 0x00FF)
-    else
-      case (keycode>>12) & 0x0F
-      when 0x0
-        modifiers = (keycode>>8) & 0x0F
-        prk_keycode = -(keycode & 0x00FF)
-        return [ modifiers, prk_keycode ]
-      when 0x1
-        modifiers = ( (keycode>>8) & 0x0F )<<4
-        prk_keycode = -(keycode & 0x00FF)
-        return [ modifiers, prk_keycode ]
-      end
-    end
-
-    return 0x0000
-  end
-
   # PRK_KeySymbol | PRK_Keycode -> VIA_Keycode
   def prk_keycode_into_via_keycode(key)
     case key.class
@@ -178,6 +152,18 @@ class VIA
     end
   end
 
+  def check_for_keycode_shift(keycode) 
+    if (keycode>>8) & 0x0F == 0x02
+      code = keycode & 0x00FF
+      return nil if ( code < 0x1e ) || ( 0x38 < code )
+
+      Keyboard::KEYCODE_SFT.each do |keyname, value|
+        return keyname if value == code
+      end
+    end
+
+    return nil
+  end
 
   def via_keycode_into_keysymbol(keycode)
     if (keycode>>8)==0
@@ -187,7 +173,7 @@ class VIA
         s = "VIA_FUNC" + cs
         return s.intern
       elsif keycode<0xE0
-        return @kbd.keycode_to_keysym(keycode & 0x00FF)
+        return Keyboard::KEYCODE[keycode & 0x00FF] || :KC_NO
       else
         i = keycode - 0xE0
         return :KC_NO if i>8
@@ -197,6 +183,9 @@ class VIA
     else
       case (keycode>>12) & 0x0F
       when 0x0
+        keysymbol = check_for_keycode_shift(keycode)
+        return keysymbol if keysymbol
+
         modifiers = (keycode>>8) & 0x0F
         key = keycode & 0x00FF
         keysymbol = (
@@ -204,6 +193,9 @@ class VIA
           via_keycode_into_keysymbol(key).to_s.split("_")[1] ).intern
         return keysymbol
       when 0x1
+        keysymbol = check_for_keycode_shift(keycode)
+        return keysymbol if keysymbol
+
         modifiers = ( (keycode>>8) & 0x0F )<<4
         key = keycode & 0x00FF
         keysymbol = (
