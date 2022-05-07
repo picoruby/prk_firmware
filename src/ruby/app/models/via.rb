@@ -315,27 +315,21 @@ class VIA
               end
           end
       end
-    
-      if ret.class == Array
-        puts "loading VIA map"
-        # @type var ret: Array[Array[Symbol]]
-        ret.each_with_index do |map,i|
-          layer_name = via_get_layer_name i
-          @kbd.add_layer layer_name, map
-          map.each do |kc|
-            next if kc.to_s.start_with?("KC")
-            next if kc.to_s.start_with?("VIA_FUNC")
-            # composite keys
-            @composite_keys << kc unless @composite_keys.include?(kc)
-          end
+
+      puts "loading VIA map"
+      # @type var ret: Array[Array[Symbol]]
+      ret.each_with_index do |map,i|
+        layer_name = via_get_layer_name i
+        @kbd.add_layer layer_name, map
+        map.each do |kc|
+          next if kc.to_s.start_with?("KC")
+          next if kc.to_s.start_with?("VIA_FUNC")
+          # composite keys
+          @composite_keys << kc unless @composite_keys.include?(kc)
         end
-        
-        sync_keymap(false)
-        load_mode_keys
-      else
-        sync_keymap(true)
-        save_on_keyboard
       end
+      sync_keymap(false)
+      load_mode_keys
     else
       sync_keymap(true)
       save_on_keyboard
