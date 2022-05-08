@@ -31,14 +31,15 @@ put_pixel(int32_t pixel_rgb) {
   uint32_t now = time_us_32();
 
   dma_ws2812_grb_pixels[dma_ws2812_last_append_index++] = rgb2grb(pixel_rgb) << 8u;
-
+  
   // WS2812 signal chain is reset after 80 us
   if( now-dma_ws2812_last_append_us > 100 ) {
-    dma_ws2812_grb_pixels[0] = dma_ws2812_grb_pixels[dma_ws2812_last_append_index-1];
+    pio_sm_put(pio, sm, dma_ws2812_grb_pixels[dma_ws2812_last_append_index-1]);
     dma_ws2812_last_append_index = 1;
-    // wait for dma_ws2812_grb_pixels[0]
-    __dmb();
-    dma_channel_set_read_addr(dma_ws2812_channel, dma_ws2812_grb_pixels, true);
+  }
+
+  if(dma_ws2812_last_append_index==2) {
+    dma_channel_set_read_addr(dma_ws2812_channel, dma_ws2812_grb_pixels+1, true);
   }
 
   dma_ws2812_last_append_us = now;
@@ -54,6 +55,7 @@ init_dma_ws2812(void)
   channel_config_set_read_increment(&c, true);
   channel_config_set_write_increment(&c, false);
   channel_config_set_dreq(&c, DREQ_PIO1_TX0);
+  channel_config_set_irq_quiet(&c, true);
 
   dma_channel_configure(
     dma_ws2812_channel,  // Channel to be configured
@@ -75,7 +77,7 @@ c_ws2812_init(mrb_vm *vm, mrb_value *v, int argc)
   } else {
     is_rgbw = false;
   }
-  ws2812_program_init(pio, sm, offset, GET_INT_ARG(1), 800000, is_rgbw);
+  ws2812_program_init(pio, sm, offset, GET_INT_ARG(1), is_rgbw);
   init_dma_ws2812();
 }
 
