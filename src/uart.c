@@ -115,7 +115,7 @@ oneway_partner_put24(uint32_t data24)
  */
 
 uint32_t
-mutual_anchor_put8_get24_nonblocking(uint8_t data)
+__not_in_flash_func(mutual_anchor_put8_get24_nonblocking)(uint8_t data)
 {
   uint8_t i;
   { /* TX */
@@ -230,7 +230,7 @@ mutual_anchor_put8_get24_nonblocking(uint8_t data)
  *   Idling   : 0        Until invoked
  */
 uint8_t
-mutual_partner_get8_put24_blocking(uint32_t data24)
+__not_in_flash_func(mutual_partner_get8_put24_blocking)(uint32_t data24)
 {
   uint8_t data, i;
   for (;;) {
