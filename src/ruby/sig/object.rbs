@@ -12,6 +12,8 @@ class Object
   def resume_keymap: () -> void
   def reload_keymap: () -> void
   def report_hid : (Integer, String) -> void
+  def raw_hid_report_received?: -> bool
+  def get_last_received_raw_hid_report: -> Array[Integer]
   def __reset_usb_boot: () -> void
 
   # Raspi
@@ -24,4 +26,7 @@ class Object
   def gpio_pull_up : (Integer) -> void
   def gpio_put : (Integer, Integer) -> void
   def gpio_get : (Integer) -> bool
+  def write_file_internal : (String, String) -> void
+  def find_file : (String) -> ( [Integer, Integer] | nil )
+  def read_file : (Integer, Integer) -> String
 end

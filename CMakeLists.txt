@@ -8,12 +8,13 @@ project(prk_firmware)
 
 add_definitions(
   -DNDEBUG
-  -DMRBC_USE_HAL_USER_RESERVED
+  -DMRBC_USE_HAL_RP2040
   -DMRBC_REQUIRE_32BIT_ALIGNMENT
   -DMAX_REGS_SIZE=256
   -DMAX_SYMBOLS_COUNT=700
-  -DMAX_VM_COUNT=10
+  -DMAX_VM_COUNT=20
   -DMRBC_CONVERT_CRLF
+  -DPICORBC_PTR_SIZE=4
 )
 if(PRK_NO_MSC)
   add_definitions(-DPRK_NO_MSC)
@@ -70,6 +71,7 @@ endif()
 add_custom_target(models
   COMMAND ${RBC} -Bfloat_ext      float_ext.rb
   COMMAND ${RBC} -Bkeyboard       keyboard.rb
+  COMMAND ${RBC} -Bvia            via.rb
   COMMAND ${RBC} -Brgb            rgb.rb
   COMMAND ${RBC} -Brotary_encoder rotary_encoder.rb
   COMMAND ${RBC} -Bbuffer         buffer.rb

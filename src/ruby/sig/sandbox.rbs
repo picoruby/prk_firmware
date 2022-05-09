@@ -1,0 +1,6 @@
+class Sandbox
+  def compile: (String) -> bool
+  def resume: () -> bool
+  def state: () -> Integer
+  def result: () -> untyped
+end

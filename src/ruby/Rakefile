@@ -25,5 +25,5 @@ task :test do
     end
     FileUtils.cp mrblib_src, mrblib_dst
   end
-  exec %q(CFLAGS=-DMAX_SYMBOLS_COUNT=1000 bundle exec mrubyc-test)
+  exec %q(RUBYLIB=./app/models CFLAGS=-DMAX_SYMBOLS_COUNT=1000 bundle exec mrubyc-test)
 end

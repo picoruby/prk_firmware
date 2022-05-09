@@ -25,6 +25,7 @@
 #include "ruby/app/models/rotary_encoder.c"
 #include "ruby/app/models/rgb.c"
 #include "ruby/app/models/buffer.c"
+#include "ruby/app/models/via.c"
 #include "ruby/app/models/debounce.c"
 /* tasks */
 #include "ruby/app/tasks/usb_task.c"
@@ -33,10 +34,95 @@
 #include "ruby/app/keymap.c"
 #endif
 
+//--------------------------------------------------------------------+
+// Device Descriptors
+//--------------------------------------------------------------------+
+tusb_desc_device_t desc_device =
+{
+  .bLength            = sizeof(tusb_desc_device_t),
+  .bDescriptorType    = TUSB_DESC_DEVICE,
+  .bcdUSB             = 0x0200,
+  // Use Interface Association Descriptor (IAD) for CDC
+  // As required by USB Specs IAD's subclass must be common class (2) and protocol must be IAD (1)
+  .bDeviceClass       = TUSB_CLASS_MISC,
+  .bDeviceSubClass    = MISC_SUBCLASS_COMMON,
+  .bDeviceProtocol    = MISC_PROTOCOL_IAD,
+  .bMaxPacketSize0    = CFG_TUD_ENDPOINT0_SIZE,
+  /*
+   * VID and PID from USB-IDs-for-free.txt
+   * https://github.com/obdev/v-usb/blob/releases/20121206/usbdrv/USB-IDs-for-free.txt#L128
+   */
+  .idVendor           = 0x16c0,
+  .idProduct          = 0x27db,
+  .bcdDevice          = 0x0100,
+  .iManufacturer      = 0x01,
+  .iProduct           = 0x02,
+  .iSerialNumber      = 0x03,
+  .bNumConfigurations = 0x01
+};
+
+//--------------------------------------------------------------------+
+// String Descriptors
+//--------------------------------------------------------------------+
+#include "version.h"
+#define PRK_SERIAL (PRK_VERSION "-" PRK_BUILDDATE "-" PRK_REVISION)
+char const *string_desc_arr[STRING_DESC_ARR_SIZE] =
+{
+  (const char[]) { 0x09, 0x04 }, // 0: is supported language is English (0x0409)
+  "PRK Firmware developers",     // 1: Manufacturer
+  "Default VID/PID",             // 2: Product
+  PRK_SERIAL,                    // 3: Serial
+  "PRK CDC",                     // 4: CDC Interface
+  "PRK MSC",                     // 5: MSC Interface
+};
+/*
+ * If you want users to use the VIA feature, provide the `prk-conf.txt`
+ * file in order to VIA/Remap can determine the layout of the keyboard.
+ * Format of the content `prk-conf.txt` (at the very top of the file):
+ *   0x1234:0xABCD:productName
+ *   ^^^^^^ ^^^^^^ ^^^^^^^^^^^
+ *    VID    PID      Name
+ *   - IDs' prefix should be `0x`, should NOT be `0X`
+ *   - Length of productName should be less than or equal 32 bytes
+ * and any other letter must not be included in the file.
+ */
+#define PRK_CONF_LENGTH (7 + 7 + 32)
+static void
+configure_prk(void)
+{
+  DirEnt entry;
+  uint8_t buf[PRK_CONF_LENGTH + 1] = {0};
+  uint8_t vid[7] = {0};
+  uint8_t pid[7] = {0};
+  static char name[PRK_CONF_LENGTH - 14] = {0};
+  msc_findDirEnt("PRK-CONFTXT", &entry);
+  if (entry.Name[0] != '\0') {
+    if (entry.FileSize > PRK_CONF_LENGTH) return;
+    msc_loadFile(buf, &entry);
+    if (strncmp("0x", buf, 2) || strncmp(":0x", buf + 6, 3)) return;
+    memcpy(vid,  buf     , 6);
+    memcpy(pid,  buf +  7, 6);
+    memcpy(name, buf + 14, strlen(buf) - 14);
+    for (int i = 0; ; i++) {
+      if (name[i] == '\r' || name[i] == '\n') name[i] = '\0';
+      if (name[i] == '\0') break;
+    }
+    desc_device.idVendor  = (uint16_t)strtol(vid, NULL, 16);
+    desc_device.idProduct = (uint16_t)strtol(pid, NULL, 16);
+    string_desc_arr[2] = (const char *)name;
+  }
+}
+
 void
 c___reset_usb_boot(mrb_vm *vm, mrb_value *v, int argc)
 {
   reset_usb_boot(0, 0);
+}
+
+void
+c_picorbc_ptr_size(mrb_vm *vm, mrb_value *v, int argc)
+{
+  SET_INT_RETURN(PICORBC_PTR_SIZE);
 }
 
 void
@@ -162,21 +248,83 @@ c_autoreload_ready_q(mrb_vm *vm, mrb_value *v, int argc)
 
 static uint8_t memory_pool[MEMORY_SIZE];
 
-void
+bool
 mrbc_load_model(const uint8_t *mrb)
 {
   mrbc_vm *vm = mrbc_vm_open(NULL);
   if( vm == 0 ) {
     console_printf("Error: Can't open VM.\n");
-    return;
+    return false;
   }
   if( mrbc_load_mrb(vm, mrb) != 0 ) {
     console_printf("Error: Illegal bytecode.\n");
-    return;
+    return false;
   }
   mrbc_vm_begin(vm);
   mrbc_vm_run(vm);
   mrbc_raw_free(vm);
+  return true;
+}
+
+typedef struct picogems {
+  const char *name;
+  void (*initializer)(void);
+  const uint8_t *mrb;
+  const uint8_t *task;
+  bool required;
+} picogems;
+
+static void
+init_RotaryEncoder(void)
+{
+  ROTARY_ENCODER_INIT();
+}
+
+static void
+init_RGB(void)
+{
+  WS2812_INIT();
+}
+
+picogems gems[] = {
+  {"keyboard",       NULL,               keyboard,       NULL,     false},
+  {"debounce",       NULL,               debounce,       NULL,     false},
+  {"rotary_encoder", init_RotaryEncoder, rotary_encoder, NULL,     false},
+  {"rgb",            init_RGB,           rgb,            rgb_task, false},
+  {"via",            NULL,               via,            NULL,     false},
+  {NULL, NULL, NULL, NULL, false}
+};
+
+void
+c_require(mrb_vm *vm, mrb_value *v, int argc)
+{
+  char *name = GET_STRING_ARG(1);
+  bool result = false;
+  if (!name) return;
+  for (int i = 0; ; i++) {
+    if (gems[i].name == NULL) {
+      console_printf("cannot load such mrb -- %s\n (LoadError)", name);
+      break;
+    } else if (strcmp(name, gems[i].name) == 0) {
+      if (!gems[i].required) {
+        if (gems[i].initializer) gems[i].initializer();
+        if (mrbc_load_model(gems[i].mrb)) {
+          if (gems[i].task) {
+            if (mrbc_create_task(gems[i].task, 0) != NULL) {
+              console_printf("failed to create task\n (LoadError)", name);
+              result = false; /* ToDo: Exception */
+            }
+          }
+          gems[i].required = true;
+        } else {
+          console_printf("failed to load mrb -- %s\n (LoadError)", name);
+          result = false; /* ToDo: Exception */
+        }
+      }
+      break;
+    }
+  }
+  if (result) { SET_TRUE_RETURN(); } else { SET_FALSE_RETURN(); }
 }
 
 int loglevel;
@@ -184,14 +332,18 @@ int loglevel;
 int main() {
   loglevel = LOGLEVEL_WARN;
 
+  configure_prk();
+
   stdio_init_all();
   board_init();
   tusb_init();
   mrbc_init(memory_pool, MEMORY_SIZE);
+  mrbc_define_method(0, mrbc_class_object, "require",      c_require);
   mrbc_define_method(0, mrbc_class_object, "board_millis", c_board_millis);
   mrbc_define_method(0, mrbc_class_object, "rand",         c_rand);
   mrbc_define_method(0, mrbc_class_object, "srand",        c_srand);
   mrbc_define_method(0, mrbc_class_object, "__reset_usb_boot", c___reset_usb_boot);
+  mrbc_define_method(0, mrbc_class_object, "picorbc_ptr_size", c_picorbc_ptr_size);
 #ifndef PRK_NO_MSC
   msc_init();
 #endif
@@ -199,17 +351,11 @@ int main() {
   GPIO_INIT();
   USB_INIT();
   UART_INIT();
-  WS2812_INIT();
-  ROTARY_ENCODER_INIT();
   SANDBOX_INIT();
   mrbc_load_model(float_ext);
-  mrbc_load_model(rgb);
   mrbc_load_model(buffer);
-  mrbc_load_model(debounce);
-  mrbc_load_model(rotary_encoder);
   mrbc_load_model(keyboard);
   mrbc_create_task(usb_task, 0);
-  mrbc_create_task(rgb_task, 0);
   create_sandbox();
   mrbc_define_method(0, mrbc_class_object, "autoreload_ready?", c_autoreload_ready_q);
 #ifdef PRK_NO_MSC

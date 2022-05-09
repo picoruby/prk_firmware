@@ -1,5 +1,9 @@
 # Change log
 
+## 0.9.14 on 2022/05/xx
+- VIA! VIA!! VIA!!! 🙌  
+  See [wiki/VIA and Remap](https://github.com/picoruby/prk_firmware/wiki/VIA-and-Remap)
+
 ## 0.9.13 on 2022/04/16
 
 ### Software rebooting into BOOTSEL mode 😍

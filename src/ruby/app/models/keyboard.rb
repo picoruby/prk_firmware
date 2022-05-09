@@ -1,3 +1,7 @@
+require "debounce"
+require "rgb"
+require "rotary_encoder"
+
 class Keyboard
   GPIO_IN          = 0b000
   GPIO_IN_PULLUP   = 0b010
@@ -462,13 +466,15 @@ class Keyboard
     @buffer = Buffer.new("picoirb")
     @scan_mode = :matrix
     @skip_positions = Array.new
+    @layer_changed_delay = 20
+    @via = nil
     @sandbox = Sandbox.new
     @sandbox.compile("_ = nil")
     @sandbox.resume
   end
 
   attr_accessor :split, :uart_pin
-  attr_reader :layer, :split_style
+  attr_reader :layer, :split_style, :sandbox
 
   def bootsel!
     puts "Rebooting into BOOTSEL mode!"
@@ -527,6 +533,10 @@ class Keyboard
         feature.init_pins
         @encoders << feature
       end
+    when VIA
+      # @type var feature: VIA
+      feature.kbd = self
+      @via = feature
     end
   end
 
@@ -682,7 +692,26 @@ class Keyboard
       col_index += 1
     end
     @keymaps[name] = new_map
-    @layer_names << name
+    @layer_names << name unless @layer_names.include?(name)
+  end
+
+  def get_layer(name, num)
+    if name
+      return @keymaps[name] if @keymaps[name]
+    end
+
+    if @layer_names.size>num
+      return @keymaps[@layer_names[num]]
+    end
+
+    return nil
+  end
+
+  def delete_mode_keys(layer_name)
+    @composite_keys.delete_if { |item| item[:layer]==layer_name }
+    @mode_keys.each do |switch, config|
+      config[:layers].delete(layer_name)
+    end
   end
 
   def entire_cols_size
@@ -922,6 +951,8 @@ class Keyboard
       end
     end
 
+    @via.start! if @via
+
     @keycodes = Array.new
     prev_layer = :default
     modifier_switch_positions = Array.new
@@ -1130,6 +1161,8 @@ class Keyboard
         rgb_message = uart_partner
         $rgb.invoke_partner rgb_message if $rgb
       end
+      
+      @via.task if @via
 
       time = cycle_time - (board_millis - now)
       sleep_ms(time) if time > 0
@@ -1275,7 +1308,6 @@ class Keyboard
       end
     end
   end
-
 end
 
 $mutex = true
