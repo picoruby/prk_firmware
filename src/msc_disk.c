@@ -335,7 +335,8 @@ msc_findDirEnt(const char *filename, DirEnt *entry)
     memcpy(entry, addr, 32);
     if (entry->Name[0] == 0xe5) continue;
     if (entry->Name[0] == '\0') return;
-    if (strncmp(filename, entry->Name, 11) == 0 && entry->Attr == 0x20) return;
+    //if (strncmp(filename, entry->Name, 11) == 0 && entry->Attr == 0x20) return;
+    if (strncmp(filename, entry->Name, 11) == 0) return;
   }
 }
 
