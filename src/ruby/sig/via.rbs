@@ -4,7 +4,7 @@ class VIA
   VIA_PROTOCOL_VERSION : Integer
   KEYBOARD_VALUES : Array[Symbol]
   ID_UNHANDLED : Integer
-  @mode_keys: Hash[Symbol, [ Symbol | Array[Symbol] | Proc | nil, Symbol | Proc, Integer | nil, Integer| nil ] ]
+  @mode_keys: Hash[Symbol, [ Symbol | Array[Symbol] | Proc | nil, Symbol | Proc | nil, Integer | nil, Integer| nil ] ]
   @composite_keys: Array[Symbol]
   @kbd: Keyboard
   @keymaps: Array[Array[Array[Integer]]]
@@ -32,7 +32,7 @@ class VIA
   def get_via_composite_keycode : (Symbol) -> Integer
   def get_modifier_name : (Integer) -> String
   def load_mode_keys: -> void
-  def define_mode_key : (Symbol key_name, [Symbol | Array[Symbol] | Proc | nil, Symbol | Proc, Integer?, Integer?] param) -> void
+  def define_mode_key : (Symbol key_name, [Symbol | Array[Symbol] | Proc | nil, Symbol | Proc | nil, Integer?, Integer?] param) -> void
   def eval_val : (String) -> untyped
   def sync_keymap : (?bool)-> void
   def init_keymap: -> void
