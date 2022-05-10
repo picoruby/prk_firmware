@@ -120,6 +120,23 @@ c___reset_usb_boot(mrb_vm *vm, mrb_value *v, int argc)
 }
 
 void
+c_alloc_raw_stats(mrb_vm *vm, mrb_value *v, int argc)
+{
+  struct MRBC_ALLOC_STATISTICS mem;
+  mrbc_alloc_statistics( &mem );
+  mrbc_value ret = mrbc_hash_new(vm, 4);
+  mrbc_hash_set(&ret, &mrbc_symbol_value( mrbc_str_to_symid("TOTAL") ),
+                &mrbc_integer_value( mem.total ));
+  mrbc_hash_set(&ret, &mrbc_symbol_value( mrbc_str_to_symid("USED") ),
+                &mrbc_integer_value( mem.used ));
+  mrbc_hash_set(&ret, &mrbc_symbol_value( mrbc_str_to_symid("FREE") ),
+                &mrbc_integer_value( mem.free ));
+  mrbc_hash_set(&ret, &mrbc_symbol_value( mrbc_str_to_symid("FRAGMENTATION") ),
+                &mrbc_integer_value( mem.fragmentation ));
+  SET_RETURN(ret);
+}
+
+void
 c_picorbc_ptr_size(mrb_vm *vm, mrb_value *v, int argc)
 {
   SET_INT_RETURN(PICORBC_PTR_SIZE);
@@ -343,6 +360,7 @@ int main() {
   mrbc_define_method(0, mrbc_class_object, "rand",         c_rand);
   mrbc_define_method(0, mrbc_class_object, "srand",        c_srand);
   mrbc_define_method(0, mrbc_class_object, "__reset_usb_boot", c___reset_usb_boot);
+  mrbc_define_method(0, mrbc_class_object, "alloc_raw_stats",  c_alloc_raw_stats);
   mrbc_define_method(0, mrbc_class_object, "picorbc_ptr_size", c_picorbc_ptr_size);
 #ifndef PRK_NO_MSC
   msc_init();

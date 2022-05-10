@@ -128,4 +128,5 @@ class Keyboard
   def resolve_key_alias: (Symbol) -> Symbol
   def get_layer: (Symbol | nil, Integer) -> ( Array[Array[Integer | Symbol | Proc]] | nil )
   def delete_mode_keys: (Symbol) -> void
+  def print_stats: () -> void
 end

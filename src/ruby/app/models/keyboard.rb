@@ -1308,6 +1308,12 @@ class Keyboard
       end
     end
   end
+
+  def print_stats
+    alloc_raw_stats.each do |k, v|
+      puts "#{k}: #{v}"
+    end
+  end
 end
 
 $mutex = true

@@ -14,6 +14,7 @@ class Object
   def report_hid : (Integer, String) -> void
   def raw_hid_report_received?: -> bool
   def get_last_received_raw_hid_report: -> Array[Integer]
+  def alloc_raw_stats: () -> Hash[Symbol, Integer]
   def __reset_usb_boot: () -> void
 
   # Raspi
