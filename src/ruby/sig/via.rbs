@@ -14,6 +14,7 @@ class VIA
   attr_accessor layer_count: Integer
   attr_accessor rows_size: Integer
   attr_accessor cols_size: Integer
+  attr_accessor split_left_cols_size: Integer
 
   def task: -> void
   def start!: -> void
