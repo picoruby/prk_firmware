@@ -1,10 +1,13 @@
 require "fileutils"
 
 task :default => :all
-task :debug => :debug_all
 
 desc "build PRK Firmware in build directory"
 task :all => %i(check_setup test_all make_without_test)
+
+desc "build debug built and start gdb-multiarch"
+task :debug => :debug_all
+
 task :debug_all => %i(check_setup test_all debug_make_without_test)
 
 # Build without tests
