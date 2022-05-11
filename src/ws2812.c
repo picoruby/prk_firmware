@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include "hardware/pio.h"
 #include "ws2812.pio.h"
+#include "uart_tx.pio.h"
 #include "hardware/clocks.h"
 #include "hardware/dma.h"
 #include "hardware/sync.h"
@@ -10,7 +11,7 @@
 static PIO pio = pio1;
 static uint sm = 0;
 
-#define PIO_WS2812_INST_HEAD 5
+#define PIO_WS2812_INST_HEAD uart_tx_program.length
 
 #define MAX_PIXEL_SIZE 150
 
