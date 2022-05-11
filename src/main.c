@@ -119,15 +119,24 @@ c___reset_usb_boot(mrb_vm *vm, mrb_value *v, int argc)
   reset_usb_boot(0, 0);
 }
 
+static void
+quick_print_alloc_stats()
+{
+  struct MRBC_ALLOC_STATISTICS mem;
+  mrbc_alloc_statistics(&mem);
+  console_printf("\nSTATS %d/%d\n", mem.used, mem.total);
+}
+
 void
 c_print_alloc_stats(mrb_vm *vm, mrb_value *v, int argc)
 {
   struct MRBC_ALLOC_STATISTICS mem;
   mrbc_alloc_statistics(&mem);
-  console_printf("TOTAL %6d\n", mem.total);
-  console_printf("USED  %6d\n", mem.used);
-  console_printf("FREE  %6d\n", mem.free);
-  console_printf("FRAGMENTATION %d\n", mem.fragmentation);
+  console_printf("ALLOC STATS\n");
+  console_printf(" TOTAL %6d\n", mem.total);
+  console_printf(" USED  %6d\n", mem.used);
+  console_printf(" FREE  %6d\n", mem.free);
+  console_printf(" FRAG  %6d\n\n", mem.fragmentation);
   SET_NIL_RETURN();
 }
 
@@ -222,6 +231,7 @@ create_keymap_task(mrbc_tcb *tcb)
     si = StreamInterface_new(NULL, SUSPEND_TASK, STREAM_TYPE_MEMORY);
     Compiler_compile(p, si, NULL);
   }
+  quick_print_alloc_stats();
   if (keymap_rb) free(keymap_rb);
   if (tcb == NULL) {
     tcb = mrbc_create_task(p->scope->vm_code, 0);
