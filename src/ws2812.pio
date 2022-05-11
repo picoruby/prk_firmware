@@ -1,13 +1,13 @@
 .program ws2812
-
+ws2812:
     set pins, 0;
     pull;       blocks
 bit_loop:
     set pins, 1 [1]; HIGH 2clks
     out pins, 1 [2]; HIGH if 1, LOW if 0, 3clks
-    set pins, 0 [5]; LOW 6clks
+    set pins, 0 [1]; LOW 2clks
     jmp !OSRE bit_loop; LOW 1clk
-
+    jmp ws2812;
 
 % c-sdk {
 #include "hardware/clocks.h"

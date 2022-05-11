@@ -10,6 +10,8 @@
 static PIO pio = pio1;
 static uint sm = 0;
 
+#define PIO_WS2812_INST_HEAD 5
+
 #define MAX_PIXEL_SIZE 150
 
 static int32_t pixels[MAX_PIXEL_SIZE + 1];
@@ -54,13 +56,13 @@ init_dma_ws2812(void)
   channel_config_set_transfer_data_size(&c, DMA_SIZE_32);
   channel_config_set_read_increment(&c, true);
   channel_config_set_write_increment(&c, false);
-  channel_config_set_dreq(&c, DREQ_PIO1_TX0);
+  channel_config_set_dreq(&c, ( pio==pio0 ? DREQ_PIO0_TX0 : DREQ_PIO1_TX0 ) + sm );
   channel_config_set_irq_quiet(&c, true);
 
   dma_channel_configure(
     dma_ws2812_channel,  // Channel to be configured
     &c,                  // The configuration we just created
-    pio->txf,            // The initial write address
+    pio->txf+sm,         // The initial write address
     dma_ws2812_grb_pixels,      // The initial read address
     MAX_PIXEL_SIZE,      // Number of transfers; in this case each is 4 byte.
     false                // Not start
@@ -70,14 +72,18 @@ init_dma_ws2812(void)
 void
 c_ws2812_init(mrb_vm *vm, mrb_value *v, int argc)
 {
-  uint offset = pio_add_program(pio, &ws2812_program);
   bool is_rgbw;
   if (GET_ARG(3).tt == MRBC_TT_TRUE) {
     is_rgbw = true;
   } else {
     is_rgbw = false;
   }
-  ws2812_program_init(pio, sm, offset, GET_INT_ARG(1), is_rgbw);
+
+  if(pio_can_add_program_at_offset(pio, &ws2812_program, PIO_WS2812_INST_HEAD)) {
+    pio_add_program_at_offset(pio, &ws2812_program, PIO_WS2812_INST_HEAD);
+    ws2812_program_init(pio, sm, PIO_WS2812_INST_HEAD, GET_INT_ARG(1), is_rgbw);
+  }
+  
   init_dma_ws2812();
 }
 
