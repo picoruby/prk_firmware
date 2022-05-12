@@ -114,7 +114,7 @@ configure_prk(void)
 }
 
 void
-c___reset_usb_boot(mrb_vm *vm, mrb_value *v, int argc)
+c_reset_usb_boot(mrb_vm *vm, mrb_value *v, int argc)
 {
   reset_usb_boot(0, 0);
 }
@@ -141,7 +141,7 @@ c_print_alloc_stats(mrb_vm *vm, mrb_value *v, int argc)
 }
 
 void
-c_alloc_raw_stats(mrb_vm *vm, mrb_value *v, int argc)
+c_alloc_stats(mrb_vm *vm, mrb_value *v, int argc)
 {
   struct MRBC_ALLOC_STATISTICS mem;
   mrbc_alloc_statistics(&mem);
@@ -381,10 +381,12 @@ int main() {
   mrbc_define_method(0, mrbc_class_object, "board_millis", c_board_millis);
   mrbc_define_method(0, mrbc_class_object, "rand",         c_rand);
   mrbc_define_method(0, mrbc_class_object, "srand",        c_srand);
-  mrbc_define_method(0, mrbc_class_object, "__reset_usb_boot", c___reset_usb_boot);
-  mrbc_define_method(0, mrbc_class_object, "alloc_raw_stats",  c_alloc_raw_stats);
-  mrbc_define_method(0, mrbc_class_object, "print_alloc_stats", c_print_alloc_stats);
   mrbc_define_method(0, mrbc_class_object, "picorbc_ptr_size", c_picorbc_ptr_size);
+  mrbc_class *mrbc_class_Microcontroller = mrbc_define_class(0, "Microcontroller", mrbc_class_object);
+  mrbc_define_method(0, mrbc_class_Microcontroller, "reset_usb_boot",  c_reset_usb_boot);
+  mrbc_class *mrbc_class_PicoRubyVM = mrbc_define_class(0, "PicoRubyVM", mrbc_class_object);
+  mrbc_define_method(0, mrbc_class_PicoRubyVM, "alloc_stats",       c_alloc_stats);
+  mrbc_define_method(0, mrbc_class_PicoRubyVM, "print_alloc_stats", c_print_alloc_stats);
 #ifndef PRK_NO_MSC
   msc_init();
 #endif

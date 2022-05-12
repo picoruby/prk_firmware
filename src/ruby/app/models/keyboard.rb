@@ -479,7 +479,7 @@ class Keyboard
   def bootsel!
     puts "Rebooting into BOOTSEL mode!"
     sleep 0.1
-    __reset_usb_boot
+    Microcontroller.reset_usb_boot
   end
 
   def set_debounce(type)
