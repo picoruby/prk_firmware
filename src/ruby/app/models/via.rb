@@ -125,6 +125,15 @@ class VIA
             end
           end
           return 0
+        elsif key < 0x101
+          return 0
+        elsif key <= 0x10d
+          if key < 0x106
+            i = [2,3,3,4,4]
+            return 0x5CC0 + i[key-0x101]
+          else
+            return 0x5CC5 + key - 0x106
+          end
         else
           return 0
         end
@@ -203,6 +212,18 @@ class VIA
           get_modifier_name(modifiers) + "_" + 
           via_keycode_into_keysymbol(key).to_s.split("_")[1] ).intern
         return keysymbol
+      when 0x5
+        case keycode
+        when 0x5CC2
+          return :RGB_TOG
+        when 0x5CC3
+          return :RGB_MOD
+        when 0x5CC4
+          return :RGB_RMOD
+        when (0x5CC5..0x5CCC)
+          idx = keycode & 0x0F
+          return Keyboard::KEYCODE_RGB.keys[idx]
+        end
       end
     end
 
