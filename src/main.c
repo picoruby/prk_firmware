@@ -114,9 +114,47 @@ configure_prk(void)
 }
 
 void
-c___reset_usb_boot(mrb_vm *vm, mrb_value *v, int argc)
+c_reset_usb_boot(mrb_vm *vm, mrb_value *v, int argc)
 {
   reset_usb_boot(0, 0);
+}
+
+static void
+quick_print_alloc_stats()
+{
+  struct MRBC_ALLOC_STATISTICS mem;
+  mrbc_alloc_statistics(&mem);
+  console_printf("\nSTATS %d/%d\n", mem.used, mem.total);
+}
+
+void
+c_print_alloc_stats(mrb_vm *vm, mrb_value *v, int argc)
+{
+  struct MRBC_ALLOC_STATISTICS mem;
+  mrbc_alloc_statistics(&mem);
+  console_printf("ALLOC STATS\n");
+  console_printf(" TOTAL %6d\n", mem.total);
+  console_printf(" USED  %6d\n", mem.used);
+  console_printf(" FREE  %6d\n", mem.free);
+  console_printf(" FRAG  %6d\n\n", mem.fragmentation);
+  SET_NIL_RETURN();
+}
+
+void
+c_alloc_stats(mrb_vm *vm, mrb_value *v, int argc)
+{
+  struct MRBC_ALLOC_STATISTICS mem;
+  mrbc_alloc_statistics(&mem);
+  mrbc_value ret = mrbc_hash_new(vm, 4);
+  mrbc_hash_set(&ret, &mrbc_symbol_value(mrbc_str_to_symid("TOTAL")),
+                &mrbc_integer_value(mem.total));
+  mrbc_hash_set(&ret, &mrbc_symbol_value(mrbc_str_to_symid("USED")),
+                &mrbc_integer_value(mem.used));
+  mrbc_hash_set(&ret, &mrbc_symbol_value(mrbc_str_to_symid("FREE")),
+                &mrbc_integer_value(mem.free));
+  mrbc_hash_set(&ret, &mrbc_symbol_value(mrbc_str_to_symid("FRAGMENTATION")),
+                &mrbc_integer_value(mem.fragmentation));
+  SET_RETURN(ret);
 }
 
 void
@@ -193,6 +231,7 @@ create_keymap_task(mrbc_tcb *tcb)
     si = StreamInterface_new(NULL, SUSPEND_TASK, STREAM_TYPE_MEMORY);
     Compiler_compile(p, si, NULL);
   }
+  quick_print_alloc_stats();
   if (keymap_rb) free(keymap_rb);
   if (tcb == NULL) {
     tcb = mrbc_create_task(p->scope->vm_code, 0);
@@ -342,8 +381,12 @@ int main() {
   mrbc_define_method(0, mrbc_class_object, "board_millis", c_board_millis);
   mrbc_define_method(0, mrbc_class_object, "rand",         c_rand);
   mrbc_define_method(0, mrbc_class_object, "srand",        c_srand);
-  mrbc_define_method(0, mrbc_class_object, "__reset_usb_boot", c___reset_usb_boot);
   mrbc_define_method(0, mrbc_class_object, "picorbc_ptr_size", c_picorbc_ptr_size);
+  mrbc_class *mrbc_class_Microcontroller = mrbc_define_class(0, "Microcontroller", mrbc_class_object);
+  mrbc_define_method(0, mrbc_class_Microcontroller, "reset_usb_boot",  c_reset_usb_boot);
+  mrbc_class *mrbc_class_PicoRubyVM = mrbc_define_class(0, "PicoRubyVM", mrbc_class_object);
+  mrbc_define_method(0, mrbc_class_PicoRubyVM, "alloc_stats",       c_alloc_stats);
+  mrbc_define_method(0, mrbc_class_PicoRubyVM, "print_alloc_stats", c_print_alloc_stats);
 #ifndef PRK_NO_MSC
   msc_init();
 #endif
