@@ -39,11 +39,12 @@ class VIA
     @keymap_saved = true
     @rows_size = 1
     @cols_size = 1
+    @split_left_cols_size = 0
     @keymaps = Array.new
     @composite_keys = Array.new
   end
 
-  attr_accessor :layer_count, :kbd, :cols_size, :rows_size, :sandbox
+  attr_accessor :layer_count, :kbd, :cols_size, :rows_size, :split_left_cols_size, :sandbox
 
   def expand_composite_key(name)
     keynames = []
@@ -227,7 +228,13 @@ class VIA
         layer.each_with_index do |rows, row|
           via_map[row] = []
           rows.each_with_index do |cell, col|
-            via_map[row][col] = cell ? prk_keycode_into_via_keycode(cell) : 0
+            keycode = cell ? prk_keycode_into_via_keycode(cell) : 0
+            
+            if @kbd.split && @kbd.split_style == Keyboard::RIGHT_SIDE_FLIPPED_SPLIT && ( col > @split_left_cols_size - 1 )
+              via_map[row][@cols_size-1-col+@split_left_cols_size] = keycode
+            else
+              via_map[row][col] = keycode
+            end 
           end
         end
         @keymaps[i] = via_map
@@ -289,6 +296,12 @@ class VIA
   
   def start!
     init_keymap
+
+    if @kbd.split
+      if @split_left_cols_size==0
+        @split_left_cols_size = @cols_size / 2
+      end
+    end
 
     fileinfo = find_file(VIA_FILENAME)
     
