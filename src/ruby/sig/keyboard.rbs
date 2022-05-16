@@ -58,7 +58,6 @@ class Keyboard
   @anchor: bool
   @anchor_left: bool
   @direct_pins: Array[Integer]
-  @cols_size: Integer
   @matrix: Hash[Integer, Hash[Integer, Array[Integer]]]
   @locked_layer: Symbol | nil
   @keycodes: Array[String]
@@ -80,10 +79,12 @@ class Keyboard
   attr_reader layer: Symbol
   attr_reader split_style: Symbol
   attr_reader sandbox: Sandbox
+  attr_reader cols_size: Integer
+  attr_reader rows_size: Integer
 
   def set_debounce: (Symbol) -> void
   def set_debounce_threshold: (Integer) -> void
-  def append: (RGB | RotaryEncoder | VIA | DebounceNone | DebouncePerRow | DebouncePerKey feature) -> void
+  def append: (RGB | RotaryEncoder | DebounceNone | DebouncePerRow | DebouncePerKey feature) -> void
   def start_features: -> void
   def mutual_uart_at_my_own_risk= : (bool) -> void
   def uart_partner_push8 : (Integer) -> void
@@ -93,6 +94,8 @@ class Keyboard
   def uart_partner_init : (Integer) -> void
 
   def initialize: -> void
+  def via=: (bool) -> void
+  def via_layer_count=: (Integer) -> void
   def bootsel!: -> void
   def set_anchor: (Symbol val) -> void
   def set_scan_mode: (Symbol val) -> void
@@ -106,7 +109,7 @@ class Keyboard
   def add_layer: (Symbol name, Array[ Symbol | Array[Symbol] ] map) -> void
   def find_keycode_index: (Symbol key) -> (Integer | Symbol)
   def define_composite_key: (Symbol key_name, Array[Symbol] keys) -> void
-  def define_mode_key: (Symbol key_name, [Symbol | Array[Symbol] | Proc | nil, Symbol | Proc | nil, Integer?, Integer?] param) -> void
+  def define_mode_key: (Symbol key_name, [Symbol | Array[Symbol] | Proc | nil, Symbol | Proc | nil, Integer?, Integer?] param, ?bool from_via) -> void
   def invert_sft: -> void
   def before_report: () { () -> void } -> void
   def keys_include?: (Symbol) -> bool

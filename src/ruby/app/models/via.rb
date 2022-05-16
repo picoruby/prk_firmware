@@ -37,14 +37,19 @@ class VIA
     @layer_count = 5
     @mode_keys = Hash.new
     @keymap_saved = true
-    @rows_size = 1
-    @cols_size = 1
-    @split_left_cols_size = 0
     @keymaps = Array.new
     @composite_keys = Array.new
   end
 
-  attr_accessor :layer_count, :kbd, :cols_size, :rows_size, :split_left_cols_size, :sandbox
+  attr_accessor :layer_count, :kbd, :sandbox
+
+  def cols_size
+    (@kbd.cols_size || 1) * (@kbd.split ? 2 : 1)
+  end
+
+  def rows_size
+    @kbd.rows_size || 1
+  end
 
   def expand_composite_key(name)
     keynames = []
@@ -58,7 +63,7 @@ class VIA
 
   def load_mode_keys
     @mode_keys.each do |key_name, param|
-      @kbd.define_mode_key(key_name, param)
+      @kbd.define_mode_key(key_name, param, true)
     end
 
     @composite_keys.each do |key_name|
@@ -66,7 +71,7 @@ class VIA
     end
   end
 
-  def define_mode_key(key_name, param)
+  def add_mode_key(key_name, param)
     @mode_keys[key_name] = param
   end
 
@@ -233,8 +238,8 @@ class VIA
   def init_keymap
     @layer_count.times do |layer|
       @keymaps[layer] = []
-      @rows_size.times do |row|
-        @keymaps[layer][row] = Array.new(@cols_size)
+      rows_size.times do |row|
+        @keymaps[layer][row] = Array.new(cols_size)
       end
     end
   end
@@ -251,11 +256,11 @@ class VIA
           rows.each_with_index do |cell, col|
             keycode = cell ? prk_keycode_into_via_keycode(cell) : 0
             
-            if @kbd.split && @kbd.split_style == Keyboard::RIGHT_SIDE_FLIPPED_SPLIT && ( col > @split_left_cols_size - 1 )
-              via_map[row][@cols_size-1-col+@split_left_cols_size] = keycode
+            if @kbd.split && @kbd.split_style == Keyboard::RIGHT_SIDE_FLIPPED_SPLIT && ( col > cols_size / 2 - 1 )
+              via_map[row][cols_size - 1 - col + cols_size / 2] = keycode
             else
               via_map[row][col] = keycode
-            end 
+            end
           end
         end
         @keymaps[i] = via_map
@@ -273,11 +278,11 @@ class VIA
       layer_name = via_get_layer_name(layer)
       @kbd.delete_mode_keys(layer_name)
       
-      map = Array.new(@rows_size * @cols_size)
-      @rows_size.times do |row|
-        @cols_size.times do |col|
+      map = Array.new(rows_size * cols_size)
+      rows_size.times do |row|
+        cols_size.times do |col|
           keysymbol = via_keycode_into_keysymbol(@keymaps[layer][row][col] || 0)
-          map[row*@cols_size+col] = keysymbol
+          map[row * cols_size + col] = keysymbol
           
           keyname = keysymbol.to_s
 
@@ -298,8 +303,8 @@ class VIA
     data = ""
 
     @layer_count.times do |i|
-      @rows_size.times do |j|
-        @cols_size.times do |k|
+      rows_size.times do |j|
+        cols_size.times do |k|
           key = via_keycode_into_keysymbol(@keymaps[i][j][k] || 0)
           data << key.to_s + " "
         end
@@ -317,12 +322,6 @@ class VIA
   
   def start!
     init_keymap
-
-    if @kbd.split
-      if @split_left_cols_size==0
-        @split_left_cols_size = @cols_size / 2
-      end
-    end
 
     fileinfo = find_file(VIA_FILENAME)
     
@@ -395,7 +394,6 @@ class VIA
       else
         data = raw_hid_receive_kb(data)
       end
-
     when :ID_SET_KEYBOARD_VALUE
       case KEYBOARD_VALUES[data[1]]
       when :ID_LAYOUT_OPTIONS
@@ -420,7 +418,6 @@ class VIA
       data[1] = @layer_count
     when :ID_VIA_GET_BUFFER
       data = dynamic_keymap_get_buffer(data)
-      
       unless @keymap_saved
         save_keymap
         @keymap_saved = true
@@ -444,17 +441,17 @@ class VIA
   def dynamic_keymap_get_buffer(data)
     offset = (data[1]<<8) | data[2]
     size   = data[3]
-    layer_num = (offset/2/(@cols_size*@rows_size)).to_i
-    key_index = (offset/2 - layer_num * (@cols_size*@rows_size)).to_i
+    layer_num = (offset/2/(cols_size * rows_size)).to_i
+    key_index = (offset/2 - layer_num * (cols_size * rows_size)).to_i
     
     (size/2).times do |i|
-      if key_index==(@cols_size*@rows_size)
+      if key_index==(cols_size * rows_size)
         layer_num += 1
         key_index = 0
       end
       
-      row = key_index / @cols_size
-      col = key_index % @cols_size
+      row = key_index / cols_size
+      col = key_index % cols_size
 
       keycode = dynamic_keymap_get_keycode(layer_num, row, col)
       
@@ -472,17 +469,17 @@ class VIA
     # @type var data: Array[Integer]
     offset = (data[1]<<8) | data[2]
     size   = data[3]
-    layer_num = ( offset/2/(@cols_size*@rows_size) ).to_i
-    key_index = ( offset/2 - layer_num * (@cols_size*@rows_size) ).to_i
+    layer_num = ( offset/2/(cols_size * rows_size) ).to_i
+    key_index = ( offset/2 - layer_num * (cols_size * rows_size) ).to_i
     
     (size/2).times do |i|
       keycode = data[i*2+4] << 8 | data[i*2+5]
-      if key_index==(@cols_size*@rows_size)
+      if key_index==(cols_size * rows_size)
         layer_num += 1
         key_index = 0
       end
-      row = (key_index / @rows_size).to_i
-      col = (key_index % @rows_size).to_i
+      row = (key_index / rows_size).to_i
+      col = (key_index % rows_size).to_i
       
       dynamic_keymap_set_keycode(layer_num, row, col, keycode);
 
