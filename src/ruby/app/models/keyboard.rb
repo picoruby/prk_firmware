@@ -636,12 +636,15 @@ class Keyboard
 
   def init_direct_pins(pins)
     set_scan_mode :direct
+    init_uart
     pins.each do |pin|
       gpio_init(pin)
       gpio_set_dir(pin, GPIO_IN_PULLUP)
     end
     @cols_size = pins.count
     @direct_pins = pins
+    @offset_a = (@cols_size / 2.0).ceil_to_i
+    @offset_b = @cols_size * 2 - @offset_a - 1
   end
 
   def skip_position?(row, col)
@@ -1218,7 +1221,24 @@ class Keyboard
   def scan_direct!
     @debouncer.set_time
     @direct_pins.each_with_index do |col_pin, col|
-      if !@debouncer.resolve(col_pin, 0)
+      unless @debouncer.resolve(col_pin, 0)
+        col = if @anchor_left
+          if @anchor
+            # left
+            col
+          else
+            # right
+            (col - @offset_a) * -1 + @offset_b
+          end
+        else # right side is the anchor
+          unless @anchor
+            # left
+            col
+          else
+            # right
+            (col - @offset_a) * -1 + @offset_b
+          end
+        end
         @switches << [0, col]
       end
     end
