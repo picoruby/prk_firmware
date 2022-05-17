@@ -474,7 +474,7 @@ class Keyboard
   end
 
   attr_accessor :split, :uart_pin
-  attr_reader :layer, :split_style, :sandbox
+  attr_reader :layer, :split_style, :sandbox, :cols_size, :rows_size
 
   def bootsel!
     puts "Rebooting into BOOTSEL mode!"
@@ -502,6 +502,19 @@ class Keyboard
 
   def set_debounce_threshold(val)
     @debouncer.threshold = val if @debouncer
+  end
+
+  def via=(val)
+    if val
+      @via = VIA.new
+      @via.kbd = self
+    else
+      @via = nil
+    end
+  end
+
+  def via_layer_count=(count)
+    @via.layer_count = count
   end
 
   # TODO: OLED, SDCard
@@ -533,10 +546,6 @@ class Keyboard
         feature.init_pins
         @encoders << feature
       end
-    when VIA
-      # @type var feature: VIA
-      feature.kbd = self
-      @via = feature
     end
   end
 
@@ -613,6 +622,7 @@ class Keyboard
   end
 
   def init_pins(rows, cols)
+    @rows_size = rows.size
     matrix = Array.new
     rows.each do |row|
       line = Array.new
@@ -792,7 +802,11 @@ class Keyboard
   # param[1] :on_hold
   # param[2] :release_threshold
   # param[3] :repush_threshold
-  def define_mode_key(key_name, param)
+  def define_mode_key(key_name, param, from_via = false)
+    if @via && !from_via
+      @via.add_mode_key(key_name, param)
+      return
+    end
     on_release = param[0]
     on_hold = param[1]
     release_threshold = param[2]

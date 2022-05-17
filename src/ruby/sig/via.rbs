@@ -12,10 +12,9 @@ class VIA
 
   attr_accessor kbd: Keyboard
   attr_accessor layer_count: Integer
-  attr_accessor rows_size: Integer
-  attr_accessor cols_size: Integer
-  attr_accessor split_left_cols_size: Integer
 
+  def cols_size: -> Integer
+  def rows_size: -> Integer
   def task: -> void
   def start!: -> void
   def raw_hid_receive : (Array[Integer]) -> Array[Integer]
