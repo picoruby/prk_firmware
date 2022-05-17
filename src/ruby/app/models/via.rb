@@ -453,6 +453,11 @@ class VIA
       row = key_index / cols_size
       col = key_index % cols_size
 
+      if @kbd.split
+        row = key_index / ( cols_size/2 )
+        col = key_index % ( cols_size/2 )
+      end
+
       keycode = dynamic_keymap_get_keycode(layer_num, row, col)
       
       # @type var keycode : Integer
@@ -480,6 +485,11 @@ class VIA
       end
       row = (key_index / rows_size).to_i
       col = (key_index % rows_size).to_i
+
+      if @kbd.split
+        row = key_index / ( cols_size/2 )
+        col = key_index % ( cols_size/2 )
+      end
       
       dynamic_keymap_set_keycode(layer_num, row, col, keycode);
 
@@ -488,10 +498,24 @@ class VIA
   end
 
   def dynamic_keymap_get_keycode(layer, row, col)
+    if @kbd.split
+      if row >= rows_size
+        row -= rows_size
+        col = cols_size - col - 1
+      end
+    end
+
     return @keymaps[layer][row][col] || 0
   end
 
   def dynamic_keymap_set_keycode(layer, row, col, keycode)
+    if @kbd.split
+      if row >= rows_size
+        row -= rows_size
+        col = cols_size - col - 1
+      end
+    end
+
     @keymaps[layer][row][col] = keycode
     @keymap_saved = false
   end
