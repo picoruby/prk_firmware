@@ -10,6 +10,12 @@ class Keyboard
   GPIO_OUT_LO      = 0b011
   GPIO_OUT_HI      = 0b101
 
+  LED_NUMLOCK    = 0b00001
+  LED_CAPSLOCK   = 0b00010
+  LED_SCROLLLOCK = 0b00100
+  LED_COMPOSE    = 0b01000
+  LED_KANA       = 0b10000
+
   MOD_KEYCODE = {
     KC_LCTL: 0b00000001,
     KC_LSFT: 0b00000010,
@@ -364,7 +370,7 @@ class Keyboard
     KC_RBRC: :KC_RBRACKET,
     KC_BSLS: :KC_BSLASH,
     # KC_NUHS: :KC_NONUS_HASH,
-    # KC_SCLN: :KC_SCOLON,
+    KC_SCLN: :KC_SCOLON,
     KC_QUOT: :KC_QUOTE,
     KC_GRV: :KC_GRAVE,
     KC_ZKHK: :KC_GRAVE,
@@ -373,9 +379,9 @@ class Keyboard
     # KC_NUBS: :KC_NONUS_BSLASH,
     # KC_CLCK: :KC_CAPSLOCK,
     KC_CAPS: :KC_CAPSLOCK,
-    # KC_SLCK: :KC_SCROLLLOCK,
+    KC_SLCK: :KC_SCROLLLOCK,
     # KC_BRMD: :KC_SCROLLLOCK,
-    # KC_NLCK: :KC_NUMLOCK,
+    KC_NLCK: :KC_NUMLOCK,
     # KC_LCTRL: :KC_LCTL,
     # KC_LSHIFT: :KC_LSFT,
     # KC_LOPT: :KC_LALT,
@@ -944,6 +950,11 @@ class Keyboard
     sleep_ms 1
   end
 
+  def output_report_changed(&block)
+    @output_report_cb = block
+    start_observing_output_report
+  end
+
   # **************************************************************
   #  For those who are willing to contribute to PRK Firmware:
   #
@@ -975,6 +986,8 @@ class Keyboard
     modifier_switch_positions = Array.new
     rgb_message = 0
     earlier_report_size = 0
+
+    prev_output_report = 0
 
     while true
       cycle_time = 20
@@ -1178,8 +1191,14 @@ class Keyboard
         rgb_message = uart_partner
         $rgb.invoke_partner rgb_message if $rgb
       end
-      
+
       @via.task if @via
+
+      # CapsLock, NumLock, etc.
+      if prev_output_report != output_report && @output_report_cb
+        prev_output_report = output_report
+        @output_report_cb.call(prev_output_report)
+      end
 
       time = cycle_time - (board_millis - now)
       sleep_ms(time) if time > 0

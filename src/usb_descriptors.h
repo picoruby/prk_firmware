@@ -32,6 +32,10 @@ void c_report_raw_hid(mrb_vm *vm, mrb_value *v, int argc);
 void c_raw_hid_report_received_q(mrb_vm *vm, mrb_value *v, int argc);
 void c_get_last_received_raw_hid_report(mrb_vm *vm, mrb_value *v, int argc);
 
+void c_Keyboard_start_observing_output_report(mrb_vm *vm, mrb_value *v, int argc);
+void c_Keyboard_stop_observing_output_report(mrb_vm *vm, mrb_value *v, int argc);
+void c_Keyboard_output_report(mrb_vm *vm, mrb_value *v, int argc);
+
 #define VIA_INIT() do {\
   mrbc_define_method(0, mrbc_class_object, "report_raw_hid", c_report_raw_hid);\
   mrbc_define_method(0, mrbc_class_object, "raw_hid_report_received?", c_raw_hid_report_received_q);\
@@ -42,6 +46,12 @@ void c_get_last_received_raw_hid_report(mrb_vm *vm, mrb_value *v, int argc);
   mrbc_define_method(0, mrbc_class_object, "tud_task",     c_tud_task);      \
   mrbc_define_method(0, mrbc_class_object, "tud_mounted?", c_tud_mounted_q); \
   mrbc_define_method(0, mrbc_class_object, "report_hid",   c_report_hid);    \
+  mrbc_define_method(0, mrbc_class_Keyboard, "stop_observing_output_report", \
+                                   c_Keyboard_stop_observing_output_report);   \
+  mrbc_define_method(0, mrbc_class_Keyboard, "start_observing_output_report",\
+                                   c_Keyboard_start_observing_output_report);  \
+  mrbc_define_method(0, mrbc_class_Keyboard, "output_report",    \
+                                   c_Keyboard_output_report);                  \
   VIA_INIT();\
 } while (0)
 

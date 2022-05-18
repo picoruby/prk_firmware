@@ -387,6 +387,7 @@ int main() {
   mrbc_class *mrbc_class_PicoRubyVM = mrbc_define_class(0, "PicoRubyVM", mrbc_class_object);
   mrbc_define_method(0, mrbc_class_PicoRubyVM, "alloc_stats",       c_alloc_stats);
   mrbc_define_method(0, mrbc_class_PicoRubyVM, "print_alloc_stats", c_print_alloc_stats);
+  mrbc_class *mrbc_class_Keyboard = mrbc_define_class(0, "Keyboard", mrbc_class_object);
 #ifndef PRK_NO_MSC
   msc_init();
 #endif
