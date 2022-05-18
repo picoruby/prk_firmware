@@ -21,6 +21,9 @@
 #define SHORT_STOP_BITS    2
 #define IDLE_BITS          8
 #define NIL         0xFFFFFF
+
+#define PIO_UART_INST_HEAD 0
+
 static int uart_pin;
 static bool mutual = false;
 
@@ -60,9 +63,8 @@ c_uart_anchor_init(mrb_vm *vm, mrb_value *v, int argc)
  * It seems RX pin can't be inverted to TX on Raspi Pico.
  * That's why using PIO instead.
  */
-static PIO pio = pio0;
-static uint sm = 0;
-static uint offset;
+static PIO pio = pio1;
+static uint sm = 1;
 void
 c_uart_partner_init(mrb_vm *vm, mrb_value *v, int argc)
 {
@@ -72,8 +74,10 @@ c_uart_partner_init(mrb_vm *vm, mrb_value *v, int argc)
     gpio_set_dir(uart_pin, GPIO_IN);
     gpio_pull_up(uart_pin);
   } else {
-    offset = pio_add_program(pio, &uart_tx_program);
-    uart_tx_program_init(pio, sm, offset, GET_INT_ARG(1), BAUD_RATE);
+    if( pio_can_add_program_at_offset(pio, &uart_tx_program, PIO_UART_INST_HEAD) ) {
+      pio_add_program_at_offset(pio, &uart_tx_program, PIO_UART_INST_HEAD);
+      uart_tx_program_init(pio, sm, PIO_UART_INST_HEAD, GET_INT_ARG(1), BAUD_RATE);
+    }
   }
 }
 
