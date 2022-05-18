@@ -27,8 +27,6 @@ class Keyboard
     KC_RGUI: 0b10000000
   }
 
-  # Due to PicoRuby's limitation,
-  # a big array can't be created at once
   KEYCODE = [
     :KC_NO,               # 0x00
     :KC_ROLL_OVER,
@@ -78,7 +76,6 @@ class Keyboard
     :KC_MINUS,
     :KC_EQUAL,
     :KC_LBRACKET,
-  ] + [
     :KC_RBRACKET,         # 0x30
     :KC_BSLASH,
     :KC_NONUS_HASH,
@@ -127,7 +124,6 @@ class Keyboard
     :KC_KP_5,
     :KC_KP_6,
     :KC_KP_7,
-  ] + [
     :KC_KP_8,             # 0x60
     :KC_KP_9,
     :KC_KP_0,
@@ -176,7 +172,6 @@ class Keyboard
     :KC_INT7,
     :KC_INT8,
     :KC_INT9,
-  ] + [
     :KC_LANG1,            # 0x90
     :KC_LANG2,
     :KC_LANG3,
