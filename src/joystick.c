@@ -3,7 +3,7 @@
 #include "hardware/gpio.h"
 #include "hardware/adc.h"
 #include "usb_descriptors.h"
-#include "gamepad.h"
+#include "joystick.h"
 
 #define MAX_ADC_COUNT  4
 
@@ -71,7 +71,7 @@ c_init_axis_offset(mrb_vm *vm, mrb_value *v, int argc)
 }
 
 void
-gamepad_report(void)
+joystick_report(void)
 {
   hid_gamepad_report_t report = {
     .x = 0, .y = 0, .z = 0, .rz = 0, .rx = 0, .ry = 0, .hat = 0, .buttons = buttons

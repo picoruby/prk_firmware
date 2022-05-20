@@ -27,7 +27,7 @@
 
 #include "usb_descriptors.h"
 #include "raw_hid.h"
-#include "gamepad.h"
+#include "joystick.h"
 
 // Invoked when received GET DEVICE DESCRIPTOR
 // Application return pointer to descriptor
@@ -301,7 +301,7 @@ send_hid_report(uint8_t report_id)
       }
       break;
     case REPORT_ID_GAMEPAD:
-      gamepad_report();
+      joystick_report();
       break;
     default: break;
   }

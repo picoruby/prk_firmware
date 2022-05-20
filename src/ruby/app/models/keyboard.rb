@@ -537,9 +537,9 @@ class Keyboard
       # @type var feature: VIA
       feature.kbd = self
       @via = feature
-    when "Gamepad"
-      # @type var feature: Gamepad
-      @gamepad = feature
+    when "Joystick"
+      # @type var feature: Joystick
+      @joystick = feature
     end
   end
 
@@ -762,7 +762,7 @@ class Keyboard
       KEYCODE_RGB[key]
     elsif key.to_s[0, 9] == "JS_BUTTON"
       # JS_BUTTON0 - JS_BUTTON31
-      # You need to `require "gamepad"`
+      # You need to `require "joystick"`
       key.to_s[9, 10].to_i + 0x200
     elsif key.to_s[0, 7] == "JS_HAT_"
       case key
@@ -990,8 +990,8 @@ class Keyboard
 
       @switches.clear
       @modifier = 0
-      gamepad_hat = 0
-      gamepad_buttons = 0
+      joystick_hat = 0
+      joystick_buttons = 0
 
       @scan_mode == :matrix ? scan_matrix! : scan_direct!
 
@@ -1105,10 +1105,10 @@ class Keyboard
             @modifier |= 0b00100000
           elsif keycode < 0 # Normal keys
             @keycodes << (keycode * -1).chr
-          elsif keycode > 0x300 # Gamepad hat
-            gamepad_hat |= (keycode - 0x300)
-          elsif keycode >= 0x200 # Gamepad button
-            gamepad_buttons |= (1 << (keycode - 0x200))
+          elsif keycode > 0x300 # Joystick hat
+            joystick_hat |= (keycode - 0x300)
+          elsif keycode >= 0x200 # Joystick button
+            joystick_buttons |= (1 << (keycode - 0x200))
           elsif keycode > 0x100 # RGB
             rgb_message = $rgb.invoke_anchor KEYCODE_RGB.key(keycode)
           else # Should be a modifier key
@@ -1169,7 +1169,7 @@ class Keyboard
           end
         end
 
-        @gamepad.set_values(gamepad_buttons, gamepad_hat) if @gamepad
+        @joystick.set_values(joystick_buttons, joystick_hat) if @joystick
         report_hid(@modifier, @keycodes.join)
 
         if @locked_layer

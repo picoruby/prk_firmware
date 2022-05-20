@@ -1,4 +1,4 @@
-class Gamepad
+class Joystick
   VALID_PINS = [26, 27, 28, 29]
 
   # https://raspberrypi.github.io/pico-sdk-doxygen/group__hardware__adc.html

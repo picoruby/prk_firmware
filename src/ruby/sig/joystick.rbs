@@ -1,4 +1,4 @@
-class Gamepad
+class Joystick
   VALID_PINS: Array[Integer]
 
   def initialize: (Hash[Symbol, Integer]) -> void
