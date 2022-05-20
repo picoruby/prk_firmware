@@ -14,6 +14,7 @@ add_definitions(
   -DMAX_SYMBOLS_COUNT=700
   -DMAX_VM_COUNT=20
   -DMRBC_CONVERT_CRLF
+  -DPICORBC_PTR_SIZE=4
 )
 if(PRK_NO_MSC)
   add_definitions(-DPRK_NO_MSC)
@@ -27,7 +28,7 @@ pico_sdk_init()
 
 execute_process (COMMAND date +%Y%m%d OUTPUT_VARIABLE CMAKE_BUILDDATE OUTPUT_STRIP_TRAILING_WHITESPACE)
 execute_process (COMMAND git rev-parse --short HEAD OUTPUT_VARIABLE CMAKE_REVISION OUTPUT_STRIP_TRAILING_WHITESPACE)
-set (PRK_VERSION   0.9.13)
+set (PRK_VERSION   0.9.14)
 set (PRK_BUILDDATE ${CMAKE_BUILDDATE})
 set (PRK_REVISION  ${CMAKE_REVISION})
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/src/version.h.in" "${CMAKE_CURRENT_SOURCE_DIR}/src/version.h")
@@ -114,6 +115,8 @@ target_link_libraries(${PROJECT}
   pico_multicore
   hardware_flash
   hardware_adc
+  hardware_dma
+  hardware_sync
 )
 
 include_directories(${PROJECT} PRIVATE

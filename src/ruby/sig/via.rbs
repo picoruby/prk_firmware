@@ -4,7 +4,7 @@ class VIA
   VIA_PROTOCOL_VERSION : Integer
   KEYBOARD_VALUES : Array[Symbol]
   ID_UNHANDLED : Integer
-  @mode_keys: Hash[Symbol, [ Symbol | Array[Symbol] | Proc | nil, Symbol | Proc, Integer | nil, Integer| nil ] ]
+  @mode_keys: Hash[Symbol, [ Symbol | Array[Symbol] | Proc | nil, Symbol | Proc | nil, Integer | nil, Integer| nil ] ]
   @composite_keys: Array[Symbol]
   @kbd: Keyboard
   @keymaps: Array[Array[Array[Integer]]]
@@ -12,9 +12,9 @@ class VIA
 
   attr_accessor kbd: Keyboard
   attr_accessor layer_count: Integer
-  attr_accessor rows_size: Integer
-  attr_accessor cols_size: Integer
 
+  def cols_size: -> Integer
+  def rows_size: -> Integer
   def task: -> void
   def start!: -> void
   def raw_hid_receive : (Array[Integer]) -> Array[Integer]
@@ -25,14 +25,14 @@ class VIA
   def dynamic_keymap_get_keycode : (Integer, Integer, Integer) -> Integer
   def dynamic_keymap_set_keycode : (Integer, Integer, Integer, Integer) -> void
   def via_get_layer_name : (Integer) -> Symbol
-  def via_keycode_into_prk_keycode : (Integer) -> ( [Integer, Integer] | Symbol | Integer )
+  def check_for_keycode_shift : (Integer) -> ( Symbol | nil )
   def via_keycode_into_keysymbol : (Integer) -> Symbol
   def prk_keycode_into_via_keycode : (Integer | Symbol | Proc) -> Integer
   def expand_composite_key : (Symbol) -> Array[Symbol]
   def get_via_composite_keycode : (Symbol) -> Integer
   def get_modifier_name : (Integer) -> String
   def load_mode_keys: -> void
-  def define_mode_key : (Symbol key_name, [Symbol | Array[Symbol] | Proc | nil, Symbol | Proc, Integer?, Integer?] param) -> void
+  def define_mode_key : (Symbol key_name, [Symbol | Array[Symbol] | Proc | nil, Symbol | Proc | nil, Integer?, Integer?] param) -> void
   def eval_val : (String) -> untyped
   def sync_keymap : (?bool)-> void
   def init_keymap: -> void

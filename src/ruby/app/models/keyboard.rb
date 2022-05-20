@@ -10,6 +10,12 @@ class Keyboard
   GPIO_OUT_LO      = 0b011
   GPIO_OUT_HI      = 0b101
 
+  LED_NUMLOCK    = 0b00001
+  LED_CAPSLOCK   = 0b00010
+  LED_SCROLLLOCK = 0b00100
+  LED_COMPOSE    = 0b01000
+  LED_KANA       = 0b10000
+
   MOD_KEYCODE = {
     KC_LCTL: 0b00000001,
     KC_LSFT: 0b00000010,
@@ -21,8 +27,6 @@ class Keyboard
     KC_RGUI: 0b10000000
   }
 
-  # Due to PicoRuby's limitation,
-  # a big array can't be created at once
   KEYCODE = [
     :KC_NO,               # 0x00
     :KC_ROLL_OVER,
@@ -72,7 +76,6 @@ class Keyboard
     :KC_MINUS,
     :KC_EQUAL,
     :KC_LBRACKET,
-  ] + [
     :KC_RBRACKET,         # 0x30
     :KC_BSLASH,
     :KC_NONUS_HASH,
@@ -121,7 +124,6 @@ class Keyboard
     :KC_KP_5,
     :KC_KP_6,
     :KC_KP_7,
-  ] + [
     :KC_KP_8,             # 0x60
     :KC_KP_9,
     :KC_KP_0,
@@ -170,7 +172,6 @@ class Keyboard
     :KC_INT7,
     :KC_INT8,
     :KC_INT9,
-  ] + [
     :KC_LANG1,            # 0x90
     :KC_LANG2,
     :KC_LANG3,
@@ -364,7 +365,7 @@ class Keyboard
     KC_RBRC: :KC_RBRACKET,
     KC_BSLS: :KC_BSLASH,
     # KC_NUHS: :KC_NONUS_HASH,
-    # KC_SCLN: :KC_SCOLON,
+    KC_SCLN: :KC_SCOLON,
     KC_QUOT: :KC_QUOTE,
     KC_GRV: :KC_GRAVE,
     KC_ZKHK: :KC_GRAVE,
@@ -373,9 +374,9 @@ class Keyboard
     # KC_NUBS: :KC_NONUS_BSLASH,
     # KC_CLCK: :KC_CAPSLOCK,
     KC_CAPS: :KC_CAPSLOCK,
-    # KC_SLCK: :KC_SCROLLLOCK,
+    KC_SLCK: :KC_SCROLLLOCK,
     # KC_BRMD: :KC_SCROLLLOCK,
-    # KC_NLCK: :KC_NUMLOCK,
+    KC_NLCK: :KC_NUMLOCK,
     # KC_LCTRL: :KC_LCTL,
     # KC_LSHIFT: :KC_LSFT,
     # KC_LOPT: :KC_LALT,
@@ -474,12 +475,12 @@ class Keyboard
   end
 
   attr_accessor :split, :uart_pin
-  attr_reader :layer, :split_style, :sandbox
+  attr_reader :layer, :split_style, :sandbox, :cols_size, :rows_size
 
   def bootsel!
     puts "Rebooting into BOOTSEL mode!"
     sleep 0.1
-    __reset_usb_boot
+    Microcontroller.reset_usb_boot
   end
 
   def set_debounce(type)
@@ -502,6 +503,19 @@ class Keyboard
 
   def set_debounce_threshold(val)
     @debouncer.threshold = val if @debouncer
+  end
+
+  def via=(val)
+    if val
+      @via = VIA.new
+      @via.kbd = self
+    else
+      @via = nil
+    end
+  end
+
+  def via_layer_count=(count)
+    @via.layer_count = count
   end
 
   # TODO: OLED, SDCard
@@ -616,6 +630,7 @@ class Keyboard
   end
 
   def init_pins(rows, cols)
+    @rows_size = rows.size
     matrix = Array.new
     rows.each do |row|
       line = Array.new
@@ -629,12 +644,15 @@ class Keyboard
 
   def init_direct_pins(pins)
     set_scan_mode :direct
+    init_uart
     pins.each do |pin|
       gpio_init(pin)
       gpio_set_dir(pin, GPIO_IN_PULLUP)
     end
     @cols_size = pins.count
     @direct_pins = pins
+    @offset_a = (@cols_size / 2.0).ceil_to_i
+    @offset_b = @cols_size * 2 - @offset_a - 1
   end
 
   def skip_position?(row, col)
@@ -715,10 +733,6 @@ class Keyboard
     @mode_keys.each do |switch, config|
       config[:layers].delete(layer_name)
     end
-  end
-
-  def keycode_to_keysym(keycode)
-    return KEYCODE[keycode] || :KC_NO
   end
 
   def entire_cols_size
@@ -816,7 +830,11 @@ class Keyboard
   # param[1] :on_hold
   # param[2] :release_threshold
   # param[3] :repush_threshold
-  def define_mode_key(key_name, param)
+  def define_mode_key(key_name, param, from_via = false)
+    if @via && !from_via
+      @via.add_mode_key(key_name, param)
+      return
+    end
     on_release = param[0]
     on_hold = param[1]
     release_threshold = param[2]
@@ -951,6 +969,11 @@ class Keyboard
     sleep_ms 1
   end
 
+  def output_report_changed(&block)
+    @output_report_cb = block
+    start_observing_output_report
+  end
+
   # **************************************************************
   #  For those who are willing to contribute to PRK Firmware:
   #
@@ -982,6 +1005,8 @@ class Keyboard
     modifier_switch_positions = Array.new
     rgb_message = 0
     earlier_report_size = 0
+
+    prev_output_report = 0
 
     while true
       cycle_time = 20
@@ -1196,6 +1221,12 @@ class Keyboard
 
       @via.task if @via
 
+      # CapsLock, NumLock, etc.
+      if prev_output_report != output_report && @output_report_cb
+        prev_output_report = output_report
+        @output_report_cb.call(prev_output_report)
+      end
+
       time = cycle_time - (board_millis - now)
       sleep_ms(time) if time > 0
     end
@@ -1236,7 +1267,24 @@ class Keyboard
   def scan_direct!
     @debouncer.set_time
     @direct_pins.each_with_index do |col_pin, col|
-      if !@debouncer.resolve(col_pin, 0)
+      unless @debouncer.resolve(col_pin, 0)
+        col = if @anchor_left
+          if @anchor
+            # left
+            col
+          else
+            # right
+            (col - @offset_a) * -1 + @offset_b
+          end
+        else # right side is the anchor
+          unless @anchor
+            # left
+            col
+          else
+            # right
+            (col - @offset_a) * -1 + @offset_b
+          end
+        end
         @switches << [0, col]
       end
     end
@@ -1340,6 +1388,7 @@ class Keyboard
       end
     end
   end
+
 end
 
 $mutex = true

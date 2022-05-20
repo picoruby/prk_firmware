@@ -192,6 +192,8 @@ const uint16_t string_desc_product[] = { // Index: 1
 uint8_t raw_hid_last_received_report[REPORT_RAW_MAX_LEN];
 uint8_t raw_hid_last_received_report_length;
 bool raw_hid_report_received = false;
+bool observing_output_report = false;
+uint8_t keyboard_output_report = 0;
 
 uint8_t const *tud_hid_descriptor_report_cb(uint8_t instance) {
     return desc_hid_report;
@@ -201,21 +203,40 @@ uint16_t tud_hid_get_report_cb(uint8_t instance, uint8_t report_id, hid_report_t
 }
 
 void tud_hid_set_report_cb(uint8_t instance, uint8_t report_id, hid_report_type_t report_type, uint8_t const* buffer, uint16_t bufsize) {
-    if (report_type == HID_REPORT_TYPE_INVALID) {
-        report_id = buffer[0];
-        buffer++;
-        bufsize--;
-    } else if(report_type != HID_REPORT_TYPE_OUTPUT && report_type != HID_REPORT_TYPE_FEATURE) {
-        return;
-    }
-
-    if(report_id==REPORT_ID_RAWHID) {
-        memcpy(raw_hid_last_received_report, buffer, bufsize);
-        raw_hid_last_received_report_length = bufsize;
-        raw_hid_report_received = true;
-    }
-
+  if (report_type == HID_REPORT_TYPE_INVALID) {
+    report_id = buffer[0];
+    buffer++;
+    bufsize--;
+  } else if(report_type != HID_REPORT_TYPE_OUTPUT && report_type != HID_REPORT_TYPE_FEATURE) {
     return;
+  }
+
+  if (bufsize < 1) return;
+
+  switch (report_id) {
+    case REPORT_ID_RAWHID:
+      memcpy(raw_hid_last_received_report, buffer, bufsize);
+      raw_hid_last_received_report_length = bufsize;
+      raw_hid_report_received = true;
+      break;
+    case REPORT_ID_KEYBOARD:
+      if (observing_output_report) {
+        keyboard_output_report = buffer[0];
+      }
+      break;
+    default:
+      break;
+  }
+}
+
+void c_Keyboard_start_observing_output_report(mrb_vm *vm, mrb_value *v, int argc) {
+  observing_output_report = true;
+}
+void c_Keyboard_stop_observing_output_report(mrb_vm *vm, mrb_value *v, int argc) {
+  observing_output_report = false;
+}
+void c_Keyboard_output_report(mrb_vm *vm, mrb_value *v, int argc) {
+  SET_INT_RETURN(keyboard_output_report);
 }
 
 void c_raw_hid_report_received_q(mrb_vm *vm, mrb_value *v, int argc) {

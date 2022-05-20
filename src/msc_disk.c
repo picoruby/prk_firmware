@@ -351,7 +351,8 @@ msc_findDirEnt(const char *filename, DirEnt *entry)
     memcpy(entry, addr, 32);
     if (entry->Name[0] == 0xe5) continue;
     if (entry->Name[0] == '\0') return;
-    if (strncmp(filename, entry->Name, 11) == 0 && entry->Attr == 0x20) return;
+    //if (strncmp(filename, entry->Name, 11) == 0 && entry->Attr == 0x20) return;
+    if (strncmp(filename, entry->Name, 11) == 0) return;
   }
 }
 
@@ -384,16 +385,10 @@ c_read_file(mrb_vm *vm, mrb_value *v, int argc) {
   uint16_t sector = GET_INT_ARG(1);
   uint16_t length = GET_INT_ARG(2);
 
-  mrbc_value rb_val_array = mrbc_array_new(vm, length);
-  mrbc_array *rb_array = rb_val_array.array;
   uint8_t *data = msc_read_sector(sector);
-
-  rb_array->n_stored = length;
-  for(uint16_t i=0; i<length; i++) {
-    mrbc_set_integer( (rb_array->data)+i, data[i] );
-  }
-
-  SET_RETURN(rb_val_array);
+  mrbc_value rb_val_str = mrbc_string_new(vm, data, length);
+  
+  SET_RETURN(rb_val_str);
 }
 
 void

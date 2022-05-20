@@ -41,9 +41,10 @@ static void c_debugprint(struct VM *vm, mrbc_value v[], int argc)
   console_putchar('\n');
   unsigned char *message = GET_STRING_ARG(1);
   console_printf("%s\n", message);
-  int total, used, free, fragment;
-  mrbc_alloc_statistics( &total, &used, &free, &fragment );
-  console_printf("Memory total:%d, used:%d, free:%d, fragment:%d\n", total, used, free, fragment );
+
+  struct MRBC_ALLOC_STATISTICS mem;
+  mrbc_alloc_statistics( &mem );
+  console_printf("Memory total:%d, used:%d, free:%d, fragment:%d\n", mem.total, mem.used, mem.free, mem.fragmentation );
   for( int i = 0; i < 79; i++ ) { console_putchar('='); }
   console_putchar('\n');
   console_putchar('\n');
