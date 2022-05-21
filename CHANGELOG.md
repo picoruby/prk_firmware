@@ -1,6 +1,6 @@
 # Change log
 
-## 0.9.14 on 2022/05/xx
+## 0.9.14 on 2022/05/21
 
 ### VIA! VIA!! VIA!!! 🙌
 - See [wiki/VIA and Remap](https://github.com/picoruby/prk_firmware/wiki/VIA-and-Remap)
