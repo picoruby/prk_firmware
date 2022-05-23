@@ -44,7 +44,7 @@ class RGB
       ((rgb[2] + m) * 255).ceil_to_i
   end
 
-  EFFECTS = %i|swirl rainbow_mood breath nokogiri|
+  EFFECTS = %i|swirl rainbow_mood breath nokogiri static|
 
   def effect=(name)
     @offed = true
@@ -119,6 +119,8 @@ class RGB
         @value += (@max_value / 31.0)
       end
       ws2812_fill(hsv2rgb(@hue, @saturation, @value), @pixel_size)
+    when :static
+      ws2812_fill(hsv2rgb(@hue, @saturation, @max_value), @pixel_size)
     end
     sleep_ms @delay
   end
