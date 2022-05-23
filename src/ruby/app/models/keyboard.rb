@@ -1194,7 +1194,8 @@ class Keyboard
           end
         end
 
-        @joystick.set_values(joystick_buttons, joystick_hat) if @joystick
+        @joystick.report_hid(joystick_buttons, joystick_hat) if @joystick
+
         report_hid(@modifier, @keycodes.join)
 
         if @locked_layer

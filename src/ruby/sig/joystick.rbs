@@ -4,5 +4,6 @@ class Joystick
   def initialize: (Hash[Symbol, Integer]) -> void
   def reset_axes: () -> nil
   def init_axis_offset: (String axis, Integer pin) -> bool
-  def set_values: (Integer, Integer) -> nil
+  def report_hid: (Integer, Integer) -> nil
+  def drift_supression=: (Integer) -> bool
 end

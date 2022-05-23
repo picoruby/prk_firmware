@@ -16,20 +16,30 @@
 static int8_t axes[MAX_ADC_COUNT] = {-1,-1,-1,-1};
 static uint8_t adc_offset[MAX_ADC_COUNT] = {0,0,0,0};
 
-static uint32_t buttons = 0;
-static uint8_t hat = 0;
+static int8_t drift_suppression = 5;
+static int8_t drift_suppression_minus = -5;
+
+static hid_gamepad_report_t zero_report;
 
 void
-c_set_values(mrb_vm *vm, mrb_value *v, int argc)
+c_Joystick_drift_suppression_eq(mrb_vm *vm, mrb_value *v, int argc)
 {
-  buttons = GET_INT_ARG(1);
-  hat = GET_INT_ARG(2);
-  SET_NIL_RETURN();
+  int value = GET_INT_ARG(1);
+  if (value < 0 || 100 < value) {
+    console_printf("Invalid argument for drift_suppression=\n");
+    SET_FALSE_RETURN();
+    return;
+  } else {
+    drift_suppression = value;
+    drift_suppression_minus = value * (-1);
+    SET_TRUE_RETURN();
+  }
 }
 
 void
-c_reset_axes(mrb_vm *vm, mrb_value *v, int argc)
+c_Joystick_reset_axes(mrb_vm *vm, mrb_value *v, int argc)
 {
+  memset(&zero_report, 0, sizeof(zero_report));
   for (int i = 0; i < MAX_ADC_COUNT; i++) {
     axes[i] = -1;
     adc_offset[i] = 0;
@@ -38,7 +48,7 @@ c_reset_axes(mrb_vm *vm, mrb_value *v, int argc)
 }
 
 void
-c_init_axis_offset(mrb_vm *vm, mrb_value *v, int argc)
+c_Joystick_init_axis_offset(mrb_vm *vm, mrb_value *v, int argc)
 {
   char *axis = GET_STRING_ARG(1);
   int8_t adc_ch = GET_INT_ARG(2);
@@ -49,7 +59,7 @@ c_init_axis_offset(mrb_vm *vm, mrb_value *v, int argc)
     sleep_ms(20);
     offset_sum += adc_read();
   }
-  adc_offset[adc_ch] = (offset_sum / 3) >> 4;
+  adc_offset[adc_ch] = (uint8_t)((offset_sum / 3) >> 4);
   if (strcmp(axis, "x") == 0) {
     axes[adc_ch] = AXIS_INDEX_X;
   } else if (strcmp(axis, "y") == 0) {
@@ -71,26 +81,32 @@ c_init_axis_offset(mrb_vm *vm, mrb_value *v, int argc)
 }
 
 void
-joystick_report(void)
-{
-  hid_gamepad_report_t report = {
-    .x = 0, .y = 0, .z = 0, .rz = 0, .rx = 0, .ry = 0, .hat = 0, .buttons = buttons
-  };
+c_Joystick_report_hid(mrb_vm *vm, mrb_value *v, int argc) {
+  static bool zero_reported = false;
+  hid_gamepad_report_t report;
+  memset(&report, 0, sizeof(report));
+  /* buttons */
+  report.buttons = GET_INT_ARG(1);
   /* analog axes */
   int16_t value;
   for (int ch = 0; ch < MAX_ADC_COUNT; ch++) {
     if (axes[ch] > -1) {
       adc_select_input(ch);
-      value = (adc_read() >> 4)  - adc_offset[ch];
-      if (value < -128) value = -128;
-      if (127 < value) value = 127;
-      switch (axes[ch]) {
-        case AXIS_INDEX_X:  report.x  = (int8_t)value; break;
-        case AXIS_INDEX_Y:  report.y  = (int8_t)value; break;
-        case AXIS_INDEX_Z:  report.z  = (int8_t)value; break;
-        case AXIS_INDEX_RZ: report.rz = (int8_t)value; break;
-        case AXIS_INDEX_RX: report.rx = (int8_t)value; break;
-        case AXIS_INDEX_RY: report.ry = (int8_t)value; break;
+      value = (adc_read() >> 4) - adc_offset[ch];
+      if ((value < drift_suppression_minus) || (drift_suppression < value)) {
+        if (value < -128) {
+          value = -128;
+        } else if (127 < value) {
+          value = 127;
+        }
+        switch (axes[ch]) {
+          case AXIS_INDEX_X:  report.x  = (int8_t)value; break;
+          case AXIS_INDEX_Y:  report.y  = (int8_t)value; break;
+          case AXIS_INDEX_Z:  report.z  = (int8_t)value; break;
+          case AXIS_INDEX_RZ: report.rz = (int8_t)value; break;
+          case AXIS_INDEX_RX: report.rx = (int8_t)value; break;
+          case AXIS_INDEX_RY: report.ry = (int8_t)value; break;
+        }
       }
     }
   }
@@ -111,6 +127,7 @@ joystick_report(void)
    * GAMEPAD_HAT_LEFT        7
    * GAMEPAD_HAT_UP_LEFT     8
    */
+  uint8_t hat = GET_INT_ARG(2);
   if (hat <= 0b0100) {
     switch (hat) {
       case 0b0001: report.hat = GAMEPAD_HAT_RIGHT;      break;
@@ -126,5 +143,11 @@ joystick_report(void)
       case 0b1100: report.hat = GAMEPAD_HAT_DOWN_LEFT;  break;
     }
   }
-  tud_hid_report(REPORT_ID_GAMEPAD, &report, sizeof(report));
+  if (memcmp(&report, &zero_report, sizeof(report))) {
+    tud_hid_report(REPORT_ID_GAMEPAD, &report, sizeof(report));
+    zero_reported = false;
+  } else if (!zero_reported) {
+    tud_hid_report(REPORT_ID_GAMEPAD, &report, sizeof(report));
+    zero_reported = true;
+  }
 }

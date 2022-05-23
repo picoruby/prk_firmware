@@ -1,28 +1,3 @@
-/* 
- * The MIT License (MIT)
- *
- * Copyright (c) 2019 Ha Thach (tinyusb.org)
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- *
- */
-
 #include "tusb.h"
 
 #include "usb_descriptors.h"
@@ -133,7 +108,8 @@ uint8_t const desc_fs_configuration[] =
 // Invoked when received GET CONFIGURATION DESCRIPTOR
 // Application return pointer to descriptor
 // Descriptor contents must exist long enough for transfer to complete
-uint8_t const * tud_descriptor_configuration_cb(uint8_t index)
+uint8_t const*
+tud_descriptor_configuration_cb(uint8_t index)
 {
   (void) index; // for multiple configurations
   return desc_fs_configuration;
@@ -143,7 +119,8 @@ static uint16_t _desc_str[32];
 
 // Invoked when received GET STRING DESCRIPTOR request
 // Application return pointer to descriptor, whose contents must exist long enough for transfer to complete
-uint16_t const* tud_descriptor_string_cb(uint8_t index, uint16_t langid)
+uint16_t const*
+tud_descriptor_string_cb(uint8_t index, uint16_t langid)
 {
   (void) langid;
 
@@ -179,11 +156,6 @@ uint16_t const* tud_descriptor_string_cb(uint8_t index, uint16_t langid)
   return _desc_str;
 }
 
-
-//--------------------------------------------------------------------+
-// HID Descriptor
-//--------------------------------------------------------------------+
-
 const uint16_t string_desc_product[] = { // Index: 1
   16 | (3 << 8),
   'P', 'R', 'K', 'f', 'i', 'r', 'm'
@@ -195,14 +167,16 @@ bool raw_hid_report_received = false;
 bool observing_output_report = false;
 uint8_t keyboard_output_report = 0;
 
-uint8_t const *tud_hid_descriptor_report_cb(uint8_t instance) {
+uint8_t const *
+tud_hid_descriptor_report_cb(uint8_t instance) {
     return desc_hid_report;
 }
 uint16_t tud_hid_get_report_cb(uint8_t instance, uint8_t report_id, hid_report_type_t report_type, uint8_t* buffer, uint16_t reqlen) {
     return 0;
 }
 
-void tud_hid_set_report_cb(uint8_t instance, uint8_t report_id, hid_report_type_t report_type, uint8_t const* buffer, uint16_t bufsize) {
+void
+tud_hid_set_report_cb(uint8_t instance, uint8_t report_id, hid_report_type_t report_type, uint8_t const* buffer, uint16_t bufsize) {
   if (report_type == HID_REPORT_TYPE_INVALID) {
     report_id = buffer[0];
     buffer++;
@@ -229,38 +203,8 @@ void tud_hid_set_report_cb(uint8_t instance, uint8_t report_id, hid_report_type_
   }
 }
 
-void c_Keyboard_start_observing_output_report(mrb_vm *vm, mrb_value *v, int argc) {
-  observing_output_report = true;
-}
-void c_Keyboard_stop_observing_output_report(mrb_vm *vm, mrb_value *v, int argc) {
-  observing_output_report = false;
-}
-void c_Keyboard_output_report(mrb_vm *vm, mrb_value *v, int argc) {
-  SET_INT_RETURN(keyboard_output_report);
-}
-
-void c_raw_hid_report_received_q(mrb_vm *vm, mrb_value *v, int argc) {
-  if(raw_hid_report_received) {
-    SET_TRUE_RETURN();
-  } else {
-    SET_FALSE_RETURN();
-  }
-}
-
-void c_get_last_received_raw_hid_report(mrb_vm *vm, mrb_value *v, int argc) {
-  mrbc_value rb_val_array = mrbc_array_new(vm, REPORT_RAW_MAX_LEN);
-  mrbc_array *rb_array = rb_val_array.array;
-
-  rb_array->n_stored = raw_hid_last_received_report_length;
-  for(uint8_t i=0; i<raw_hid_last_received_report_length && i<REPORT_RAW_MAX_LEN; i++) {
-    mrbc_set_integer( (rb_array->data)+i, raw_hid_last_received_report[i] );
-  } 
-  raw_hid_report_received = false;
-
-  SET_RETURN(rb_val_array);
-}
-
-bool report_raw_hid(uint8_t* data, uint8_t len)
+bool
+report_raw_hid(uint8_t* data, uint8_t len)
 {
   bool ret;
   // Remote wakeup
@@ -277,11 +221,60 @@ bool report_raw_hid(uint8_t* data, uint8_t len)
   }
 }
 
-void c_report_raw_hid(mrb_vm *vm, mrb_value *v, int argc) {
+//--------------------------------------------------------------------+
+// Ruby methods
+//--------------------------------------------------------------------+
+
+void
+c_Keyboard_start_observing_output_report(mrb_vm *vm, mrb_value *v, int argc) {
+  observing_output_report = true;
+}
+
+void
+c_Keyboard_stop_observing_output_report(mrb_vm *vm, mrb_value *v, int argc) {
+  observing_output_report = false;
+}
+
+void
+c_Keyboard_output_report(mrb_vm *vm, mrb_value *v, int argc) {
+  SET_INT_RETURN(keyboard_output_report);
+}
+
+void
+c_raw_hid_report_received_q(mrb_vm *vm, mrb_value *v, int argc) {
+  if(raw_hid_report_received) {
+    SET_TRUE_RETURN();
+  } else {
+    SET_FALSE_RETURN();
+  }
+}
+
+void
+c_get_last_received_raw_hid_report(mrb_vm *vm, mrb_value *v, int argc) {
+  mrbc_value rb_val_array = mrbc_array_new(vm, REPORT_RAW_MAX_LEN);
+  mrbc_array *rb_array = rb_val_array.array;
+
+  rb_array->n_stored = raw_hid_last_received_report_length;
+  for(uint8_t i=0; i<raw_hid_last_received_report_length && i<REPORT_RAW_MAX_LEN; i++) {
+    mrbc_set_integer( (rb_array->data)+i, raw_hid_last_received_report[i] );
+  } 
+  raw_hid_report_received = false;
+
+  SET_RETURN(rb_val_array);
+}
+
+void
+c_tud_task(mrb_vm *vm, mrb_value *v, int argc)
+{
+  tud_task();
+}
+
+void
+c_report_raw_hid(mrb_vm *vm, mrb_value *v, int argc) {
   mrbc_array rb_ary = *( GET_ARY_ARG(1).array );
   uint8_t c_data[REPORT_RAW_MAX_LEN];
   uint8_t len = REPORT_RAW_MAX_LEN;
-  
+
   memset(c_data, 0, REPORT_RAW_MAX_LEN);
   if(GET_ARY_ARG(1).tt == MRBC_TT_ARRAY) {
     if(rb_ary.n_stored<len) {
@@ -299,78 +292,26 @@ void c_report_raw_hid(mrb_vm *vm, mrb_value *v, int argc) {
   }
 }
 
-static void
-send_hid_report(uint8_t report_id)
+void
+c_mouse_report_hid(mrb_vm *vm, mrb_value *v, int argc)
 {
-  if ( !tud_hid_ready() ) return;
-  switch(report_id)
-  {
-    case REPORT_ID_KEYBOARD:
-      /* Keyboard report was already sent in c_report_hid() */
-      break;
-    case REPORT_ID_MOUSE:
-      {
-        int8_t const delta = 0;
-        tud_hid_mouse_report(REPORT_ID_MOUSE, 0x00, delta, delta, 0, 0);
-      }
-      break;
-    case REPORT_ID_CONSUMER_CONTROL:
-      {
-        //uint16_t volume_down = HID_USAGE_CONSUMER_VOLUME_DECREMENT;
-        uint16_t empty = 0;
-        tud_hid_report(REPORT_ID_CONSUMER_CONTROL, &empty, 2);
-      }
-      break;
-    case REPORT_ID_GAMEPAD:
-      joystick_report();
-      break;
-    default: break;
-  }
+  int8_t const delta = 0;
+  tud_hid_mouse_report(REPORT_ID_MOUSE, 0x00, delta, delta, 0, 0);
 }
 
-// Invoked when sent REPORT successfully to host
-// Application can use this to send the next report
-// Note: For composite reports, report[0] is report ID
 void
-tud_hid_report_complete_cb(uint8_t instance, uint8_t const* report, uint8_t len)
+c_consumer_report_hid(mrb_vm *vm, mrb_value *v, int argc)
 {
-  (void) instance;
-  (void) len;
-  uint8_t next_report_id = report[0] + 1;
-  if (next_report_id < REPORT_ID_COUNT) {
-    send_hid_report(next_report_id);
-  }
-}
-
-//--------------------------------------------------------------------+
-// Ruby methods
-//--------------------------------------------------------------------+
-
-void
-c_tud_task(mrb_vm *vm, mrb_value *v, int argc)
-{
-  tud_task();
+  uint16_t empty = 0;
+  tud_hid_report(REPORT_ID_CONSUMER_CONTROL, &empty, 2);
 }
 
 void
 c_report_hid(mrb_vm *vm, mrb_value *v, int argc)
 {
-//  // Remote wakeup
-//  if (tud_suspended()) {
-//    // Wake up host if we are in suspend mode
-//    // and REMOTE_WAKEUP feature is enabled by host
-//    tud_remote_wakeup();
-//  }
-
   uint8_t modifier = GET_INT_ARG(1);
   uint8_t *keycodes = GET_STRING_ARG(2);
-
-  /*------------- Keyboard -------------*/
   tud_hid_keyboard_report(REPORT_ID_KEYBOARD, modifier, keycodes);
-  /*
-   * The rest of reports are going to be invoked in send_hid_report()
-   * that is invoked by tud_hid_report_complete_cb()
-   */
 }
 
 void
