@@ -1,5 +1,10 @@
 # Change log
 
+## 0.9.15 on 2022/06/xx
+
+### Joystick🕹
+- See [wiki/VIA and Remap](https://github.com/picoruby/prk_firmware/wiki/Joystick)
+
 ## 0.9.14 on 2022/05/21
 
 ### VIA! VIA!! VIA!!! 🙌
