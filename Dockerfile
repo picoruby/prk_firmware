@@ -1,6 +1,8 @@
-# Usage:
+# Quick usage:
 # - Setup:
 #   docker build . -t prk
+#   - If you work on an Arm architecture including M1 Mac, try the following instead:
+#     docker build --platform amd64 . -t prk
 # - Build:
 #   docker run --rm -v $PWD:/prk_firmware prk rake
 # - Clean built:
@@ -9,6 +11,9 @@
 #   docker run --rm -v $PWD:/prk_firmware prk rake build_with_keymap[prk_meishi2]
 # - Clean built with keymap:
 #   docker run --rm -v $PWD:/prk_firmware prk rake clean_with_keymap[prk_meishi2]
+#
+# Document:
+# https://github.com/picoruby/prk_firmware/wiki/Building-a-binary
 
 FROM ruby:3.0.1-slim AS build
 
