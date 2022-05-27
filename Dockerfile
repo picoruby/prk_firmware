@@ -1,21 +1,7 @@
-# Quick usage:
-# - Setup:
-#   docker build . -t prk
-#   - If you work on an Arm architecture including M1 Mac, try the following instead:
-#     docker build --platform amd64 . -t prk
-# - Build:
-#   docker run --rm -v $PWD:/prk_firmware prk rake
-# - Clean built:
-#   docker run --rm -v $PWD:/prk_firmware prk clean
-# - Build with keymap:
-#   docker run --rm -v $PWD:/prk_firmware prk rake build_with_keymap[prk_meishi2]
-# - Clean built with keymap:
-#   docker run --rm -v $PWD:/prk_firmware prk rake clean_with_keymap[prk_meishi2]
-#
 # Document:
-# https://github.com/picoruby/prk_firmware/wiki/Building-a-binary
+# https://github.com/picoruby/prk_firmware/wiki/Docker
 
-FROM ruby:3.0.1-slim AS build
+FROM --platform=amd64 ruby:3.1.2-slim AS build
 
 RUN apt-get update && apt-get install --no-install-recommends -y \
   cmake \
@@ -28,8 +14,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
   make \
   g++ \
   zip \
-  python3 \
-  ruby
+  python3
 
 RUN git clone --recursive https://github.com/raspberrypi/pico-sdk.git
 ENV PICO_SDK_PATH "/pico-sdk"
