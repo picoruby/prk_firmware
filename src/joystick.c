@@ -16,6 +16,9 @@
 static int8_t axes[MAX_ADC_COUNT] = {-1,-1,-1,-1};
 static uint8_t adc_offset[MAX_ADC_COUNT] = {0,0,0,0};
 
+#define MAGNIFY_BASE 1.0
+static float sensitivity[MAX_ADC_COUNT] = {-1.0,-1.0,-1.0,-1.0};
+
 static int8_t drift_suppression = 5;
 static int8_t drift_suppression_minus = -5;
 
@@ -48,6 +51,14 @@ c_Joystick_reset_axes(mrb_vm *vm, mrb_value *v, int argc)
 }
 
 void
+c_Joystick_init_sensitivity(mrb_vm *vm, mrb_value *v, int argc)
+{
+  int8_t adc_ch = GET_INT_ARG(1);
+  float val = GET_FLOAT_ARG(2);
+  sensitivity[adc_ch] = val * MAGNIFY_BASE;
+}
+
+void
 c_Joystick_init_axis_offset(mrb_vm *vm, mrb_value *v, int argc)
 {
   char *axis = GET_STRING_ARG(1);
@@ -73,7 +84,7 @@ c_Joystick_init_axis_offset(mrb_vm *vm, mrb_value *v, int argc)
   } else if (strcmp(axis, "ry") == 0) {
     axes[adc_ch] = AXIS_INDEX_RY;
   } else {
-    console_printf("Invalid analog stick: %s\n", axis);
+    console_printf("Invalid axis: %s\n", axis);
     SET_FALSE_RETURN();
     return;
   }
@@ -92,7 +103,7 @@ c_Joystick_report_hid(mrb_vm *vm, mrb_value *v, int argc) {
   for (int ch = 0; ch < MAX_ADC_COUNT; ch++) {
     if (axes[ch] > -1) {
       adc_select_input(ch);
-      value = (adc_read() >> 4) - adc_offset[ch];
+      value = (int16_t)(((adc_read() >> 4) - adc_offset[ch]) * sensitivity[ch]);
       if ((value < drift_suppression_minus) || (drift_suppression < value)) {
         if (value < -128) {
           value = -128;

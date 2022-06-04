@@ -9,6 +9,7 @@ void c_Joystick_reset_axes(mrb_vm *vm, mrb_value *v, int argc);
 void c_Joystick_init_axis_offset(mrb_vm *vm, mrb_value *v, int argc);
 void c_Joystick_report_hid(mrb_vm *vm, mrb_value *v, int argc);
 void c_Joystick_drift_suppression_eq(mrb_vm *vm, mrb_value *v, int argc);
+void c_Joystick_init_sensitivity(mrb_vm *vm, mrb_value *v, int argc);
 
 #define JOYSTICK_INIT() do { \
   adc_init(); \
@@ -17,5 +18,6 @@ void c_Joystick_drift_suppression_eq(mrb_vm *vm, mrb_value *v, int argc);
   mrbc_define_method(0, mrbc_class_Joystick, "init_axis_offset",    c_Joystick_init_axis_offset); \
   mrbc_define_method(0, mrbc_class_Joystick, "report_hid",          c_Joystick_report_hid); \
   mrbc_define_method(0, mrbc_class_Joystick, "drift_suppression=",  c_Joystick_drift_suppression_eq); \
+  mrbc_define_method(0, mrbc_class_Joystick, "init_sensitivity",    c_Joystick_init_sensitivity); \
 } while (0)
 
