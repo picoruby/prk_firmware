@@ -1,0 +1,9 @@
+services:
+  prk:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    stdin_open: true
+    tty: true
+    volumes:
+      - .:/prk_firmware
