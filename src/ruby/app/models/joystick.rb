@@ -3,7 +3,7 @@ class Joystick
   # > input channel. 0...3 are GPIOs 26...29 respectively
   VALID_PINS = [26, 27, 28, 29]
 
-  def initialize(axes)
+  def initialize(axes = {})
     reset_axes
     axes.each do |axis, params|
       pin = params[:pin]
