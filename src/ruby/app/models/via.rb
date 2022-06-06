@@ -248,15 +248,13 @@ class VIA
     @layer_count.times do |i|
       layer_name = init ? nil : via_get_layer_name(i)
       layer = @kbd.get_layer(layer_name, i)
-      
       if layer
         via_map = []
         layer.each_with_index do |rows, row|
           via_map[row] = []
           rows.each_with_index do |cell, col|
             keycode = cell ? prk_keycode_into_via_keycode(cell) : 0
-            
-            if @kbd.split && @kbd.split_style == Keyboard::RIGHT_SIDE_FLIPPED_SPLIT && ( col > cols_size / 2 - 1 )
+            if @kbd.split && @kbd.split_style == :right_side_flipped_split && ( col > cols_size / 2 - 1 )
               via_map[row][cols_size - 1 - col + cols_size / 2] = keycode
             else
               via_map[row][col] = keycode
