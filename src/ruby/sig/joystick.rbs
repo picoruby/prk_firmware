@@ -3,9 +3,9 @@ class Joystick
 
   type init_axis_type = :x | :y | :z | :rx | :ry | :rz
   type init_param_type = {
-                           invert: bool,
-                           magnify: Integer | Float,
-                           pin: Integer
+                           invert: bool?,
+                           magnify: Integer? | Float?,
+                           pin: Integer?
                          }
 
   def initialize: (Hash[init_axis_type, init_param_type]) -> void
