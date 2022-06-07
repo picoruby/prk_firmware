@@ -1,0 +1,3 @@
+class Microcontroller
+  def self.reset_usb_boot: () -> void
+end

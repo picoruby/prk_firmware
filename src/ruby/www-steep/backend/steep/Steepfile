@@ -1,0 +1,4 @@
+target :lib do
+  signature "sig"
+  check "keymap.rb"
+end

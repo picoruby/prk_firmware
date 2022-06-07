@@ -1,0 +1,16 @@
+{
+  "name": "prk-www-steep",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "serverless": "^3.17.0",
+    "serverless-offline": "^8.8.0",
+    "serverless-ruby-layer": "^1.6.0"
+  }
+}

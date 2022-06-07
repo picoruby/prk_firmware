@@ -1,0 +1,40 @@
+namespace :backend do
+
+  desc "Run offline backend on port 4000"
+  task :offline do
+    FileUtils.cd "backend" do
+      sh "serverless offline"
+    end
+  end
+
+  desc "Release backend to AWS"
+  task :release do
+    FileUtils.cd "backend" do
+      sh "serverless deploy --stage prod"
+    end
+  end
+end
+
+namespace :frontend do
+
+  desc "Recompile frontend/app.rb"
+  task :ifchanged do
+    FileUtils.cd "frontend" do
+      sh <<~CMD
+        bundle exec ifchanged ./app.rb \
+        --do 'bundle exec opal -c -g ovto app.rb > app.js'
+      CMD
+    end
+  end
+
+  desc "Release frontend to AWS"
+  task :release do
+  end
+
+  desc "Run offline frontend on port 8000"
+  task :offline do
+    FileUtils.cd "frontend" do
+      sh "ruby -run -e httpd . -p 8000"
+    end
+  end
+end

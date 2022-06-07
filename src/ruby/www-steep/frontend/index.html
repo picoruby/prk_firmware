@@ -1,0 +1,89 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <script type='text/javascript' src='app.js'></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.13.0/css/all.min.css" rel="stylesheet" />
+    <style>
+        .accordion-content {
+        transition: max-height 0.3s ease-out, padding 0.3s ease;
+        }
+    </style>
+  </head>
+
+  <body>
+    <div class="px-10 pt-4">
+      <h3 class="text-lg font-medium text-gray-800">PRK Firmware <span class="italic text-red-600">keymap.rb</span> checker</h3>
+
+      <div class="h-1 w-full mx-auto border-b my-5"></div>
+
+      <div class="transition hover:bg-indigo-50">
+        <!-- header -->
+        <div class="accordion-header cursor-pointer transition flex space-x-5 px-5 items-center h-16">
+          <i class="fas fa-plus"></i>
+          <h3>Usage</h3>
+        </div>
+        <!-- Content -->
+        <div class="accordion-content px-5 pt-0 overflow-hidden max-h-0">
+          <p class="leading-6 font-light pl-9 pb-6 text-justify">
+          Paste the content of keymap.rb into the textarea below then press "Check" button.
+          If you got some error, fix the keymap.rb until you get "No type error detected."
+          <br>
+          Note that this tool only checks Ruby syntax and static typing defined in PRK Firmware.
+          Even if this tool does not find any errors, it does not mean that your keymap.rb must work.
+          </p>
+        </div>
+      </div>
+
+      <div class="transition hover:bg-indigo-50">
+        <!-- header -->
+        <div class="accordion-header cursor-pointer transition flex space-x-5 px-5 items-center h-16">
+          <i class="fas fa-plus"></i>
+          <h3>If you couldn't resolve the error?</h3>
+        </div>
+        <!-- Content -->
+        <div class="accordion-content px-5 pt-0 overflow-hidden max-h-0">
+          <p class="leading-6 font-light pl-9 pb-6 text-justify">
+          Read the
+          <a href="https://github.com/picoruby/prk_firmware/wiki" target="_blank" class="text-sky-700 no-underline hover:underline">wiki pages</a>
+          of PRK Firmware and search the
+          <a href="https://github.com/picoruby/prk_firmware/issues" target="_blank" class="text-sky-700 no-underline hover:underline">issues page</a>
+          for related conversations.<br>
+          If you still don't figure out the cause, create a gist in your GitHub account that contains your keymap.rb and the whole of the error message then make a new issue.
+          </p>
+        </div>
+      </div>
+
+    </div>
+
+    <div id='ovto'></div>
+    <div id='ovto-debug'></div>
+
+    <script>
+        const accordionHeader = document.querySelectorAll(".accordion-header");
+        accordionHeader.forEach((header) => {
+        header.addEventListener("click", function () {
+            const accordionContent = header.parentElement.querySelector(".accordion-content");
+            let accordionMaxHeight = accordionContent.style.maxHeight;
+
+            // Condition handling
+            if (accordionMaxHeight == "0px" || accordionMaxHeight.length == 0) {
+            accordionContent.style.maxHeight = `${accordionContent.scrollHeight + 32}px`;
+            header.querySelector(".fas").classList.remove("fa-plus");
+            header.querySelector(".fas").classList.add("fa-minus");
+            header.parentElement.classList.add("bg-indigo-50");
+            } else {
+            accordionContent.style.maxHeight = `0px`;
+            header.querySelector(".fas").classList.add("fa-plus");
+            header.querySelector(".fas").classList.remove("fa-minus");
+            header.parentElement.classList.remove("bg-indigo-50");
+            }
+        });
+        });
+    </script>
+  </body>
+</html>
+

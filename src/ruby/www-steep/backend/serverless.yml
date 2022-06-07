@@ -1,0 +1,55 @@
+service: aurora-data-api-example
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: ruby2.7
+  stage: ${opt:stage, self:custom.defaultStage}
+  endpointType: REGIONAL
+  region: ap-northeast-1
+  environment:
+    STAGE: ${sls:stage}
+    TZ: Asia/Tokyo
+  iam:
+    role:
+      statements:
+        - Effect: "Allow"
+          Action: lambda:InvokeFunction
+          Resource:
+            - !Join
+              - ""
+              - - "arn:aws:lambda:${self:provider.region}:"
+                - !Ref AWS::AccountId
+                - ":function:"
+                - "*"
+  logs:
+    restApi:
+      accessLogging: true
+      format: '{"requestId":"$context.requestId","ip":"$context.identity.sourceIp","requestTime":"$context.requestTime","httpMethod":"$context.httpMethod","routeKey":"$context.routeKey","status":"$context.status","protocol":"$context.protocol","responseLength":"$context.responseLength","errorMessage":"$context.integrationErrorMessage"}'
+      executionLogging: true
+      level: INFO
+      fullExecutionData: true
+
+plugins:
+  - serverless-offline
+  - serverless-ruby-layer
+
+custom:
+  defaultStage: offline
+  serverless-offline:
+    httpPort: 4000
+
+functions:
+  hello:
+    handler: app/handler.hello
+    events:
+      - http:
+          path: hello
+          method: get
+  steep:
+    handler: app/handler.steep
+    events:
+      - http:
+          path: steep
+          method: post
