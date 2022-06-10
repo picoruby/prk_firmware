@@ -8,9 +8,15 @@ namespace :backend do
   end
 
   desc "Release backend to AWS"
-  task :release do
+  task :release, ['aws_profile'] => :copy_rbs do |_t, args|
     FileUtils.cd "backend" do
-      sh "serverless deploy --stage prod"
+      sh "serverless deploy --stage prod --aws-profile #{args.aws_profile}"
+    end
+  end
+
+  task :copy_rbs do
+    Dir.glob("../sig/*.rbs") do |src|
+      FileUtils.cp src, "backend/steep/sig/"
     end
   end
 end

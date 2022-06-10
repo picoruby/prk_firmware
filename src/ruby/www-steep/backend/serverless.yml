@@ -1,4 +1,4 @@
-service: aurora-data-api-example
+service: prk-firmware-keymap-checker
 
 frameworkVersion: '3'
 
@@ -34,22 +34,26 @@ provider:
 plugins:
   - serverless-offline
   - serverless-ruby-layer
+  - serverless-api-gateway-throttling
 
 custom:
   defaultStage: offline
   serverless-offline:
     httpPort: 4000
+  apiGatewayThrottling:
+    maxRequestsPerSecond: 10
+    maxConcurrentRequests: 5
 
 functions:
-  hello:
-    handler: app/handler.hello
-    events:
-      - http:
-          path: hello
-          method: get
   steep:
     handler: app/handler.steep
+    memorySize: 1024
+    timeout: 15
     events:
       - http:
           path: steep
           method: post
+          cors: true
+          throttling:
+            maxRequestsPerSecond: 10
+            maxConcurrentRequests: 5

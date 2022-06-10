@@ -10,6 +10,7 @@
   "license": "ISC",
   "devDependencies": {
     "serverless": "^3.17.0",
+    "serverless-api-gateway-throttling": "^2.0.1",
     "serverless-offline": "^8.8.0",
     "serverless-ruby-layer": "^1.6.0"
   }
