@@ -1,7 +1,7 @@
 class RGB
  def initialize(pin, underglow_size, backlight_size, is_rgbw = false)
     puts "Initializing RGB."
-    @offed = true
+    turn_off
     @fifo = Array.new
     # TODO: @underglow_size, @backlight_size
     @pixel_size = underglow_size + backlight_size
@@ -47,10 +47,11 @@ class RGB
   EFFECTS = %i|swirl rainbow_mood breath nokogiri static|
 
   def effect=(name)
-    @offed = true
+    turn_off
     @effect = name
     init_values
     reset_pixel
+    turn_on
   end
 
   def reset_pixel
@@ -68,6 +69,9 @@ class RGB
     when :breathing
       puts "[WARN] :breathing is deprecated. Use :rainbow_mood instead"
     end
+  end
+
+  def turn_on
     @offed = false
   end
 

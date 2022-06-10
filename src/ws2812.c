@@ -15,7 +15,7 @@ static uint sm = 0;
 
 #define MAX_PIXEL_SIZE 150
 
-static int32_t pixels[MAX_PIXEL_SIZE + 1];
+static int32_t pixels[MAX_PIXEL_SIZE + 1] = {};
 static int32_t dma_ws2812_grb_pixels[MAX_PIXEL_SIZE];
 static int dma_ws2812_channel;
 static uint8_t dma_ws2812_last_append_index = 0;

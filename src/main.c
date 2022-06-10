@@ -189,7 +189,7 @@ int autoreload_state; /* from msc_disk.h */
 #define NODE_BOX_SIZE 50
 #endif
 
-mrbc_tcb *tcb_keymap;
+static mrbc_tcb *tcb_keymap;
 
 #define KEYMAP_PREFIX      "puts;" /* Somehow scapegoat... */
 #define KEYMAP_PREFIX_SIZE (sizeof(KEYMAP_PREFIX) - 1)
@@ -310,6 +310,7 @@ typedef struct picogems {
   void (*initializer)(void);
   const uint8_t *mrb;
   const uint8_t *task;
+  mrbc_tcb *tcb;
   bool required;
 } picogems;
 
@@ -326,44 +327,67 @@ init_RGB(void)
 }
 
 picogems gems[] = {
-  {"keyboard",       NULL,               keyboard,       NULL,     false},
-  {"debounce",       NULL,               debounce,       NULL,     false},
-  {"rotary_encoder", init_RotaryEncoder, rotary_encoder, NULL,     false},
-  {"rgb",            init_RGB,           rgb,            rgb_task, false},
-  {"via",            NULL,               via,            NULL,     false},
-  {NULL, NULL, NULL, NULL, false}
+  {"keyboard",       NULL,               keyboard,       NULL,     NULL, false},
+  {"debounce",       NULL,               debounce,       NULL,     NULL, false},
+  {"rotary_encoder", init_RotaryEncoder, rotary_encoder, NULL,     NULL, false},
+  {"rgb",            init_RGB,           rgb,            rgb_task, NULL, false},
+  {"via",            NULL,               via,            NULL,     NULL, false},
+  {NULL,             NULL,               NULL,           NULL,     NULL, false}
 };
+
+int
+gem_index(const char *name)
+{
+  int i;
+  if (!name) return -1;
+  for (int i = 0; ; i++) {
+    if (gems[i].name == NULL) {
+      console_printf("cannot find such gem -- %s\n (LoadError)", name);
+      return -1;
+    } else if (strcmp(name, gems[i].name) == 0) {
+      return i;
+      break;
+    }
+  }
+}
+
+void
+c_resume_task(mrb_vm *vm, mrb_value *v, int argc)
+{
+  int i = gem_index(GET_STRING_ARG(1));
+  if (i < 0) {
+    SET_FALSE_RETURN();
+  } else {
+    mrbc_resume_task(gems[i].tcb);
+    SET_TRUE_RETURN();
+  }
+}
 
 void
 c_require(mrb_vm *vm, mrb_value *v, int argc)
 {
-  char *name = GET_STRING_ARG(1);
-  bool result = false;
-  if (!name) return;
-  for (int i = 0; ; i++) {
-    if (gems[i].name == NULL) {
-      console_printf("cannot load such mrb -- %s\n (LoadError)", name);
-      break;
-    } else if (strcmp(name, gems[i].name) == 0) {
-      if (!gems[i].required) {
-        if (gems[i].initializer) gems[i].initializer();
-        if (mrbc_load_model(gems[i].mrb)) {
-          if (gems[i].task) {
-            if (mrbc_create_task(gems[i].task, 0) != NULL) {
-              console_printf("failed to create task\n (LoadError)", name);
-              result = false; /* ToDo: Exception */
-            }
-          }
-          gems[i].required = true;
-        } else {
-          console_printf("failed to load mrb -- %s\n (LoadError)", name);
-          result = false; /* ToDo: Exception */
-        }
+  const char *name = GET_STRING_ARG(1);
+  int i = gem_index(name);
+  SET_FALSE_RETURN();
+  if (i < 0) return;
+  if (gems[i].required) return;
+  if (gems[i].initializer) gems[i].initializer();
+  if (mrbc_load_model(gems[i].mrb)) {
+    if (gems[i].task) {
+      gems[i].tcb = mrbc_create_task(gems[i].task, 0);
+      if (gems[i].tcb == NULL) {
+        console_printf("failed to create task\n (LoadError)", name);
+        /* ToDo: Exception */
+      } else {
+        mrbc_suspend_task(gems[i].tcb);
       }
-      break;
     }
+    gems[i].required = true;
+    SET_TRUE_RETURN();
+  } else {
+    console_printf("failed to load mrb -- %s\n (LoadError)", name);
+    /* ToDo: Exception */
   }
-  if (result) { SET_TRUE_RETURN(); } else { SET_FALSE_RETURN(); }
 }
 
 int loglevel;
@@ -408,6 +432,7 @@ int main() {
   mrbc_define_method(0, mrbc_class_object, "reload_keymap",     c_reload_keymap);
   mrbc_define_method(0, mrbc_class_object, "suspend_keymap",    c_suspend_keymap);
   mrbc_define_method(0, mrbc_class_object, "resume_keymap",     c_resume_keymap);
+  mrbc_define_method(0, mrbc_class_object, "resume_task",       c_resume_task);
 #endif
   autoreload_state = AUTORELOAD_READY;
   mrbc_run();

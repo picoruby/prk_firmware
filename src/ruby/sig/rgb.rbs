@@ -35,6 +35,7 @@ class RGB
   def initialize: (Integer pin, Integer underglow_size, Integer backlight_size, ?bool is_rgbw) -> void
   def init_values: () -> void
   def turn_off: () -> void
+  def turn_on: () -> void
   def toggle: () -> void
   def effect=: (Symbol) -> void
   def hue=: (Integer) -> void
