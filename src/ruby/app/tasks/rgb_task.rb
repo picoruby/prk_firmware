@@ -1,13 +1,10 @@
-while !$mutex
-  relinquish
-end
+puts "RGB task started."
 
-
-puts "Starting rgb task ..."
+3.times { sleep 1 }
 
 while true
   unless $rgb
-    sleep 1
+    sleep 10
   else
     $rgb.show
   end

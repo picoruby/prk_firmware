@@ -975,6 +975,7 @@ class Keyboard
     end
 
     @via.start! if @via
+    resume_task("rgb") if $rgb
 
     @keycodes = Array.new
     prev_layer = :default
