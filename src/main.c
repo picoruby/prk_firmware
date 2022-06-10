@@ -335,58 +335,58 @@ picogems gems[] = {
   {NULL,             NULL,               NULL,           NULL,     NULL, false}
 };
 
-void
-c_resume_task(mrb_vm *vm, mrb_value *v, int argc)
+int
+gem_index(const char *name)
 {
-  char *name = GET_STRING_ARG(1);
-  SET_FALSE_RETURN();
-  if (!name) return;
+  int i;
+  if (!name) return -1;
   for (int i = 0; ; i++) {
     if (gems[i].name == NULL) {
-      console_printf("cannot load such gem -- %s\n (LoadError)", name);
-      break;
+      console_printf("cannot find such gem -- %s\n (LoadError)", name);
+      return -1;
     } else if (strcmp(name, gems[i].name) == 0) {
-      mrbc_resume_task(gems[i].tcb);
-      SET_TRUE_RETURN();
+      return i;
       break;
     }
   }
 }
 
 void
+c_resume_task(mrb_vm *vm, mrb_value *v, int argc)
+{
+  int i = gem_index(GET_STRING_ARG(1));
+  if (i < 0) {
+    SET_FALSE_RETURN();
+  } else {
+    mrbc_resume_task(gems[i].tcb);
+    SET_TRUE_RETURN();
+  }
+}
+
+void
 c_require(mrb_vm *vm, mrb_value *v, int argc)
 {
-  char *name = GET_STRING_ARG(1);
+  const char *name = GET_STRING_ARG(1);
+  int i = gem_index(name);
   SET_FALSE_RETURN();
-  if (!name) return;
-  for (int i = 0; ; i++) {
-    if (gems[i].name == NULL) {
-      console_printf("cannot load such gem -- %s\n (LoadError)", name);
-      break;
-    } else if (strcmp(name, gems[i].name) == 0) {
-      if (!gems[i].required) {
-        if (gems[i].initializer) gems[i].initializer();
-        if (mrbc_load_model(gems[i].mrb)) {
-          if (gems[i].task) {
-            gems[i].tcb = mrbc_create_task(gems[i].task, 0);
-            if (gems[i].tcb == NULL) {
-              console_printf("failed to create task\n (LoadError)", name);
-              /* ToDo: Exception */
-              break;
-            } else {
-              mrbc_suspend_task(gems[i].tcb);
-            }
-          }
-          gems[i].required = true;
-          SET_TRUE_RETURN();
-        } else {
-          console_printf("failed to load mrb -- %s\n (LoadError)", name);
-          /* ToDo: Exception */
-          break;
-        }
+  if (i < 0) return;
+  if (gems[i].required) return;
+  if (gems[i].initializer) gems[i].initializer();
+  if (mrbc_load_model(gems[i].mrb)) {
+    if (gems[i].task) {
+      gems[i].tcb = mrbc_create_task(gems[i].task, 0);
+      if (gems[i].tcb == NULL) {
+        console_printf("failed to create task\n (LoadError)", name);
+        /* ToDo: Exception */
+      } else {
+        mrbc_suspend_task(gems[i].tcb);
       }
-      break;
     }
+    gems[i].required = true;
+    SET_TRUE_RETURN();
+  } else {
+    console_printf("failed to load mrb -- %s\n (LoadError)", name);
+    /* ToDo: Exception */
   }
 }
 
