@@ -237,6 +237,14 @@ class Keyboard
     RGB_SPD:          0x10d
   }
 
+end
+
+#
+# Keyboard class have to be split to avoid unexpected behavior of the compiler
+#
+
+class Keyboard
+
   letter = [
     nil,nil,nil,nil,
     'a', # 0x04
@@ -430,10 +438,7 @@ class Keyboard
   letter = nil
 end
 
-#
-# Keyboard class have to be defined twice to avoid "too big operand" error of mrbc
-# It seems `b` operand of OP_LOADSYM will be more than 0xFFFF if the class is united
-#
+# Keyboard class have to be split to avoid unexpected behavior of the compiler
 
 class Keyboard
 
