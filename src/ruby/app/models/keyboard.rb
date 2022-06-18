@@ -601,6 +601,7 @@ class Keyboard
     puts "Initializing GPIO."
     init_uart
     @cols_size = 0
+    @rows_size = matrix.size
     @matrix = Hash.new
     matrix.each do |cols|
       @cols_size = [cols.size, @cols_size].max.to_i
