@@ -49,7 +49,7 @@ add_executable(${PROJECT}
   src/uart.c
   src/ws2812.c
   src/rotary_encoder.c
-  lib/picoruby/mrbgems/mruby-bin-picoirb/tools/picoirb/sandbox.c
+  lib/picoruby/build/repos/host/mruby-bin-picoirb/tools/picoirb/sandbox.c
 )
 
 pico_generate_pio_header(${PROJECT} ${CMAKE_CURRENT_LIST_DIR}/src/uart_tx.pio)
@@ -119,9 +119,9 @@ target_link_libraries(${PROJECT}
 include_directories(${PROJECT} PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}
   ${CMAKE_CURRENT_LIST_DIR}/include
-  ${CMAKE_CURRENT_LIST_DIR}/lib/picoruby/mrbgems/mruby-bin-picoirb/tools/picoirb
-  ${CMAKE_CURRENT_LIST_DIR}/lib/picoruby/mrbgems/mruby-pico-compiler/include
-  ${CMAKE_CURRENT_LIST_DIR}/lib/picoruby/mrbgems/mruby-mrubyc/repos/mrubyc/src
+  ${CMAKE_CURRENT_LIST_DIR}/lib/picoruby/build/repos/host/mruby-bin-picoirb/tools/picoirb
+  ${CMAKE_CURRENT_LIST_DIR}/lib/picoruby/build/repos/host/mruby-pico-compiler/include
+  ${CMAKE_CURRENT_LIST_DIR}/lib/picoruby/build/repos/host/mruby-mrubyc/repos/mrubyc/src
 )
 
 # create map/bin/hex/uf2 file in addition to ELF.
