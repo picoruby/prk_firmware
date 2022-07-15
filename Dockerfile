@@ -16,7 +16,8 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
   zip \
   python3
 
-RUN git clone --recursive https://github.com/raspberrypi/pico-sdk.git
+RUN git clone https://github.com/raspberrypi/pico-sdk.git
+RUN cd /pico-sdk/lib && git submodule update --init ./
 ENV PICO_SDK_PATH "/pico-sdk"
 
 ENV PRK_HOME /prk_firmware
