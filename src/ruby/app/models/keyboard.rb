@@ -459,6 +459,7 @@ class Keyboard
     @mode_keys = Hash.new
     @switches = Array.new
     @layer_names = Array.new
+    @default_layer = :default
     @layer = :default
     @split = false
     @split_style = STANDARD_SPLIT
@@ -479,7 +480,7 @@ class Keyboard
     @sandbox.resume
   end
 
-  attr_accessor :split, :uart_pin
+  attr_accessor :split, :uart_pin, :default_layer
   attr_reader :layer, :split_style, :sandbox, :cols_size, :rows_size
 
   def bootsel!
@@ -984,7 +985,7 @@ class Keyboard
     resume_task("rgb") if $rgb
 
     @keycodes = Array.new
-    prev_layer = :default
+    prev_layer = @default_layer
     modifier_switch_positions = Array.new
     rgb_message = 0
     earlier_report_size = 0
@@ -1085,7 +1086,7 @@ class Keyboard
               end
               mode_key[:released_at] = now
               @layer = prev_layer
-              prev_layer = :default
+              prev_layer = @default_layer
             when :pushed_interrupted, :pushed_then_released_then_pushed
               mode_key[:prev_state] = :released
             when :pushed_then_released
@@ -1097,7 +1098,7 @@ class Keyboard
         end
 
         if @layer != desired_layer
-          prev_layer = @layer if prev_layer != :default
+          prev_layer = @layer if prev_layer != @default_layer
           @layer = desired_layer
         end
 
@@ -1176,7 +1177,7 @@ class Keyboard
           # @type ivar @locked_layer: Symbol
           @layer = @locked_layer
         elsif @switches.empty?
-          @layer = :default
+          @layer = @default_layer
         end
       else
         # Partner
