@@ -456,7 +456,6 @@ class Keyboard
     @mode_keys = Hash.new
     @switches = Array.new
     @layer_names = Array.new
-    @default_layer = :default
     @layer = :default
     @split = false
     @split_style = :standard_split
@@ -671,6 +670,8 @@ class Keyboard
   # Result
   #   layer: { default:      [ [ -0x04, -0x05, 0b00000001, :MACRO_1 ],... ] }
   def add_layer(name, map)
+    # The name that is added at first is going to be the default name
+    @default_layer ||= name
     new_map = Array.new
     new_map[0] = Array.new
     row_index = 0
