@@ -442,9 +442,6 @@ end
 
 class Keyboard
 
-  STANDARD_SPLIT = :standard_split
-  RIGHT_SIDE_FLIPPED_SPLIT = :right_side_flipped_split
-
   def initialize
     puts "Initializing Keyboard."
     # mruby/c VM doesn't work with a CONSTANT to make another CONSTANT
@@ -462,7 +459,7 @@ class Keyboard
     @default_layer = :default
     @layer = :default
     @split = false
-    @split_style = STANDARD_SPLIT
+    @split_style = :standard_split
     @anchor = true
     @anchor_left = true # so-called "master left"
     @uart_pin = 1
@@ -500,10 +497,6 @@ class Keyboard
       DebouncePerRow.new
     when :per_key
       DebouncePerKey.new
-    else
-      puts "Error: Unknown debouncer type :#{type}."
-      puts "Using :none instead."
-      DebounceNone.new
     end
   end
 
@@ -526,12 +519,12 @@ class Keyboard
 
   # TODO: OLED, SDCard
   def append(feature)
-    case feature.class
-    when RGB
+    case feature.class.to_s
+    when "RGB"
       # @type var feature: RGB
       $rgb = feature
       $rgb.anchor = @anchor
-    when RotaryEncoder
+    when "RotaryEncoder"
       # @type var feature: RotaryEncoder
       if @split
         feature.create_keycodes(@partner_encoders.size)
@@ -553,6 +546,13 @@ class Keyboard
         feature.init_pins
         @encoders << feature
       end
+    when "VIA"
+      # @type var feature: VIA
+      feature.kbd = self
+      @via = feature
+    when "Joystick"
+      # @type var feature: Joystick
+      @joystick = feature
     end
   end
 
@@ -563,11 +563,11 @@ class Keyboard
 
   def split_style=(style)
     case style
-    when STANDARD_SPLIT, RIGHT_SIDE_FLIPPED_SPLIT
+    when :standard_split, :right_side_flipped_split
       @split_style = style
     else
       # NOTE: fall back
-      @split_style = STANDARD_SPLIT
+      @split_style = :standard_split
     end
   end
 
@@ -580,8 +580,6 @@ class Keyboard
         puts "Warning: Scan mode :direct won't work with :per_row debouncer."
       end
       @scan_mode = mode
-    else
-      puts 'Scan mode only support :matrix and :direct. (default: :matrix)'
     end
   end
 
@@ -659,9 +657,9 @@ class Keyboard
     col2 = if col < @cols_size
       col
     else
-      if @split_style == RIGHT_SIDE_FLIPPED_SPLIT
+      if @split_style == :right_side_flipped_split
         col - @cols_size
-      else # STANDARD_SPLIT
+      else # :standard_split
         (col - @cols_size + 1) * -1 + @cols_size
       end
     end
@@ -742,11 +740,7 @@ class Keyboard
   def calculate_col_position(col_index)
     return col_index unless @split
     case @split_style
-    # `when STANDARD_SPLIT` can be deleted after fixing a picoruby's bug
-    #   https://github.com/picoruby/picoruby/issues/74
-    when STANDARD_SPLIT
-      col_index
-    when RIGHT_SIDE_FLIPPED_SPLIT
+    when :right_side_flipped_split
       if col_index < @cols_size
         col_index
       else
@@ -774,6 +768,23 @@ class Keyboard
       MOD_KEYCODE[key]
     elsif KEYCODE_RGB[key]
       KEYCODE_RGB[key]
+    elsif key.to_s[0, 9] == "JS_BUTTON"
+      # JS_BUTTON0 - JS_BUTTON31
+      # You need to `require "joystick"`
+      key.to_s[9, 10].to_i + 0x200
+    elsif key.to_s[0, 7] == "JS_HAT_"
+      case key
+      when :JS_HAT_RIGHT
+        0b0001 + 0x300
+      when :JS_HAT_UP
+        0b0010 + 0x300
+      when :JS_HAT_DOWN
+        0b0100 + 0x300
+      when :JS_HAT_LEFT
+        0b1000 + 0x300
+      else
+        0 #== :KC_NO
+      end
     else
       key
     end
@@ -999,6 +1010,8 @@ class Keyboard
 
       @switches.clear
       @modifier = 0
+      joystick_hat = 0
+      joystick_buttons = 0
 
       @scan_mode == :matrix ? scan_matrix! : scan_direct!
 
@@ -1112,7 +1125,11 @@ class Keyboard
             @modifier |= 0b00100000
           elsif keycode < 0 # Normal keys
             @keycodes << (keycode * -1).chr
-          elsif keycode > 0x100
+          elsif keycode > 0x300 # Joystick hat
+            joystick_hat |= (keycode - 0x300)
+          elsif keycode >= 0x200 # Joystick button
+            joystick_buttons |= (1 << (keycode - 0x200))
+          elsif keycode > 0x100 # RGB
             rgb_message = $rgb.invoke_anchor KEYCODE_RGB.key(keycode)
           else # Should be a modifier key
             @modifier |= keycode
@@ -1171,6 +1188,9 @@ class Keyboard
             @buffer.refresh_screen
           end
         end
+
+        @joystick.report_hid(joystick_buttons, joystick_hat) if @joystick
+
         report_hid(@modifier, @keycodes.join)
 
         if @locked_layer

@@ -16,6 +16,7 @@
 #include "uart.h"
 #include "ws2812.h"
 #include "rotary_encoder.h"
+#include "joystick.h"
 #include <sandbox.h>
 
 /* ruby */
@@ -27,6 +28,7 @@
 #include "ruby/app/models/buffer.c"
 #include "ruby/app/models/via.c"
 #include "ruby/app/models/debounce.c"
+#include "ruby/app/models/joystick.c"
 /* tasks */
 #include "ruby/app/tasks/usb_task.c"
 #include "ruby/app/tasks/rgb_task.c"
@@ -326,12 +328,19 @@ init_RGB(void)
   WS2812_INIT();
 }
 
+static void
+init_Joystick(void)
+{
+  JOYSTICK_INIT();
+}
+
 picogems gems[] = {
   {"keyboard",       NULL,               keyboard,       NULL,     NULL, false},
   {"debounce",       NULL,               debounce,       NULL,     NULL, false},
   {"rotary_encoder", init_RotaryEncoder, rotary_encoder, NULL,     NULL, false},
   {"rgb",            init_RGB,           rgb,            rgb_task, NULL, false},
   {"via",            NULL,               via,            NULL,     NULL, false},
+  {"joystick",       init_Joystick,      joystick,       NULL,     NULL, false},
   {NULL,             NULL,               NULL,           NULL,     NULL, false}
 };
 

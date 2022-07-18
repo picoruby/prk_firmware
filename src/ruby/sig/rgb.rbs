@@ -5,7 +5,16 @@ $rgb: RGB
 
 # Classes
 class RGB
-  EFFECTS: Array[Symbol]
+  type effect_type = :swirl
+                   | :rainbow_mood
+                   | :breath
+                   | :ruby
+                   | :nokogiri
+                   | :static
+  type action_type = :thunder
+                   | nil
+
+  EFFECTS: Array[effect_type]
 
   def ws2812_init: (Integer, Integer, bool) -> void
   def ws2812_show: () -> void
@@ -16,11 +25,9 @@ class RGB
   def ws2812_reset_swirl_index: () -> bool
 
   @fifo: Array[true]
-  @effect: Symbol
-  @action: Symbol
+  @effect: effect_type
   @speed: Integer
   @delay: Integer
-  @pixel_size: Integer
   @max_value: Integer
   @value: Float
   @hue: Integer
@@ -28,8 +35,7 @@ class RGB
   def hsv2rgb: (Float | Integer h, Integer s, Float | Integer v) -> Integer
 
   attr_reader pixel_size: Integer
-  attr_reader effect: Symbol
-  attr_accessor action: Symbol
+  attr_accessor action: action_type
   attr_accessor anchor: bool
 
   def initialize: (Integer pin, Integer underglow_size, Integer backlight_size, ?bool is_rgbw) -> void
@@ -37,7 +43,7 @@ class RGB
   def turn_off: () -> void
   def turn_on: () -> void
   def toggle: () -> void
-  def effect=: (Symbol) -> void
+  def effect=: (effect_type) -> void
   def hue=: (Integer) -> void
   def saturation=: (Integer) -> void
   def value=: (Integer) -> void

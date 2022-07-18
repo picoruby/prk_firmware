@@ -10,7 +10,7 @@ class RGB
     init_values
   end
 
-  attr_reader :effect, :pixel_size
+  attr_reader :pixel_size
   attr_accessor :action, :anchor
 
   def init_values
