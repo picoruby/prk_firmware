@@ -35,6 +35,7 @@ class RGB
   def hsv2rgb: (Float | Integer h, Integer s, Float | Integer v) -> Integer
 
   attr_reader pixel_size: Integer
+  attr_reader effect: effect_type
   attr_accessor action: action_type
   attr_accessor anchor: bool
 
@@ -54,5 +55,5 @@ class RGB
   def show: -> void
   def fifo_push: (true data) -> void
   def thunder: -> void
-  def ping: () -> void
+  def ping?: () -> bool
 end

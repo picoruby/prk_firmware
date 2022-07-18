@@ -463,7 +463,6 @@ class Keyboard
     @anchor = true
     @anchor_left = true # so-called "master left"
     @uart_pin = 1
-    $rgb = nil
     @encoders = Array.new
     @partner_encoders = Array.new
     @macro_keycodes = Array.new

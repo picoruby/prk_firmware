@@ -10,7 +10,7 @@ class RGB
     init_values
   end
 
-  attr_reader :pixel_size
+  attr_reader :pixel_size, :effect
   attr_accessor :action, :anchor
 
   def init_values
@@ -133,6 +133,8 @@ class RGB
     if @ping
       @ping = false
       return true
+    else
+      return false
     end
   end
 
