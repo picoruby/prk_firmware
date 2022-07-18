@@ -11,10 +11,10 @@ jobs:
         submodules: recursive
     - uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.0.1
+        ruby-version: 3.1.2
         bundler-cache: true # runs 'bundle install' and caches installed gems automatically
       #- name: Setup tmate session
-      #  uses: mxschmitt/action-tmate@v3 
+      #  uses: mxschmitt/action-tmate@v3
     - name: build picoruby
       run: rake
       working-directory: lib/picoruby
@@ -23,6 +23,8 @@ jobs:
       working-directory: src/ruby
     - name: mrubyc-test
       run: |
-        cp ../../lib/picoruby/build/host/mrbgems/mruby-mrubyc/src/mrblib.c ../../lib/picoruby/mrbgems/mruby-mrubyc/repos/mrubyc/src/
+        cp ../../lib/picoruby/build/host/mrbgems/mruby-mrubyc/src/mrblib.c ../../lib/picoruby/build/repos/host/mruby-mrubyc/repos/mrubyc/src/
+        cp ../../lib/picoruby/build/repos/host/mruby-bin-picoirb/tools/picoirb/buffer.rb app/models/buffer.rb
+        cp -rT ../../lib/picoruby/build/repos/host/mruby-mrubyc/repos/mrubyc/src/hal_posix test/tmp/hal
         RUBYLIB=./app/models BUNDLE_GEMFILE=Gemfile CFLAGS=-DMAX_SYMBOLS_COUNT=1000 bundle exec mrubyc-test
       working-directory: src/ruby

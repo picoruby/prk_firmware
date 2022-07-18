@@ -1,1 +1,0 @@
-../../../../lib/picoruby/mrbgems/mruby-bin-picoirb/tools/picoirb/buffer.rb

@@ -70,10 +70,12 @@ task :check_setup do
       sh "bundle exec steep -h > /dev/null 2>&1", verbose: false
       sh "bundle exec mrubyc-test -h > /dev/null 2>&1", verbose: false
     end
-    dir = "lib/picoruby/mrbgems/mruby-mrubyc/repos/mrubyc/src/hal_user_reserved"
+    dir = "lib/picoruby/build/repos/host/mruby-mrubyc/repos/mrubyc/src/hal_user_reserved"
     sh "ls #{dir} > /dev/null 2>&1", verbose: false
     sh "ls #{dir}/hal.c > /dev/null 2>&1", verbose: false
     sh "ls #{dir}/hal.h > /dev/null 2>&1", verbose: false
+    sh "ls src/ruby/app/models/buffer.rb > /dev/null 2>&1", verbose: false
+    sh "ls src/ruby/test/tmp/hal/ > /dev/null 2>&1", verbose: false
   rescue => e
     puts "You need to do `rake setup`!"
     puts e.message
@@ -90,9 +92,15 @@ task :setup do
   FileUtils.cd "lib/picoruby" do
     sh "rake all"
   end
-  FileUtils.cd "lib/picoruby/mrbgems/mruby-mrubyc/repos/mrubyc/src/hal_user_reserved" do
-    FileUtils.ln_sf "../../../../../../../hal/hal.c", "hal.c"
-    FileUtils.ln_sf "../../../../../../../hal/hal.h", "hal.h"
+  FileUtils.cd "lib/picoruby/build/repos/host/mruby-mrubyc/repos/mrubyc/src/hal_user_reserved" do
+    FileUtils.ln_sf "../../../../../../../../../hal/hal.c", "hal.c"
+    FileUtils.ln_sf "../../../../../../../../../hal/hal.h", "hal.h"
+  end
+  FileUtils.cd "src/ruby/app/models" do
+    FileUtils.ln_sf "../../../../lib/picoruby/build/repos/host/mruby-bin-picoirb/tools/picoirb/buffer.rb", "buffer.rb"
+  end
+  FileUtils.cd "src/ruby/test/tmp" do
+    FileUtils.ln_sf "../../../../lib/picoruby/build/repos/host/mruby-mrubyc/repos/mrubyc/src/hal_posix", "hal"
   end
 end
 
@@ -106,7 +114,9 @@ end
 desc "clean everything (Then you'll need to do `rake setup`"
 task :deep_clean do
   FileUtils.rm_r Dir.glob("build/*")
-  FileUtils.rm_r "lib/picoruby"
+  FileUtils.rm_rf "lib/picoruby"
+  FileUtils.rm_rf "src/ruby/app/models/buffer.rb"
+  FileUtils.rm_rf "src/ruby/test/tmp/hal"
 end
 
 # Add a new tag then push it

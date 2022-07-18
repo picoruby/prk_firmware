@@ -6,8 +6,8 @@ project(picoruby
   LANGUAGES C
 )
 
-set(MRUBYC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/picoruby/mrbgems/mruby-mrubyc/repos/mrubyc)
-set(PICO_COMPILER_DIR ${CMAKE_CURRENT_SOURCE_DIR}/picoruby/mrbgems/mruby-pico-compiler)
+set(MRUBYC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/picoruby/build/repos/host/mruby-mrubyc/repos/mrubyc)
+set(PICO_COMPILER_DIR ${CMAKE_CURRENT_SOURCE_DIR}/picoruby/build/repos/host/mruby-pico-compiler)
 
 add_library(picoruby STATIC
   ${MRUBYC_DIR}/src/alloc.c
