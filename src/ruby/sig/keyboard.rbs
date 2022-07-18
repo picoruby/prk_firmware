@@ -60,6 +60,7 @@ class Keyboard
   @switches: Array[Array[Integer]]
   @layer_names: Array[Symbol]
   @layer: Symbol
+  @default_layer: Symbol
   @anchor: bool
   @anchor_left: bool
   @direct_pins: Array[Integer]
