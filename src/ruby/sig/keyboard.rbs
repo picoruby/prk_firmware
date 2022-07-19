@@ -95,6 +95,7 @@ class Keyboard
 
   attr_accessor split: bool
   attr_accessor uart_pin: Integer
+  attr_accessor default_layer: Symbol
 
   attr_reader layer: Symbol
   attr_reader split_style: split_style_type
