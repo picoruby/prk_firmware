@@ -1,5 +1,7 @@
 require "fileutils"
 
+MAX_SYMBOLS_COUNT = 1000
+
 task :default => :all
 
 desc "build PRK Firmware in build directory"
@@ -13,13 +15,13 @@ task :debug_all => %i(check_setup test_all debug_make_without_test)
 # Build without tests
 task :make_without_test do
   FileUtils.cd "build" do
-    sh "cmake .. && make"
+    sh "CFLAGS=-DMAX_SYMBOLS_COUNT=#{MAX_SYMBOLS_COUNT} cmake .. && make"
   end
 end
 
 task :debug_make_without_test do
   FileUtils.cd "build" do
-    sh "cmake -DCMAKE_BUILD_TYPE=Debug .. && make"
+    sh "CFLAGS=-DMAX_SYMBOLS_COUNT=#{MAX_SYMBOLS_COUNT} cmake -DCMAKE_BUILD_TYPE=Debug .. && make"
     elf_file = Dir.glob("prk_firmware-*.elf").sort_by{ |fn| File.mtime(fn) }.last
     sh "gdb-multiarch #{elf_file}"
   end
@@ -90,7 +92,7 @@ task :setup do
     sh "bundle exec steep -h || bundle install"
   end
   FileUtils.cd "lib/picoruby" do
-    sh "rake all"
+    sh "rake all MAX_SYMBOLS_COUNT=#{MAX_SYMBOLS_COUNT}"
   end
   FileUtils.cd "lib/picoruby/build/repos/host/mruby-mrubyc/repos/mrubyc/src/hal_user_reserved" do
     FileUtils.ln_sf "../../../../../../../../../hal/hal.c", "hal.c"

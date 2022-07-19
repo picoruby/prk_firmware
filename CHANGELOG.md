@@ -1,12 +1,17 @@
 # Change log
 
-## 0.9.15 on 2022/06/xx
+## 0.9.15 on 2022/07/19
 
 ### Joystick🕹
 - See [wiki/VIA and Remap](https://github.com/picoruby/prk_firmware/wiki/Joystick)
 
 ### Improvements
+- Changeable default layer name. See [wiki/Layers-and-mode-key#Changing-default-layer](https://github.com/picoruby/prk_firmware/wiki/Layers-and-mode-key#changing-default-layer)
 - Suppress RGB random flicker on startup
+
+### Bug fix
+- A bug that some alias keycodes didn't work [issue/106](https://github.com/picoruby/prk_firmware/issues/106)
+- Some fixes of VIA
 
 ## 0.9.14 on 2022/05/21
 
