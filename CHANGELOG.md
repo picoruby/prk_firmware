@@ -3,7 +3,7 @@
 ## 0.9.15 on 2022/07/19
 
 ### Joystick🕹
-- See [wiki/VIA and Remap](https://github.com/picoruby/prk_firmware/wiki/Joystick)
+- See [wiki/Joystick](https://github.com/picoruby/prk_firmware/wiki/Joystick)
 
 ### Improvements
 - Changeable default layer name. See [wiki/Layers-and-mode-key#Changing-default-layer](https://github.com/picoruby/prk_firmware/wiki/Layers-and-mode-key#changing-default-layer)
