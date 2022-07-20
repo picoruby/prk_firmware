@@ -1,6 +1,6 @@
-puts "RGB task started."
+puts "RGB started"
 
-3.times { sleep 1 }
+sleep 0.5
 
 while true
   unless $rgb

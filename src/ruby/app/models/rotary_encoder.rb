@@ -1,6 +1,6 @@
 class RotaryEncoder
  def initialize(pin_a, pin_b)
-    puts "Initializing RotaryEncoder ..."
+    puts "Init RotaryEncoder"
     @pin_a = pin_a
     @pin_b = pin_b
     @partner_keycode_cw = 0

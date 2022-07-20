@@ -443,7 +443,7 @@ end
 class Keyboard
 
   def initialize
-    puts "Initializing Keyboard."
+    puts "Init Keyboard"
     # mruby/c VM doesn't work with a CONSTANT to make another CONSTANT
     # steep doesn't allow dynamic assignment of CONSTANT
     @SHIFT_LETTER_THRESHOLD_A    = LETTER.index('A').to_i
@@ -595,7 +595,7 @@ class Keyboard
   end
 
   def init_matrix_pins(matrix)
-    puts "Initializing GPIO."
+    puts "Init GPIO"
     init_uart
     @cols_size = 0
     @rows_size = matrix.size
@@ -980,7 +980,7 @@ class Keyboard
     # default debounce algorithm will be applied
     self.set_debounce(@scan_mode == :direct ? :per_key : :per_row) unless @debouncer
 
-    puts "Keyboard task started."
+    puts "Keyboard started"
 
     # To avoid unintentional report on startup
     # which happens only on Sparkfun Pro Micro RP2040
