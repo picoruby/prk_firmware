@@ -84,34 +84,36 @@ char const *string_desc_arr[STRING_DESC_ARR_SIZE] =
  *   0x1234:0xABCD:productName
  *   ^^^^^^ ^^^^^^ ^^^^^^^^^^^
  *    VID    PID      Name
- *   - IDs' prefix should be `0x`, should NOT be `0X`
  *   - Length of productName should be less than or equal 32 bytes
  * and any other letter must not be included in the file.
  */
-#define PRK_CONF_LENGTH (7 + 7 + 32)
+#define PRK_CONF_MAX_LENGTH (7 + 7 + 33 + 2)
 static void
 configure_prk(void)
 {
+  static char prk_conf[PRK_CONF_MAX_LENGTH] = {0};
   DirEnt entry;
-  uint8_t buf[PRK_CONF_LENGTH + 1] = {0};
-  uint8_t vid[7] = {0};
-  uint8_t pid[7] = {0};
-  static char name[PRK_CONF_LENGTH - 14] = {0};
   msc_findDirEnt("PRK-CONFTXT", &entry);
   if (entry.Name[0] != '\0') {
-    if (entry.FileSize > PRK_CONF_LENGTH) return;
-    msc_loadFile(buf, &entry);
-    if (strncmp("0x", buf, 2) || strncmp(":0x", buf + 6, 3)) return;
-    memcpy(vid,  buf     , 6);
-    memcpy(pid,  buf +  7, 6);
-    memcpy(name, buf + 14, strlen(buf) - 14);
-    for (int i = 0; ; i++) {
-      if (name[i] == '\r' || name[i] == '\n') name[i] = '\0';
-      if (name[i] == '\0') break;
+    if (entry.FileSize > PRK_CONF_MAX_LENGTH) return;
+    msc_loadFile(prk_conf, &entry);
+    char *tok = strtok(prk_conf, ":");
+    for (int i = 0; i < 3; i++) {
+      if (tok == NULL) break;
+      switch (i) {
+        case 0:
+          desc_device.idVendor  = (uint16_t)strtol(tok, NULL, 16);
+          tok = strtok(NULL, ":");
+          break;
+        case 1:
+          desc_device.idProduct = (uint16_t)strtol(tok, NULL, 16);
+          tok = strtok(NULL, ": \t\n\r");
+          break;
+        case 2:
+          string_desc_arr[2] = (const char *)tok;
+          break;
+      }
     }
-    desc_device.idVendor  = (uint16_t)strtol(vid, NULL, 16);
-    desc_device.idProduct = (uint16_t)strtol(pid, NULL, 16);
-    string_desc_arr[2] = (const char *)name;
   }
 }
 
@@ -210,7 +212,7 @@ create_keymap_task(mrbc_tcb *tcb)
   if (entry.Name[0] != '\0') {
     RotaryEncoder_reset();
     uint32_t fileSize = entry.FileSize;
-    console_printf("Size of keymap.rb: %u\n", fileSize);
+    console_printf("keymap.rb size: %u\n", fileSize);
     if (fileSize < MAX_KEYMAP_SIZE) {
       keymap_rb = malloc(KEYMAP_PREFIX_SIZE + fileSize + 1);
       keymap_rb[KEYMAP_PREFIX_SIZE + fileSize] = '\0';
@@ -222,7 +224,7 @@ create_keymap_task(mrbc_tcb *tcb)
       si = StreamInterface_new(NULL, SUSPEND_TASK, STREAM_TYPE_MEMORY);
     }
   } else {
-    console_printf("No keymap.rb found.\n");
+    console_printf("No keymap.rb found!\n");
     si = StreamInterface_new(NULL, SUSPEND_TASK, STREAM_TYPE_MEMORY);
   }
   if (!Compiler_compile(p, si, NULL)) {

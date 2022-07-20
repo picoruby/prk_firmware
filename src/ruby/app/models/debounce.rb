@@ -4,7 +4,7 @@ class DebounceBase
   DEFAULT_THRESHOLD = 40
 
   def initialize
-    puts "Initializing #{self.class}."
+    puts "Init #{self.class}"
     @threshold = DEFAULT_THRESHOLD
     @now = 0
   end

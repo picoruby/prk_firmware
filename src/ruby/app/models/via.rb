@@ -33,7 +33,7 @@ class VIA
   VIA_FILENAME = "VIA_MAP TXT"
 
   def initialize
-    puts "Initializing VIA."
+    puts "Init VIA"
     @layer_count = 5
     @mode_keys = Hash.new
     @keymap_saved = true

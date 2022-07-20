@@ -1,5 +1,11 @@
 # Change log
 
+## 0.9.16 on 2022/07/20
+
+### Improvement
+- [Experimental] Startup time reduced⌨💨  
+  We really hope all guys try this version and report to us if there's a problem of any kind🙏
+
 ## 0.9.15 on 2022/07/19
 
 ### Joystick🕹

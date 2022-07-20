@@ -1,6 +1,6 @@
 class RGB
  def initialize(pin, underglow_size, backlight_size, is_rgbw = false)
-    puts "Initializing RGB."
+    puts "Init RGB"
     turn_off
     @fifo = Array.new
     # TODO: @underglow_size, @backlight_size
