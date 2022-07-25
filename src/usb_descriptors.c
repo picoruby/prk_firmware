@@ -296,14 +296,30 @@ void
 c_mouse_report_hid(mrb_vm *vm, mrb_value *v, int argc)
 {
   int8_t const delta = 0;
-  tud_hid_mouse_report(REPORT_ID_MOUSE, 0x00, delta, delta, 0, 0);
+  if (tud_suspended()) {
+    // Wake up host if we are in suspend mode
+    // and REMOTE_WAKEUP feature is enabled by host
+    tud_remote_wakeup();
+  }
+
+  if (tud_hid_ready()) {
+    tud_hid_mouse_report(REPORT_ID_MOUSE, 0x00, delta, delta, 0, 0);
+  }
 }
 
 void
 c_consumer_report_hid(mrb_vm *vm, mrb_value *v, int argc)
 {
   uint16_t empty = 0;
-  tud_hid_report(REPORT_ID_CONSUMER_CONTROL, &empty, 2);
+  if (tud_suspended()) {
+    // Wake up host if we are in suspend mode
+    // and REMOTE_WAKEUP feature is enabled by host
+    tud_remote_wakeup();
+  }
+
+  if (tud_hid_ready()) {
+    tud_hid_report(REPORT_ID_CONSUMER_CONTROL, &empty, 2);
+  }
 }
 
 void
@@ -311,7 +327,15 @@ c_report_hid(mrb_vm *vm, mrb_value *v, int argc)
 {
   uint8_t modifier = GET_INT_ARG(1);
   uint8_t *keycodes = GET_STRING_ARG(2);
-  tud_hid_keyboard_report(REPORT_ID_KEYBOARD, modifier, keycodes);
+  if (tud_suspended()) {
+    // Wake up host if we are in suspend mode
+    // and REMOTE_WAKEUP feature is enabled by host
+    tud_remote_wakeup();
+  }
+
+  if (tud_hid_ready()) {
+    tud_hid_keyboard_report(REPORT_ID_KEYBOARD, modifier, keycodes);
+  }
 }
 
 void
