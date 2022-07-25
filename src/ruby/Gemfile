@@ -4,4 +4,4 @@ gem 'rake'
 gem 'steep'
 gem 'typeprof'
 gem "rbs"
-gem "mrubyc-test", "0.7.4"
+gem "mrubyc-test", "0.8.0"

@@ -237,17 +237,23 @@ create_keymap_task(mrbc_tcb *tcb)
   }
   quick_print_alloc_stats();
   if (keymap_rb) free(keymap_rb);
+  mrbc_vm *vm;
   if (tcb == NULL) {
     tcb = mrbc_create_task(p->scope->vm_code, 0);
+    vm = (mrbc_vm *)(&tcb->vm);
   } else {
-    mrbc_vm *vm = (mrbc_vm *)(&tcb->vm);
-    int vm_id = vm->vm_id;
+    vm = (mrbc_vm *)(&tcb->vm);
+    uint8_t vm_id = vm->vm_id;
+    uint16_t regs_size = vm->regs_size;
     mrbc_vm_end(vm);
     memset(vm, 0, sizeof(mrbc_vm));
     mrbc_load_mrb(vm, p->scope->vm_code);
     vm->vm_id = vm_id;
+    vm->regs_size = regs_size;
     mrbc_vm_begin(vm);
   }
+  console_printf("vm_id %d\n", vm->vm_id);
+  console_printf("nregs %d\n", vm->regs_size);
   p->scope->vm_code = NULL;
   Compiler_parserStateFree(p);
   StreamInterface_free(si);

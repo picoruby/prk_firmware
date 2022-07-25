@@ -94,6 +94,7 @@ task :setup do
   FileUtils.cd "lib/picoruby" do
     sh "rake all MAX_SYMBOLS_COUNT=#{MAX_SYMBOLS_COUNT}"
   end
+  FileUtils.mkdir "lib/picoruby/build/repos/host/mruby-mrubyc/repos/mrubyc/src/hal_user_reserved"
   FileUtils.cd "lib/picoruby/build/repos/host/mruby-mrubyc/repos/mrubyc/src/hal_user_reserved" do
     FileUtils.ln_sf "../../../../../../../../../hal/hal.c", "hal.c"
     FileUtils.ln_sf "../../../../../../../../../hal/hal.h", "hal.h"
