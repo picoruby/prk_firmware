@@ -3,14 +3,15 @@
 # Global variables
 $rgb: RGB
 
+type effect_type = :swirl
+                 | :rainbow_mood
+                 | :breath
+                 | :ruby
+                 | :nokogiri
+                 | :static
+
 # Classes
 class RGB
-  type effect_type = :swirl
-                   | :rainbow_mood
-                   | :breath
-                   | :ruby
-                   | :nokogiri
-                   | :static
   type action_type = :thunder
                    | nil
 

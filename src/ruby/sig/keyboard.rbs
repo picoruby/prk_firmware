@@ -92,12 +92,6 @@ class Keyboard
   @skip_positions: Array[Array[Integer]]
   @joystick: Joystick
   @output_report_cb: ^(Integer)->void
-  type effect_type = :swirl
-                   | :rainbow_mood
-                   | :breath
-                   | :ruby
-                   | :nokogiri
-                   | :static
   @prev_rgb_effect: effect_type
   @ruby_mode_stop: bool
   @ruby_mode: bool
