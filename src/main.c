@@ -195,10 +195,12 @@ int autoreload_state; /* from msc_disk.h */
 
 static mrbc_tcb *tcb_keymap;
 
-#define KEYMAP_PREFIX      "puts;" /* Somehow scapegoat... */
-#define KEYMAP_PREFIX_SIZE (sizeof(KEYMAP_PREFIX) - 1)
-#define SUSPEND_TASK       "suspend_task"
-#define MAX_KEYMAP_SIZE    (1024 * 10)
+#define KEYMAP_PREFIX        "begin\n"
+#define KEYMAP_PREFIX_SIZE   (sizeof(KEYMAP_PREFIX) - 1)
+#define KEYMAP_POSTFIX       "\nrescue => e\nputs e.class, e.message, 'Task stopped!'\nend"
+#define KEYMAP_POSTFIX_SIZE  (sizeof(KEYMAP_POSTFIX))
+#define SUSPEND_TASK         "suspend_task"
+#define MAX_KEYMAP_SIZE      (1024 * 10)
 
 void
 create_keymap_task(mrbc_tcb *tcb)
@@ -214,10 +216,10 @@ create_keymap_task(mrbc_tcb *tcb)
     uint32_t fileSize = entry.FileSize;
     console_printf("keymap.rb size: %u\n", fileSize);
     if (fileSize < MAX_KEYMAP_SIZE) {
-      keymap_rb = malloc(KEYMAP_PREFIX_SIZE + fileSize + 1);
-      keymap_rb[KEYMAP_PREFIX_SIZE + fileSize] = '\0';
+      keymap_rb = malloc(KEYMAP_PREFIX_SIZE + fileSize + KEYMAP_POSTFIX_SIZE);
       memcpy(keymap_rb, KEYMAP_PREFIX, KEYMAP_PREFIX_SIZE);
       msc_loadFile(keymap_rb + KEYMAP_PREFIX_SIZE, &entry);
+      memcpy(keymap_rb + KEYMAP_PREFIX_SIZE + fileSize, KEYMAP_POSTFIX, KEYMAP_POSTFIX_SIZE);
       si = StreamInterface_new(NULL, (char *)keymap_rb, STREAM_TYPE_MEMORY);
     } else {
       console_printf("Must be less than %d bytes!\n", MAX_KEYMAP_SIZE);
