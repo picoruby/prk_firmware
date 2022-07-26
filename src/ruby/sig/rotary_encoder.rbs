@@ -11,6 +11,7 @@ class RotaryEncoder
   @partner_keycode_ccw: Integer
   @split_left: bool
   @partner_encoders: Array[RotaryEncoder]
+  @number: Integer
 
   def init_encoder: (Integer, Integer) -> Integer
   def consume_encoder: (Integer) -> Integer

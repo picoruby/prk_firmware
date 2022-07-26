@@ -51,7 +51,7 @@ class Keyboard
   @before_filters: Array[^() -> void]
   @keymaps: Hash[Symbol, Array[Array[Integer | Symbol | Proc]]]
   @composite_keys: Array[{
-    layer:             Symbol,
+    layer:             Symbol | nil,
     keycodes:          Array[Integer],
     switch:            [Integer, Integer],
   }]
@@ -72,7 +72,7 @@ class Keyboard
   ]
   @switches: Array[Array[Integer]]
   @layer_names: Array[Symbol]
-  @layer: Symbol
+  @layer: Symbol | nil
   @default_layer: Symbol
   @anchor: bool
   @anchor_left: bool
@@ -92,12 +92,27 @@ class Keyboard
   @skip_positions: Array[Array[Integer]]
   @joystick: Joystick
   @output_report_cb: ^(Integer)->void
+  type effect_type = :swirl
+                   | :rainbow_mood
+                   | :breath
+                   | :ruby
+                   | :nokogiri
+                   | :static
+  @prev_rgb_effect: effect_type
+  @ruby_mode_stop: bool
+  @ruby_mode: bool
+  @via: VIA
+  @debouncer: DebounceNone | DebouncePerRow | DebouncePerKey
+  @buffer: Buffer
+  @layer_changed_delay: Integer
+  @partner_encoders: Array[RotaryEncoder]
+  @macro_keycodes: Array[Integer]
 
   attr_accessor split: bool
   attr_accessor uart_pin: Integer
   attr_accessor default_layer: Symbol
 
-  attr_reader layer: Symbol
+  attr_reader layer: Symbol | nil
   attr_reader split_style: split_style_type
   attr_reader sandbox: Sandbox
   attr_reader cols_size: Integer

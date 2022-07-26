@@ -347,6 +347,7 @@ init_Joystick(void)
 picogems gems[] = {
   {"keyboard",       NULL,               keyboard,       NULL,     NULL, false},
   {"debounce",       NULL,               debounce,       NULL,     NULL, false},
+  {"buffer",         NULL,               buffer,         NULL,     NULL, false},
   {"rotary_encoder", init_RotaryEncoder, rotary_encoder, NULL,     NULL, false},
   {"rgb",            init_RGB,           rgb,            rgb_task, NULL, false},
   {"via",            NULL,               via,            NULL,     NULL, false},

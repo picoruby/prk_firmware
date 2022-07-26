@@ -93,6 +93,9 @@ task :setup do
   FileUtils.cd "src/ruby/app/models" do
     FileUtils.ln_sf "../../../../lib/picoruby/build/repos/host/mruby-bin-picoirb/tools/picoirb/buffer.rb", "buffer.rb"
   end
+  FileUtils.cd "src/ruby/sig" do
+    FileUtils.ln_sf "../../../lib/picoruby/build/repos/host/mruby-bin-picoirb/tools/picoirb/buffer.rbs", "buffer.rbs"
+  end
   FileUtils.cd "src/ruby/test/tmp" do
     FileUtils.ln_sf "../../../../lib/picoruby/build/repos/host/mruby-mrubyc/repos/mrubyc/src/hal_posix", "hal"
   end
@@ -110,6 +113,7 @@ task :deep_clean do
   FileUtils.rm_r Dir.glob("build/*")
   FileUtils.rm_rf "lib/picoruby"
   FileUtils.rm_rf "src/ruby/app/models/buffer.rb"
+  FileUtils.rm_rf "src/ruby/sig/buffer.rbs"
   FileUtils.rm_rf "src/ruby/test/tmp/hal"
 end
 

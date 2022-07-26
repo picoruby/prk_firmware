@@ -31,6 +31,12 @@ class RGB
   @max_value: Integer
   @value: Float
   @hue: Integer
+  @srand: bool
+  @ascent: bool
+  @offed: bool
+  @last_key: Symbol?
+  @saturation: Integer
+  @ping: bool
 
   def hsv2rgb: (Float | Integer h, Integer s, Float | Integer v) -> Integer
 
