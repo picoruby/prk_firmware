@@ -4,9 +4,17 @@
     set pins, 0;
     pull;       blocks
 bit_loop:
-    set pins, 1 [1]; HIGH 2clks
-    out pins, 1 [2]; HIGH if 1, LOW if 0, 3clks
-    set pins, 0 [1]; LOW 2clks
+    set pins, 1; HIGH 1clk
+    out X, 1; HIGH 1clk
+    jmp !X, bit_0; HIGH 1clk
+bit_1:
+    set pins, 1 [3]; HIGH 4clks
+    set pins, 0 [4]; LOW 5clks
+    jmp end; LOW 1clk
+bit_0:
+    set pins, 0 [4]; LOW 5clks
+    jmp end; LOW 1clk
+end:
     jmp !OSRE bit_loop; LOW 1clk
 .wrap
 
