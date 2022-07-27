@@ -214,7 +214,7 @@ class KeyboardTest < MrubycTestCase
     assert_equal true, @kbd.instance_variable_get("@ruby_mode")
   end
 
-  description "raise"
+  description "raise an error"
   def raise_error_case
     assert_raise(NameError) do
       NoExist.new
