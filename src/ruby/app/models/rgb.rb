@@ -108,7 +108,7 @@ class RGB
       else
         if 0 < @value
           @value -= (@max_value / 31.0)
-          @value = 0 if @value < 0
+          @value = 0.0 if @value < 0
         else
           @ping = true
           @value = 0.0
