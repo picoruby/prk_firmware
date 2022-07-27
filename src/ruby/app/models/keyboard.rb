@@ -557,7 +557,7 @@ class Keyboard
 
   # val should be treated as `:left` if it's anything other than `:right`
   def set_anchor(val)
-    @anchor_left = false if val == :right
+    @anchor_left = (val != :right)
   end
 
   def split_style=(style)
@@ -593,6 +593,15 @@ class Keyboard
       puts " Partner"
       uart_partner_init(@uart_pin)
     end
+  end
+
+  def mutual_uart_at_my_own_risk=(v)
+    if v == true
+      puts
+      puts "[WARN] Mutual UART is at your own risk"
+      puts
+    end
+    self.mutual_uart = v
   end
 
   def init_matrix_pins(matrix)
