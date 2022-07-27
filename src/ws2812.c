@@ -17,9 +17,8 @@ static uint sm = 0;
 
 static int32_t pixels[MAX_PIXEL_SIZE + 1] = {};
 static int32_t dma_ws2812_grb_pixels[MAX_PIXEL_SIZE];
-static int dma_ws2812_channel;
+static int dma_ws2812_channel = -1;
 static uint8_t dma_ws2812_last_append_index = 0;
-static uint32_t dma_ws2812_last_append_us = 0;
 
 static inline uint32_t
 rgb2grb(int32_t val) {
@@ -29,30 +28,24 @@ rgb2grb(int32_t val) {
     (uint32_t) (val & 0x0000ff);
 }
 
-static inline void
+static void
 put_pixel(int32_t pixel_rgb) {
-  uint32_t now = time_us_32();
-
   dma_ws2812_grb_pixels[dma_ws2812_last_append_index++] = rgb2grb(pixel_rgb) << 8u;
-  
-  // WS2812 signal chain is reset after 80 us
-  if( now-dma_ws2812_last_append_us > 100 ) {
-    pio_sm_put(pio, sm, dma_ws2812_grb_pixels[dma_ws2812_last_append_index-1]);
-    dma_ws2812_last_append_index = 1;
-  }
+}
 
-  if(dma_ws2812_last_append_index==2) {
-    dma_channel_set_read_addr(dma_ws2812_channel, dma_ws2812_grb_pixels+1, true);
-  }
-
-  dma_ws2812_last_append_us = now;
+static inline void 
+show_pixels(void) {
+  dma_channel_set_read_addr(dma_ws2812_channel, dma_ws2812_grb_pixels, true);
+  dma_ws2812_last_append_index = 0;
 }
 
 static void
 init_dma_ws2812(void)
 {
-  dma_ws2812_channel = dma_claim_unused_channel(true);
-
+  if(dma_ws2812_channel < 0) {
+    dma_ws2812_channel = dma_claim_unused_channel(true);
+  }
+  
   dma_channel_config c = dma_channel_get_default_config(dma_ws2812_channel);
   channel_config_set_transfer_data_size(&c, DMA_SIZE_32);
   channel_config_set_read_increment(&c, true);
@@ -100,6 +93,7 @@ c_ws2812_fill(mrb_vm *vm, mrb_value *v, int argc)
   for (int i = 0; i < GET_INT_ARG(2); i++) {
     put_pixel(GET_INT_ARG(1));
   }
+  show_pixels();
 }
 
 static int swirl_index = 0;
@@ -120,6 +114,7 @@ c_ws2812_rotate_swirl(mrb_vm *vm, mrb_value *v, int argc)
   } else {
     SET_FALSE_RETURN();
   }
+  show_pixels();
 }
 
 void
@@ -136,6 +131,7 @@ c_ws2812_show(mrb_vm *vm, mrb_value *v, int argc)
     put_pixel((uint32_t)pixels[i]);
     i++;
   }
+  show_pixels();
 }
 
 void
@@ -149,4 +145,5 @@ c_ws2812_rand_show(mrb_vm *vm, mrb_value *v, int argc)
     }
     i++;
   }
+  show_pixels();
 }
