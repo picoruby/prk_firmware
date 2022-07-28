@@ -1,0 +1,3 @@
+[submodule "lib/picoruby"]
+	path = lib/picoruby
+	url = git@github.com:picoruby/picoruby.git
