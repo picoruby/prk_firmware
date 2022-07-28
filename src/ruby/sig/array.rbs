@@ -1,3 +1,0 @@
-class Array[unchecked out Elem] < Object
-  def my_insert: (Integer, untyped) -> self
-end

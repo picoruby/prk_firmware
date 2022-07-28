@@ -28,7 +28,7 @@ add_library(picoruby STATIC
   ${MRUBYC_DIR}/src/symbol.c
   ${MRUBYC_DIR}/src/value.c
   ${MRUBYC_DIR}/src/vm.c
-  ${MRUBYC_DIR}/src/hal_user_reserved/hal.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/hal/hal.c
   ${CMAKE_CURRENT_SOURCE_DIR}/picoruby/build/host/mrbgems/mruby-mrubyc/src/mrblib.c
   ${PICO_COMPILER_DIR}/src/common.c
   ${PICO_COMPILER_DIR}/src/compiler.c

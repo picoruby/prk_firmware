@@ -39,4 +39,5 @@ class VIA
   def save_on_keyboard: -> void
   def save_on_flash: -> void
   def save_keymap: -> void
+  def add_mode_key: (Symbol key_name, [Symbol | Array[Symbol] | Proc | nil, Symbol | Proc | nil, Integer?, Integer?] param) -> void
 end

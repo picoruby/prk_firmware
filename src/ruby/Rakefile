@@ -1,7 +1,8 @@
 task :steep do
   require "steep"
   require "steep/cli"
-  Steep::CLI.new(argv: ["check", "--log-level=error"], stdout: $stdout, stderr: $stderr, stdin: $stdin).run
+  res = Steep::CLI.new(argv: ["check", "--log-level=error"], stdout: $stdout, stderr: $stderr, stdin: $stdin).run
+  raise "Steep check failed!" if res > 0
 end
 
 namespace :steep do

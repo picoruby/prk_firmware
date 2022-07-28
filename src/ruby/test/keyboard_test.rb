@@ -174,7 +174,7 @@ class KeyboardTest < MrubycTestCase
     @kbd.split = true
     @kbd.split_style = :standard_split
     @kbd.add_layer :default, %i(KC_A KC_B KC_C KC_D   KC_E KC_F KC_G KC_H)
-    assert_equal 3, @kbd.calculate_col_position(3, 4)
+    assert_equal 3, @kbd.calculate_col_position(3)
   end
 
   description "should return calculated col_index"
@@ -182,7 +182,7 @@ class KeyboardTest < MrubycTestCase
     @kbd.split = true
     @kbd.split_style = :right_side_flipped_split
     @kbd.add_layer :default, %i(KC_A KC_B KC_C KC_D   KC_E KC_F KC_G KC_H)
-    assert_equal 2, @kbd.calculate_col_position(3, 4)
+    assert_equal 2, @kbd.calculate_col_position(3)
   end
 
   description "raise"
@@ -212,5 +212,12 @@ class KeyboardTest < MrubycTestCase
     assert_not_equal true, @kbd.instance_variable_get("@ruby_mode")
     @kbd.ruby
     assert_equal true, @kbd.instance_variable_get("@ruby_mode")
+  end
+
+  description "raise an error"
+  def raise_error_case
+    assert_raise(NameError) do
+      NoExist.new
+    end
   end
 end

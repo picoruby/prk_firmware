@@ -1,6 +1,9 @@
-require "debounce"
-require "rgb"
-require "rotary_encoder"
+if RUBY_ENGINE == 'mruby/c'
+  require "buffer"
+  require "debounce"
+  require "rgb"
+  require "rotary_encoder"
+end
 
 class Keyboard
   GPIO_IN          = 0b000
@@ -469,7 +472,6 @@ class Keyboard
     @scan_mode = :matrix
     @skip_positions = Array.new
     @layer_changed_delay = 20
-    @via = nil
     @sandbox = Sandbox.new
     @sandbox.compile("_ = nil")
     @sandbox.resume
@@ -506,12 +508,11 @@ class Keyboard
     if val
       @via = VIA.new
       @via.kbd = self
-    else
-      @via = nil
     end
   end
 
   def via_layer_count=(count)
+    # @type ivar @via: VIA
     @via.layer_count = count
   end
 
@@ -556,7 +557,7 @@ class Keyboard
 
   # val should be treated as `:left` if it's anything other than `:right`
   def set_anchor(val)
-    @anchor_left = false if val == :right
+    @anchor_left = (val != :right)
   end
 
   def split_style=(style)
@@ -592,6 +593,15 @@ class Keyboard
       puts " Partner"
       uart_partner_init(@uart_pin)
     end
+  end
+
+  def mutual_uart_at_my_own_risk=(v)
+    if v == true
+      puts
+      puts "[WARN] Mutual UART is at your own risk"
+      puts
+    end
+    self.mutual_uart = v
   end
 
   def init_matrix_pins(matrix)
@@ -992,7 +1002,7 @@ class Keyboard
       end
     end
 
-    @via.start! if @via
+    @via&.start!
     resume_task("rgb") if $rgb
 
     @keycodes = Array.new
@@ -1052,7 +1062,7 @@ class Keyboard
         end
 
         @mode_keys.each do |switch, mode_key|
-          layer_action = mode_key[:layers][@layer]
+          layer_action = mode_key[:layers][@layer || @default_layer]
           next unless layer_action
           if @switches.include?(switch)
             on_hold = layer_action[:on_hold]
@@ -1111,11 +1121,11 @@ class Keyboard
         end
 
         if @layer != desired_layer
-          prev_layer = @layer if prev_layer != @default_layer
+          prev_layer = @layer || @default_layer if prev_layer != @default_layer
           @layer = desired_layer
         end
 
-        keymap = @keymaps[@locked_layer || @layer]
+        keymap = @keymaps[@locked_layer || @layer || @default_layer]
         modifier_switch_positions.clear
         @switches.each_with_index do |switch, i|
           keycode = keymap[switch[0]][switch[1]]
@@ -1215,7 +1225,7 @@ class Keyboard
         $rgb.invoke_partner rgb_message if $rgb
       end
 
-      @via.task if @via
+      @via&.task
 
       # CapsLock, NumLock, etc.
       if prev_output_report != output_report && @output_report_cb
@@ -1340,7 +1350,7 @@ class Keyboard
     end
     opts.each do |opt|
       @macro_keycodes << 0
-      @macro_keycodes << LETTER.index(opt)
+      @macro_keycodes << (LETTER.index(opt) || 0)
       puts if opt == :ENTER
     end
   end
@@ -1366,13 +1376,13 @@ class Keyboard
 
   def ruby
     if @ruby_mode
-      @macro_keycodes << LETTER.index(:ENTER)
+      @macro_keycodes << (LETTER.index(:ENTER) || 0)
       @buffer.adjust_screen
       eval @buffer.dump
       @buffer.clear
       @ruby_mode = false
       if $rgb
-        $rgb.effect = @prev_rgb_effect || :rainbow
+        $rgb.effect = @prev_rgb_effect || :rainbow_mood
       end
     else
       @buffer.refresh_screen

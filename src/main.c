@@ -195,10 +195,12 @@ int autoreload_state; /* from msc_disk.h */
 
 static mrbc_tcb *tcb_keymap;
 
-#define KEYMAP_PREFIX      "puts;" /* Somehow scapegoat... */
-#define KEYMAP_PREFIX_SIZE (sizeof(KEYMAP_PREFIX) - 1)
-#define SUSPEND_TASK       "suspend_task"
-#define MAX_KEYMAP_SIZE    (1024 * 10)
+#define KEYMAP_PREFIX        "begin\n"
+#define KEYMAP_PREFIX_SIZE   (sizeof(KEYMAP_PREFIX) - 1)
+#define KEYMAP_POSTFIX       "\nrescue => e\nputs e.class, e.message, 'Task stopped!'\nend"
+#define KEYMAP_POSTFIX_SIZE  (sizeof(KEYMAP_POSTFIX))
+#define SUSPEND_TASK         "suspend_task"
+#define MAX_KEYMAP_SIZE      (1024 * 10)
 
 void
 create_keymap_task(mrbc_tcb *tcb)
@@ -214,10 +216,10 @@ create_keymap_task(mrbc_tcb *tcb)
     uint32_t fileSize = entry.FileSize;
     console_printf("keymap.rb size: %u\n", fileSize);
     if (fileSize < MAX_KEYMAP_SIZE) {
-      keymap_rb = malloc(KEYMAP_PREFIX_SIZE + fileSize + 1);
-      keymap_rb[KEYMAP_PREFIX_SIZE + fileSize] = '\0';
+      keymap_rb = malloc(KEYMAP_PREFIX_SIZE + fileSize + KEYMAP_POSTFIX_SIZE);
       memcpy(keymap_rb, KEYMAP_PREFIX, KEYMAP_PREFIX_SIZE);
       msc_loadFile(keymap_rb + KEYMAP_PREFIX_SIZE, &entry);
+      memcpy(keymap_rb + KEYMAP_PREFIX_SIZE + fileSize, KEYMAP_POSTFIX, KEYMAP_POSTFIX_SIZE);
       si = StreamInterface_new(NULL, (char *)keymap_rb, STREAM_TYPE_MEMORY);
     } else {
       console_printf("Must be less than %d bytes!\n", MAX_KEYMAP_SIZE);
@@ -237,17 +239,23 @@ create_keymap_task(mrbc_tcb *tcb)
   }
   quick_print_alloc_stats();
   if (keymap_rb) free(keymap_rb);
+  mrbc_vm *vm;
   if (tcb == NULL) {
     tcb = mrbc_create_task(p->scope->vm_code, 0);
+    vm = (mrbc_vm *)(&tcb->vm);
   } else {
-    mrbc_vm *vm = (mrbc_vm *)(&tcb->vm);
-    int vm_id = vm->vm_id;
+    vm = (mrbc_vm *)(&tcb->vm);
+    uint8_t vm_id = vm->vm_id;
+    uint16_t regs_size = vm->regs_size;
     mrbc_vm_end(vm);
     memset(vm, 0, sizeof(mrbc_vm));
     mrbc_load_mrb(vm, p->scope->vm_code);
     vm->vm_id = vm_id;
+    vm->regs_size = regs_size;
     mrbc_vm_begin(vm);
   }
+  console_printf("vm_id %d\n", vm->vm_id);
+  console_printf("nregs %d\n", vm->regs_size);
   p->scope->vm_code = NULL;
   Compiler_parserStateFree(p);
   StreamInterface_free(si);
@@ -339,6 +347,7 @@ init_Joystick(void)
 picogems gems[] = {
   {"keyboard",       NULL,               keyboard,       NULL,     NULL, false},
   {"debounce",       NULL,               debounce,       NULL,     NULL, false},
+  {"buffer",         NULL,               buffer,         NULL,     NULL, false},
   {"rotary_encoder", init_RotaryEncoder, rotary_encoder, NULL,     NULL, false},
   {"rgb",            init_RGB,           rgb,            rgb_task, NULL, false},
   {"via",            NULL,               via,            NULL,     NULL, false},

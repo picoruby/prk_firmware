@@ -3,14 +3,15 @@
 # Global variables
 $rgb: RGB
 
+type effect_type = :swirl
+                 | :rainbow_mood
+                 | :breath
+                 | :ruby
+                 | :nokogiri
+                 | :static
+
 # Classes
 class RGB
-  type effect_type = :swirl
-                   | :rainbow_mood
-                   | :breath
-                   | :ruby
-                   | :nokogiri
-                   | :static
   type action_type = :thunder
                    | nil
 
@@ -31,6 +32,12 @@ class RGB
   @max_value: Integer
   @value: Float
   @hue: Integer
+  @srand: bool
+  @ascent: bool
+  @offed: bool
+  @last_key: Symbol?
+  @saturation: Integer
+  @ping: bool
 
   def hsv2rgb: (Float | Integer h, Integer s, Float | Integer v) -> Integer
 

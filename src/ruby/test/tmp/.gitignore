@@ -2,3 +2,4 @@ test
 test.*
 models.*
 hal
+main.c

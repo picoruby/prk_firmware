@@ -31,7 +31,7 @@ static bool mutual = false;
  * Mutual UART on a single line may break your microcontroller.
  */
 void
-c_mutual_uart_at_my_own_risk_eq(mrb_vm *vm, mrb_value *v, int argc)
+c_mutual_uart_eq(mrb_vm *vm, mrb_value *v, int argc)
 {
   if (GET_ARG(1).tt == MRBC_TT_TRUE) {
     mutual = true;
@@ -44,7 +44,6 @@ void
 c_uart_anchor_init(mrb_vm *vm, mrb_value *v, int argc)
 {
   if (mutual) {
-    console_printf("\n[WARNING] Using mutual UART is at your own risk.\n\n");
     uart_pin = GET_INT_ARG(1);
     gpio_init(uart_pin);
     gpio_set_dir(uart_pin, GPIO_OUT);

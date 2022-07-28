@@ -72,11 +72,6 @@ task :check_setup do
       sh "bundle exec steep -h > /dev/null 2>&1", verbose: false
       sh "bundle exec mrubyc-test -h > /dev/null 2>&1", verbose: false
     end
-    dir = "lib/picoruby/build/repos/host/mruby-mrubyc/repos/mrubyc/src/hal_user_reserved"
-    sh "ls #{dir} > /dev/null 2>&1", verbose: false
-    sh "ls #{dir}/hal.c > /dev/null 2>&1", verbose: false
-    sh "ls #{dir}/hal.h > /dev/null 2>&1", verbose: false
-    sh "ls src/ruby/app/models/buffer.rb > /dev/null 2>&1", verbose: false
     sh "ls src/ruby/test/tmp/hal/ > /dev/null 2>&1", verbose: false
   rescue => e
     puts "You need to do `rake setup`!"
@@ -92,14 +87,14 @@ task :setup do
     sh "bundle exec steep -h || bundle install"
   end
   FileUtils.cd "lib/picoruby" do
+    # Just to prepare picorbc. So hal should be hal_posix
     sh "rake all MAX_SYMBOLS_COUNT=#{MAX_SYMBOLS_COUNT}"
-  end
-  FileUtils.cd "lib/picoruby/build/repos/host/mruby-mrubyc/repos/mrubyc/src/hal_user_reserved" do
-    FileUtils.ln_sf "../../../../../../../../../hal/hal.c", "hal.c"
-    FileUtils.ln_sf "../../../../../../../../../hal/hal.h", "hal.h"
   end
   FileUtils.cd "src/ruby/app/models" do
     FileUtils.ln_sf "../../../../lib/picoruby/build/repos/host/mruby-bin-picoirb/tools/picoirb/buffer.rb", "buffer.rb"
+  end
+  FileUtils.cd "src/ruby/sig" do
+    FileUtils.ln_sf "../../../lib/picoruby/build/repos/host/mruby-bin-picoirb/tools/picoirb/buffer.rbs", "buffer.rbs"
   end
   FileUtils.cd "src/ruby/test/tmp" do
     FileUtils.ln_sf "../../../../lib/picoruby/build/repos/host/mruby-mrubyc/repos/mrubyc/src/hal_posix", "hal"
@@ -118,6 +113,7 @@ task :deep_clean do
   FileUtils.rm_r Dir.glob("build/*")
   FileUtils.rm_rf "lib/picoruby"
   FileUtils.rm_rf "src/ruby/app/models/buffer.rb"
+  FileUtils.rm_rf "src/ruby/sig/buffer.rbs"
   FileUtils.rm_rf "src/ruby/test/tmp/hal"
 end
 
