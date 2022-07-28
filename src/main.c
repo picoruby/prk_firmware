@@ -117,6 +117,7 @@ configure_prk(void)
   }
 }
 
+
 void
 c_reset_usb_boot(mrb_vm *vm, mrb_value *v, int argc)
 {
@@ -265,19 +266,19 @@ create_keymap_task(mrbc_tcb *tcb)
 }
 
 void
-c_resume_keymap(mrb_vm *vm, mrb_value *v, int argc)
+c_Keyboard_resume_keymap(mrb_vm *vm, mrb_value *v, int argc)
 {
   mrbc_resume_task(tcb_keymap);
 }
 
 void
-c_suspend_keymap(mrb_vm *vm, mrb_value *v, int argc)
+c_Keyboard_suspend_keymap(mrb_vm *vm, mrb_value *v, int argc)
 {
   mrbc_suspend_task(tcb_keymap);
 }
 
 void
-c_reload_keymap(mrb_vm *vm, mrb_value *v, int argc)
+c_Keyboard_reload_keymap(mrb_vm *vm, mrb_value *v, int argc)
 {
   create_keymap_task(tcb_keymap);
 }
@@ -449,10 +450,10 @@ int main() {
 #ifdef PRK_NO_MSC
   mrbc_create_task(keymap, 0);
 #else
-  mrbc_define_method(0, mrbc_class_object, "reload_keymap",     c_reload_keymap);
-  mrbc_define_method(0, mrbc_class_object, "suspend_keymap",    c_suspend_keymap);
-  mrbc_define_method(0, mrbc_class_object, "resume_keymap",     c_resume_keymap);
-  mrbc_define_method(0, mrbc_class_object, "resume_task",       c_resume_task);
+  mrbc_define_method(0, mrbc_class_Keyboard, "reload_keymap",  c_Keyboard_reload_keymap);
+  mrbc_define_method(0, mrbc_class_Keyboard, "suspend_keymap", c_Keyboard_suspend_keymap);
+  mrbc_define_method(0, mrbc_class_Keyboard, "resume_keymap",  c_Keyboard_resume_keymap);
+  mrbc_define_method(0, mrbc_class_object,   "resume_task",    c_resume_task);
 #endif
   autoreload_state = AUTORELOAD_READY;
   mrbc_run();
