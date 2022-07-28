@@ -21,6 +21,7 @@
 
 /* ruby */
 /* models */
+#include "ruby/app/ext/object.c"
 #include "ruby/app/models/float_ext.c"
 #include "ruby/app/models/keyboard.c"
 #include "ruby/app/models/rotary_encoder.c"
@@ -67,7 +68,6 @@ tusb_desc_device_t desc_device =
 // String Descriptors
 //--------------------------------------------------------------------+
 #include "version.h"
-#define PRK_SERIAL (PRK_VERSION "-" PRK_BUILDDATE "-" PRK_REVISION)
 char const *string_desc_arr[STRING_DESC_ARR_SIZE] =
 {
   (const char[]) { 0x09, 0x04 }, // 0: is supported language is English (0x0409)
@@ -117,6 +117,12 @@ configure_prk(void)
   }
 }
 
+void
+c__prk_description(mrb_vm *vm, mrb_value *v, int argc)
+{
+  mrbc_value desc = mrbc_string_new(vm, PRK_DESCRIPTION, sizeof(PRK_DESCRIPTION));
+  SET_RETURN(desc);
+}
 
 void
 c_reset_usb_boot(mrb_vm *vm, mrb_value *v, int argc)
@@ -441,6 +447,7 @@ int main() {
   USB_INIT();
   UART_INIT();
   SANDBOX_INIT();
+  mrbc_load_model(object);
   mrbc_load_model(float_ext);
   mrbc_load_model(buffer);
   mrbc_load_model(keyboard);
@@ -450,10 +457,11 @@ int main() {
 #ifdef PRK_NO_MSC
   mrbc_create_task(keymap, 0);
 #else
-  mrbc_define_method(0, mrbc_class_Keyboard, "reload_keymap",  c_Keyboard_reload_keymap);
-  mrbc_define_method(0, mrbc_class_Keyboard, "suspend_keymap", c_Keyboard_suspend_keymap);
-  mrbc_define_method(0, mrbc_class_Keyboard, "resume_keymap",  c_Keyboard_resume_keymap);
-  mrbc_define_method(0, mrbc_class_object,   "resume_task",    c_resume_task);
+  mrbc_define_method(0, mrbc_class_object,   "_prk_description", c__prk_description);
+  mrbc_define_method(0, mrbc_class_Keyboard, "reload_keymap",    c_Keyboard_reload_keymap);
+  mrbc_define_method(0, mrbc_class_Keyboard, "suspend_keymap",   c_Keyboard_suspend_keymap);
+  mrbc_define_method(0, mrbc_class_Keyboard, "resume_keymap",    c_Keyboard_resume_keymap);
+  mrbc_define_method(0, mrbc_class_object,   "resume_task",      c_resume_task);
 #endif
   autoreload_state = AUTORELOAD_READY;
   mrbc_run();

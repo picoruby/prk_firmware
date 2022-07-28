@@ -68,6 +68,10 @@ else()
   add_custom_target(keymap)
 endif()
 
+add_custom_target(ext
+  COMMAND ${RBC} -Bobject         object.rb
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src/ruby/app/ext
+)
 add_custom_target(models
   COMMAND ${RBC} -Bfloat_ext      float_ext.rb
   COMMAND ${RBC} -Bkeyboard       keyboard.rb
@@ -90,6 +94,7 @@ add_custom_target(ruby
 )
 
 add_dependencies(ruby
+  ext
   models
   tasks
 )

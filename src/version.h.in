@@ -3,3 +3,6 @@
 #define PRK_VERSION   "@PRK_VERSION@"
 #define PRK_BUILDDATE "@PRK_BUILDDATE@"
 #define PRK_REVISION  "@PRK_REVISION@"
+
+#define PRK_SERIAL       PRK_VERSION " (" PRK_BUILDDATE " revision " PRK_REVISION ")"
+#define PRK_DESCRIPTION  "PRK Firmware " PRK_SERIAL

@@ -4,7 +4,10 @@
   sleep_ms 2
 end
 print "\e[2J\e[1;1H" # clear all & home
-puts "PRK Firmware started!\n\n"
+puts "==============================================="
+puts Object._prk_description
+puts "==============================================="
+
 autoreload_tick = 0
 
 $mutex = false

@@ -26,4 +26,8 @@ class Object
   def write_file_internal : (String, String) -> void
   def find_file : (String) -> ( [Integer, Integer] | nil )
   def read_file : (Integer, Integer) -> String
+
+  # PRK
+  def self._prk_description : () -> String
+  def _puts : (*String) -> nil
 end

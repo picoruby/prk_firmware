@@ -37,9 +37,6 @@ static bool ejected = false;
 
 #include "version.h"
 
-#define PRK_DESCRIPTION \
-"PRK Firmware " PRK_VERSION " (" PRK_BUILDDATE " revision " PRK_REVISION ")"
-
 /* PRK_DESCRIPTION should be located at the beginning of README. see msc_init() */
 #define README_CONTENTS \
 PRK_DESCRIPTION "\n\nWelcome to PRK Firmware!\n\n\
