@@ -8,10 +8,7 @@ class Object
   def sandbox_picorbc: (String) -> bool
   def sandbox_resume: () -> bool
   def autoreload_ready?: () -> bool
-  def suspend_keymap: () -> void
-  def resume_keymap: () -> void
   def resume_task: (String) -> bool
-  def reload_keymap: () -> void
   def report_hid : (Integer, String) -> void
   def raw_hid_report_received?: -> bool
   def get_last_received_raw_hid_report: -> Array[Integer]
@@ -29,4 +26,8 @@ class Object
   def write_file_internal : (String, String) -> void
   def find_file : (String) -> ( [Integer, Integer] | nil )
   def read_file : (Integer, Integer) -> String
+
+  # PRK
+  def self._prk_description : () -> String
+  def _puts : (*String) -> nil
 end
