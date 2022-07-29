@@ -1,0 +1,3 @@
+class Consumer
+  KEYCODE: Hash[Symbol, Integer]
+end

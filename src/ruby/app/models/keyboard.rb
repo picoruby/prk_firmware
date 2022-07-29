@@ -3,6 +3,7 @@ if RUBY_ENGINE == 'mruby/c'
   require "debounce"
   require "rgb"
   require "rotary_encoder"
+  require "consumer"
 end
 
 class Keyboard
@@ -752,35 +753,37 @@ class Keyboard
 
   def find_keycode_index(key)
     key = resolve_key_alias(key)
-    keycode_index = KEYCODE.index(key)
-
-    if keycode_index
-      keycode_index * -1
+    keycode = KEYCODE.index(key)
+    if keycode
+      keycode * -1
     elsif KEYCODE_SFT[key]
       (KEYCODE_SFT[key] + 0x100) * -1
     elsif MOD_KEYCODE[key]
       MOD_KEYCODE[key]
     elsif RGB::KEYCODE[key]
       RGB::KEYCODE[key]
-    elsif key.to_s[0, 9] == "JS_BUTTON"
+    elsif Consumer::KEYCODE[key]
+      # You need to `require "consumer"`
+      Consumer::KEYCODE[key] + 0x300
+    elsif key.to_s.start_with?("JS_BUTTON")
       # JS_BUTTON0 - JS_BUTTON31
       # You need to `require "joystick"`
       key.to_s[9, 10].to_i + 0x200
-    elsif key.to_s[0, 7] == "JS_HAT_"
+    elsif key.to_s.start_with?("JS_HAT_")
       case key
       when :JS_HAT_RIGHT
-        0b0001 + 0x300
+        0b0001 + 0x100
       when :JS_HAT_UP
-        0b0010 + 0x300
+        0b0010 + 0x100
       when :JS_HAT_DOWN
-        0b0100 + 0x300
+        0b0100 + 0x100
       when :JS_HAT_LEFT
-        0b1000 + 0x300
+        0b1000 + 0x100
       else
-        0 #== :KC_NO
+        key # Symbol (possibly user defined)
       end
     else
-      key
+      key # Symbol (should be user defined)
     end
   end
 
@@ -951,9 +954,9 @@ class Keyboard
         return
       end
     end
-    report_hid(modifier, "#{c}\000\000\000\000\000")
+    hid_task(modifier, "#{c}\000\000\000\000\000", 0)
     sleep_ms 1
-    report_hid(0, "\000\000\000\000\000\000")
+    hid_task(0, "\000\000\000\000\000\000", 0)
     sleep_ms 1
   end
 
@@ -1111,23 +1114,36 @@ class Keyboard
 
         keymap = @keymaps[@locked_layer || @layer || @default_layer]
         modifier_switch_positions.clear
+        consumer_keycode = 0
         @switches.each_with_index do |switch, i|
           keycode = keymap[switch[0]][switch[1]]
           next unless keycode.is_a?(Integer)
-          if keycode < -255 # Key with SHIFT
+          # Reserved keycode range
+          #        ..-0x100 : Key with shift
+          #  -0x0FF..-0x001 : Normal key
+          #       0.. 0x100 : Modifier key
+          #   0x101.. 0x1FF : Joystick D-pad hat
+          #   0x200.. 0x2FF : Joystick button
+          #   0x300.. 0x5FF : Consumer (media) key
+          #   0x600.. 0x6FF : RGB
+          if keycode < -0xFF
             @keycodes << ((keycode + 0x100) * -1).chr
             @modifier |= 0b00100000
-          elsif keycode < 0 # Normal keys
+          elsif keycode < 0
             @keycodes << (keycode * -1).chr
-          elsif keycode > 0x300 # Joystick hat
-            joystick_hat |= (keycode - 0x300)
-          elsif keycode >= 0x200 # Joystick button
-            joystick_buttons |= (1 << (keycode - 0x200))
-          elsif keycode > 0x100 # RGB
-            rgb_message = $rgb.invoke_anchor RGB::KEYCODE.key(keycode)
-          else # Should be a modifier key
+          elsif keycode < 0x100
             @modifier |= keycode
             modifier_switch_positions.unshift i
+          elsif keycode < 0x200
+            joystick_hat |= (keycode - 0x100)
+          elsif keycode < 0x300
+            joystick_buttons |= (1 << (keycode - 0x200))
+          elsif keycode < 0x600
+            consumer_keycode = keycode - 0x300
+          elsif keycode < 0x700
+            rgb_message = $rgb.invoke_anchor RGB::KEYCODE.key(keycode)
+          else
+            puts "[WARN] Wrong keycode!"
           end
         end
         # To fix https://github.com/picoruby/prk_firmware/issues/49
@@ -1183,9 +1199,9 @@ class Keyboard
           end
         end
 
-        @joystick.report_hid(joystick_buttons, joystick_hat) if @joystick
+        @joystick&.report_hid(joystick_buttons, joystick_hat)
 
-        report_hid(@modifier, @keycodes.join)
+        hid_task(@modifier, @keycodes.join, consumer_keycode)
 
         if @locked_layer
           # @type ivar @locked_layer: Symbol

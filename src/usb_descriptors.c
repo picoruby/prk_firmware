@@ -221,6 +221,77 @@ report_raw_hid(uint8_t* data, uint8_t len)
   }
 }
 
+static uint8_t keyboard_modifier = 0;
+static uint8_t *keyboard_keycodes = NULL;
+static uint16_t consumer_keycode = 0;
+
+static void
+send_hid_report(uint8_t report_id)
+{
+  // skip if hid is not ready yet
+  if ( !tud_hid_ready() ) return;
+
+  switch(report_id)
+  {
+    case REPORT_ID_KEYBOARD: {
+      tud_hid_keyboard_report(REPORT_ID_KEYBOARD, keyboard_modifier, keyboard_keycodes);
+    }
+    break;
+
+    case REPORT_ID_MOUSE: {
+      int8_t const delta = 0;
+      tud_hid_mouse_report(REPORT_ID_MOUSE, 0x00, delta, delta, 0, 0);
+    }
+    break;
+
+    case REPORT_ID_CONSUMER_CONTROL: {
+      tud_hid_report(REPORT_ID_CONSUMER_CONTROL, &consumer_keycode, 2);
+    }
+    break;
+
+//    case REPORT_ID_GAMEPAD:
+//    {
+//      // use to avoid send multiple consecutive zero report for keyboard
+//      static bool has_gamepad_key = false;
+//
+//      hid_gamepad_report_t report =
+//      {
+//        .x   = 0, .y = 0, .z = 0, .rz = 0, .rx = 0, .ry = 0,
+//        .hat = 0, .buttons = 0
+//      };
+//
+//      if ( btn )
+//      {
+//        report.hat = GAMEPAD_HAT_UP;
+//        report.buttons = GAMEPAD_BUTTON_A;
+//        tud_hid_report(REPORT_ID_GAMEPAD, &report, sizeof(report));
+//
+//        has_gamepad_key = true;
+//      }else
+//      {
+//        report.hat = GAMEPAD_HAT_CENTERED;
+//        report.buttons = 0;
+//        if (has_gamepad_key) tud_hid_report(REPORT_ID_GAMEPAD, &report, sizeof(report));
+//        has_gamepad_key = false;
+//      }
+//    }
+//    break;
+
+    default: break;
+  }
+}
+
+void
+tud_hid_report_complete_cb(uint8_t instance, uint8_t const* report, uint8_t len)
+{
+  (void) instance;
+  (void) len;
+  uint8_t next_report_id = report[0] + 1;
+  if (next_report_id < REPORT_ID_COUNT) {
+    send_hid_report(next_report_id);
+  }
+}
+
 //--------------------------------------------------------------------+
 // Ruby methods
 //--------------------------------------------------------------------+
@@ -293,48 +364,18 @@ c_report_raw_hid(mrb_vm *vm, mrb_value *v, int argc) {
 }
 
 void
-c_mouse_report_hid(mrb_vm *vm, mrb_value *v, int argc)
+c_Keyboard_hid_task(mrb_vm *vm, mrb_value *v, int argc)
 {
-  int8_t const delta = 0;
+  keyboard_modifier = (uint8_t)GET_INT_ARG(1);
+  keyboard_keycodes = GET_STRING_ARG(2);
+  consumer_keycode = (uint16_t)GET_INT_ARG(3);
+
   if (tud_suspended()) {
     // Wake up host if we are in suspend mode
     // and REMOTE_WAKEUP feature is enabled by host
     tud_remote_wakeup();
-  }
-
-  if (tud_hid_ready()) {
-    tud_hid_mouse_report(REPORT_ID_MOUSE, 0x00, delta, delta, 0, 0);
-  }
-}
-
-void
-c_consumer_report_hid(mrb_vm *vm, mrb_value *v, int argc)
-{
-  uint16_t empty = 0;
-  if (tud_suspended()) {
-    // Wake up host if we are in suspend mode
-    // and REMOTE_WAKEUP feature is enabled by host
-    tud_remote_wakeup();
-  }
-
-  if (tud_hid_ready()) {
-    tud_hid_report(REPORT_ID_CONSUMER_CONTROL, &empty, 2);
-  }
-}
-
-void
-c_report_hid(mrb_vm *vm, mrb_value *v, int argc)
-{
-  uint8_t modifier = GET_INT_ARG(1);
-  uint8_t *keycodes = GET_STRING_ARG(2);
-  if (tud_suspended()) {
-    // Wake up host if we are in suspend mode
-    // and REMOTE_WAKEUP feature is enabled by host
-    tud_remote_wakeup();
-  }
-
-  if (tud_hid_ready()) {
-    tud_hid_keyboard_report(REPORT_ID_KEYBOARD, modifier, keycodes);
+  } else {
+    send_hid_report(REPORT_ID_KEYBOARD);
   }
 }
 
