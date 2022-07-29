@@ -39,7 +39,6 @@ class Keyboard
   MOD_KEYCODE: Hash[Symbol, Integer]
   KEYCODE: Array[Symbol]
   KEYCODE_SFT: Hash[Symbol, Integer]
-  KEYCODE_RGB: Hash[Symbol, Integer]
   LETTER: Array[String | Symbol | nil]
   KC_ALIASES: Hash[Symbol, Symbol]
 

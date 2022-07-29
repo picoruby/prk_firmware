@@ -224,22 +224,6 @@ class Keyboard
     KC_QUES:           0x38,
   }
 
-  KEYCODE_RGB = {
-    RGB_TOG:          0x101,
-    RGB_MODE_FORWARD: 0x102,
-    RGB_MOD:          0x103,
-    RGB_MODE_REVERSE: 0x104,
-    RGB_RMOD:         0x105,
-    RGB_HUI:          0x106,
-    RGB_HUD:          0x107,
-    RGB_SAI:          0x108,
-    RGB_SAD:          0x109,
-    RGB_VAI:          0x10a,
-    RGB_VAD:          0x10b,
-    RGB_SPI:          0x10c,
-    RGB_SPD:          0x10d
-  }
-
 end
 
 #
@@ -776,8 +760,8 @@ class Keyboard
       (KEYCODE_SFT[key] + 0x100) * -1
     elsif MOD_KEYCODE[key]
       MOD_KEYCODE[key]
-    elsif KEYCODE_RGB[key]
-      KEYCODE_RGB[key]
+    elsif RGB::KEYCODE[key]
+      RGB::KEYCODE[key]
     elsif key.to_s[0, 9] == "JS_BUTTON"
       # JS_BUTTON0 - JS_BUTTON31
       # You need to `require "joystick"`
@@ -960,7 +944,7 @@ class Keyboard
         modifier = 0b00100000
         c = keycode.chr
       else
-        keycode = KEYCODE_RGB[symbol]
+        keycode = RGB::KEYCODE[symbol]
         if keycode && $rgb
           $rgb.invoke_anchor(symbol)
         end
@@ -1140,7 +1124,7 @@ class Keyboard
           elsif keycode >= 0x200 # Joystick button
             joystick_buttons |= (1 << (keycode - 0x200))
           elsif keycode > 0x100 # RGB
-            rgb_message = $rgb.invoke_anchor KEYCODE_RGB.key(keycode)
+            rgb_message = $rgb.invoke_anchor RGB::KEYCODE.key(keycode)
           else # Should be a modifier key
             @modifier |= keycode
             modifier_switch_positions.unshift i

@@ -15,6 +15,7 @@ class RGB
   type action_type = :thunder
                    | nil
 
+  KEYCODE: Hash[Symbol, Integer]
   EFFECTS: Array[effect_type]
 
   def ws2812_init: (Integer, Integer, bool) -> void

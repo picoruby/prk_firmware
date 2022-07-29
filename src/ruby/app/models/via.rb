@@ -227,7 +227,7 @@ class VIA
           return :RGB_RMOD
         when (0x5CC5..0x5CCC)
           idx = keycode & 0x0F
-          return Keyboard::KEYCODE_RGB.keys[idx]
+          return RGB::KEYCODE.keys[idx]
         end
       end
     end
