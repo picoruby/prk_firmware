@@ -231,9 +231,13 @@ send_hid_report(uint8_t report_id)
     break;
 
     case REPORT_ID_CONSUMER_CONTROL: {
-      if(! via_active) {
-        tud_hid_report(REPORT_ID_CONSUMER_CONTROL, &consumer_keycode, 2);
+      static int16_t prev_keycode = 0;
+      if (prev_keycode == consumer_keycode) {
+        consumer_keycode = 0;
+      } else {
+        prev_keycode = consumer_keycode;
       }
+      tud_hid_report(REPORT_ID_CONSUMER_CONTROL, &consumer_keycode, 2);
     }
     break;
 

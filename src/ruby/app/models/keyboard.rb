@@ -936,28 +936,37 @@ class Keyboard
   end
 
   # for Encoders
-  def send_key(symbol)
-    keycode = KEYCODE.index(symbol)
-    if keycode
-      modifier = 0
-      c = keycode.chr
+  def send_key(*symbols)
+    modifier = 0
+    keycodes = "\000\000\000\000\000\000"
+    consumer = 0
+    if RGB::KEYCODE[symbols[0]]
+      $rgb&.invoke_anchor(symbols[0])
+      return
+    elsif keycode = Consumer::KEYCODE[symbols[0]]
+      consumer = keycode
+    elsif keycode = KEYCODE_SFT[symbols[0]]
+      modifier = 0b00100000
+      keycodes = "#{keycode.chr}\000\000\000\000\000"
     else
-      keycode = KEYCODE_SFT[symbol]
-      if keycode
-        modifier = 0b00100000
-        c = keycode.chr
-      else
-        keycode = RGB::KEYCODE[symbol]
-        if keycode && $rgb
-          $rgb.invoke_anchor(symbol)
+      6.times do |i|
+        break i unless symbols[i]
+        if code = KEYCODE.index(symbols[i])
+         keycodes[i] = code.chr
+        elsif code = MOD_KEYCODE[symbols[i]]
+          modifier |= code
         end
-        return
       end
     end
-    hid_task(modifier, "#{c}\000\000\000\000\000", 0, 0, 0)
-    sleep_ms 1
+    tud_task
+    cdc_task
+    hid_task(modifier, keycodes, consumer, 0, 0)
+    (consumer > 0 ? 3 : 1).times do
+      sleep_ms 1
+      tud_task
+      cdc_task
+    end
     hid_task(0, "\000\000\000\000\000\000", 0, 0, 0)
-    sleep_ms 1
   end
 
   def output_report_changed(&block)
