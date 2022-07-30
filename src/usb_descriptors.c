@@ -101,7 +101,7 @@ uint8_t const desc_fs_configuration[] =
 #endif
 
   // Interface number, string index, protocol, report descriptor len, EP In address, size & polling interval
-  TUD_HID_INOUT_DESCRIPTOR(ITF_NUM_HID, 0, 0, sizeof(desc_hid_report), EPNUM_HID_OUT, EPNUM_HID_IN, 64, 0x08),
+  TUD_HID_INOUT_DESCRIPTOR(ITF_NUM_HID, 0, 0, sizeof(desc_hid_report), EPNUM_HID_OUT, EPNUM_HID_IN, 64, 0x01),
 };
 
 
@@ -210,7 +210,7 @@ static uint8_t *keyboard_keycodes = NULL;
 static uint16_t consumer_keycode = 0;
 static uint32_t joystick_buttons = 0;
 static uint8_t joystick_hat = 0;
-
+static bool via_active = false;
 static void
 send_hid_report(uint8_t report_id)
 {
@@ -327,6 +327,7 @@ report_raw_hid(uint8_t* data, uint8_t len)
   }
   /*------------- RAW HID -------------*/
   if (tud_hid_ready()) {
+    via_active = true;
     return tud_hid_report(REPORT_ID_RAWHID, data, len);
   } else {
     return false;
@@ -365,6 +366,9 @@ c_Keyboard_hid_task(mrb_vm *vm, mrb_value *v, int argc)
   joystick_buttons  = (uint32_t)GET_INT_ARG(4);
   joystick_hat      = (uint8_t)GET_INT_ARG(5);
 
+  if (consumer_keycode != 0) {
+    via_active = false;
+  }
   if (tud_suspended()) {
     // Wake up host if we are in suspend mode
     // and REMOTE_WAKEUP feature is enabled by host
