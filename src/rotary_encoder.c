@@ -93,8 +93,8 @@ c_init_encoder(mrb_vm *vm, mrb_value *v, int argc)
 {
   uint32_t events = GPIO_IRQ_EDGE_FALL | GPIO_IRQ_EDGE_RISE;
   if (encoder_count == 0) {
-     gpio_set_irq_enabled_with_callback(0, events, false, &encoder_callback);
-  } else if (encoder_count > 4) {
+    gpio_set_irq_enabled_with_callback(0, events, false, &encoder_callback);
+  } else if (encoder_count == MAX_ENCODER_COUNT) {
     console_printf("RotaryEncoderLimitationError.\n");
     return;
   }
@@ -103,12 +103,12 @@ c_init_encoder(mrb_vm *vm, mrb_value *v, int argc)
   gpio_init(pin_a);
   gpio_set_dir(pin_a, GPIO_IN);
   gpio_pull_up(pin_a);
-  gpio_set_irq_enabled(pin_a, events, true);
+  gpio_set_irq_enabled_with_callback(pin_a, events, true, &encoder_callback);
   pins_a[encoder_count] = pin_a;
   gpio_init(pin_b);
   gpio_set_dir(pin_b, GPIO_IN);
   gpio_pull_up(pin_b);
-  gpio_set_irq_enabled(pin_b, events, true);
+  gpio_set_irq_enabled_with_callback(pin_b, events, true, &encoder_callback);
   pins_b[encoder_count] = pin_b;
   SET_INT_RETURN(encoder_count);
   encoder_count++;
