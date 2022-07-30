@@ -937,15 +937,14 @@ class Keyboard
 
   # for Encoders
   def send_key(*symbols)
-    symbols.each {|s| puts s}
     modifier = 0
     keycodes = "\000\000\000\000\000\000"
-    cons = 0
+    consumer = 0
     if RGB::KEYCODE[symbols[0]]
       $rgb&.invoke_anchor(symbols[0])
       return
     elsif keycode = Consumer::KEYCODE[symbols[0]]
-      cons = keycode - 0x300
+      consumer = keycode
     elsif keycode = KEYCODE_SFT[symbols[0]]
       modifier = 0b00100000
       keycodes = "#{keycode.chr}\000\000\000\000\000"
@@ -961,9 +960,12 @@ class Keyboard
     end
     tud_task
     cdc_task
-    hid_task(modifier, keycodes, cons, 0, 0)
-    tud_task
-    cdc_task
+    hid_task(modifier, keycodes, consumer, 0, 0)
+    (consumer > 0 ? 3 : 1).times do
+      sleep_ms 1
+      tud_task
+      cdc_task
+    end
     hid_task(0, "\000\000\000\000\000\000", 0, 0, 0)
   end
 
