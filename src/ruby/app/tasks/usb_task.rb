@@ -20,7 +20,7 @@ while true
       puts "\nReloading keymap"
       $rgb.turn_off if $rgb
       Keyboard.suspend_keymap
-      Keyboard.hid_task(0, "\000\000\000\000\000\000", 0)
+      Keyboard.hid_task(0, "\000\000\000\000\000\000", 0, 0, 0)
       autoreload_tick = 200
     elsif autoreload_tick == 1
       Keyboard.reload_keymap

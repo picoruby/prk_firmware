@@ -954,9 +954,9 @@ class Keyboard
         return
       end
     end
-    hid_task(modifier, "#{c}\000\000\000\000\000", 0)
+    hid_task(modifier, "#{c}\000\000\000\000\000", 0, 0, 0)
     sleep_ms 1
-    hid_task(0, "\000\000\000\000\000\000", 0)
+    hid_task(0, "\000\000\000\000\000\000", 0, 0, 0)
     sleep_ms 1
   end
 
@@ -1199,9 +1199,15 @@ class Keyboard
           end
         end
 
-        @joystick&.report_hid(joystick_buttons, joystick_hat)
+        #@joystick&.report_hid(joystick_buttons, joystick_hat)
 
-        hid_task(@modifier, @keycodes.join, consumer_keycode)
+        hid_task(
+          @modifier,
+          @keycodes.join,
+          consumer_keycode,
+          joystick_buttons,
+          joystick_hat
+        )
 
         if @locked_layer
           # @type ivar @locked_layer: Symbol

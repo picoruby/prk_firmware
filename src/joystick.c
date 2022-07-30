@@ -92,12 +92,13 @@ c_Joystick_init_axis_offset(mrb_vm *vm, mrb_value *v, int argc)
 }
 
 void
-c_Joystick_report_hid(mrb_vm *vm, mrb_value *v, int argc) {
+joystick_report_hid(uint32_t buttons, uint8_t hat)
+{
   static bool zero_reported = false;
   hid_gamepad_report_t report;
   memset(&report, 0, sizeof(report));
   /* buttons */
-  report.buttons = GET_INT_ARG(1);
+  report.buttons = buttons;
   /* analog axes */
   int16_t value;
   for (int ch = 0; ch < MAX_ADC_COUNT; ch++) {
@@ -138,7 +139,6 @@ c_Joystick_report_hid(mrb_vm *vm, mrb_value *v, int argc) {
    * GAMEPAD_HAT_LEFT        7
    * GAMEPAD_HAT_UP_LEFT     8
    */
-  uint8_t hat = GET_INT_ARG(2);
   if (hat <= 0b0100) {
     switch (hat) {
       case 0b0001: report.hat = GAMEPAD_HAT_RIGHT;      break;

@@ -115,8 +115,8 @@ class Keyboard
   def self.resume_keymap: () -> void
   def self.reload_keymap: () -> void
 
-  def self.hid_task : (Integer, String, Integer) -> void
-  def hid_task : (Integer, String, Integer) -> void
+  def self.hid_task : (Integer, String, Integer, Integer, Integer) -> void
+  def hid_task : (Integer, String, Integer, Integer, Integer) -> void
 
   def set_debounce: (debounce_type) -> void
   def set_debounce_threshold: (Integer) -> void
