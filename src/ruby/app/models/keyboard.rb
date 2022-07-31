@@ -3,7 +3,7 @@ if RUBY_ENGINE == 'mruby/c'
   require "debounce"
   require "rgb"
   require "rotary_encoder"
-  require "consumer"
+  require "consumer_key"
 end
 
 class Keyboard
@@ -762,9 +762,9 @@ class Keyboard
       MOD_KEYCODE[key]
     elsif RGB::KEYCODE[key]
       RGB::KEYCODE[key]
-    elsif Consumer::KEYCODE[key]
-      # You need to `require "consumer"`
-      Consumer::KEYCODE[key] + 0x300
+    elsif ConsumerKey::KEYCODE[key]
+      # You need to `require "consumer_key"`
+      ConsumerKey::KEYCODE[key] + 0x300
     elsif key.to_s.start_with?("JS_BUTTON")
       # JS_BUTTON0 - JS_BUTTON31
       # You need to `require "joystick"`
@@ -952,7 +952,7 @@ class Keyboard
     if RGB::KEYCODE[symbols[0]]
       $rgb&.invoke_anchor(symbols[0])
       return
-    elsif keycode = Consumer::KEYCODE[symbols[0]]
+    elsif keycode = ConsumerKey::KEYCODE[symbols[0]]
       consumer = keycode
     elsif keycode = KEYCODE_SFT[symbols[0]]
       modifier = 0b00100000

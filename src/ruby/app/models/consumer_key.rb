@@ -1,4 +1,4 @@
-class Consumer
+class ConsumerKey
   KEYCODE = {
     :KC_SYSTEM_POWER     => 0x081,
     :KC_PWR              => 0x081,
