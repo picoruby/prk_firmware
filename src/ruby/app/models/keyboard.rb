@@ -936,7 +936,16 @@ class Keyboard
   end
 
   # for Encoders
-  def send_key(*symbols)
+  def send_key(*args)
+    symbols = case args[0].class
+    when Symbol
+      args
+    when Array
+      args[0]
+    else
+      puts "[WARN] Argument for send_key is wrong"
+      []
+    end
     modifier = 0
     keycodes = "\000\000\000\000\000\000"
     consumer = 0
