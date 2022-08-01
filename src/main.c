@@ -393,7 +393,7 @@ c_resume_task(mrb_vm *vm, mrb_value *v, int argc)
 }
 
 void
-c_require(mrb_vm *vm, mrb_value *v, int argc)
+c__require(mrb_vm *vm, mrb_value *v, int argc)
 {
   const char *name = GET_STRING_ARG(1);
   int i = gem_index(name);
@@ -412,10 +412,8 @@ c_require(mrb_vm *vm, mrb_value *v, int argc)
       }
     }
     gems[i].required = true;
-    SET_TRUE_RETURN();
   } else {
-    console_printf("failed to load mrb -- %s\n (LoadError)", name);
-    /* ToDo: Exception */
+    SET_FALSE_RETURN();
   }
 }
 
@@ -430,7 +428,7 @@ int main() {
   board_init();
   tusb_init();
   mrbc_init(memory_pool, MEMORY_SIZE);
-  mrbc_define_method(0, mrbc_class_object, "require",      c_require);
+  mrbc_define_method(0, mrbc_class_object, "_require",     c__require);
   mrbc_define_method(0, mrbc_class_object, "board_millis", c_board_millis);
   mrbc_define_method(0, mrbc_class_object, "rand",         c_rand);
   mrbc_define_method(0, mrbc_class_object, "srand",        c_srand);

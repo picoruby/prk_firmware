@@ -28,5 +28,4 @@ class Object
 
   # PRK
   def self._prk_description : () -> String
-  def _puts : (*String) -> nil
 end

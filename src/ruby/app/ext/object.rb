@@ -1,4 +1,24 @@
+class LoadError < StandardError
+  # ScriptError is the super class in CRuby
+end
+
 class Object
+
+  def require(feature)
+    $LOADED_FEATURES ||= Array.new
+    if required?(feature)
+      false
+    elsif _require(feature)
+      $LOADED_FEATURES << feature
+      true
+    else
+      raise LoadError, "cannot load such gem -- #{feature}"
+    end
+  end
+
+  def required?(feature)
+    $LOADED_FEATURES&.include?(feature)
+  end
 
   alias _puts puts
 
