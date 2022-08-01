@@ -1,3 +1,4 @@
 class ConsumerKey
   KEYCODE: Hash[Symbol, Integer]
+  VIACODE: Hash[Integer, Symbol]
 end
