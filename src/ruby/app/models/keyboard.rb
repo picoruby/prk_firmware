@@ -756,15 +756,13 @@ class Keyboard
     keycode = KEYCODE.index(key)
     if keycode
       keycode * -1
-    elsif KEYCODE_SFT[key]
-      (KEYCODE_SFT[key] + 0x100) * -1
-    elsif MOD_KEYCODE[key]
-      MOD_KEYCODE[key]
-    elsif RGB::KEYCODE[key]
-      RGB::KEYCODE[key]
-    elsif ConsumerKey::KEYCODE[key]
+    elsif keycode = KEYCODE_SFT[key]
+      (keycode + 0x100) * -1
+    elsif keycode = MOD_KEYCODE[key] || RGB::KEYCODE[key]
+      keycode
+    elsif keycode = ConsumerKey.keycode(key)
       # You need to `require "consumer_key"`
-      ConsumerKey::KEYCODE[key] + 0x300
+      keycode + 0x300
     elsif key.to_s.start_with?("JS_BUTTON")
       # JS_BUTTON0 - JS_BUTTON31
       # You need to `require "joystick"`
@@ -952,7 +950,7 @@ class Keyboard
     if RGB::KEYCODE[symbols[0]]
       $rgb&.invoke_anchor(symbols[0])
       return
-    elsif keycode = ConsumerKey::KEYCODE[symbols[0]]
+    elsif keycode = ConsumerKey.keycode(symbols[0])
       consumer = keycode
     elsif keycode = KEYCODE_SFT[symbols[0]]
       modifier = 0b00100000
@@ -1157,7 +1155,7 @@ class Keyboard
           elsif keycode < 0x300
             joystick_buttons |= (1 << (keycode - 0x200))
           elsif keycode < 0x600
-            consumer_keycode = keycode - 0x300
+            consumer_keycode = ConsumerKey.keycode_from_mapcode(keycode)
           elsif keycode < 0x700
             rgb_message = $rgb.invoke_anchor RGB::KEYCODE.key(keycode)
           else
