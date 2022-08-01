@@ -28,6 +28,7 @@
 #include "ruby/app/models/rgb.c"
 #include "ruby/app/models/buffer.c"
 #include "ruby/app/models/via.c"
+#include "ruby/app/models/consumer_key.c"
 #include "ruby/app/models/debounce.c"
 #include "ruby/app/models/joystick.c"
 /* tasks */
@@ -358,6 +359,7 @@ picogems gems[] = {
   {"rotary_encoder", init_RotaryEncoder, rotary_encoder, NULL,     NULL, false},
   {"rgb",            init_RGB,           rgb,            rgb_task, NULL, false},
   {"via",            NULL,               via,            NULL,     NULL, false},
+  {"consumer_key",   NULL,               consumer_key,   NULL,     NULL, false},
   {"joystick",       init_Joystick,      joystick,       NULL,     NULL, false},
   {NULL,             NULL,               NULL,           NULL,     NULL, false}
 };

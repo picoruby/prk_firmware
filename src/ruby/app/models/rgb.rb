@@ -1,4 +1,22 @@
 class RGB
+  KEYCODE = {
+    RGB_TOG:          0x601,
+    RGB_MODE_FORWARD: 0x602,
+    RGB_MOD:          0x603,
+    RGB_MODE_REVERSE: 0x604,
+    RGB_RMOD:         0x605,
+    RGB_HUI:          0x606,
+    RGB_HUD:          0x607,
+    RGB_SAI:          0x608,
+    RGB_SAD:          0x609,
+    RGB_VAI:          0x60a,
+    RGB_VAD:          0x60b,
+    RGB_SPI:          0x60c,
+    RGB_SPD:          0x60d
+    #                 ^^^^^
+    #                 Hard-coded values
+  }
+
  def initialize(pin, underglow_size, backlight_size, is_rgbw = false)
     puts "Init RGB"
     turn_off

@@ -101,7 +101,7 @@ uint8_t const desc_fs_configuration[] =
 #endif
 
   // Interface number, string index, protocol, report descriptor len, EP In address, size & polling interval
-  TUD_HID_INOUT_DESCRIPTOR(ITF_NUM_HID, 0, 0, sizeof(desc_hid_report), EPNUM_HID_OUT, EPNUM_HID_IN, 64, 0x08),
+  TUD_HID_INOUT_DESCRIPTOR(ITF_NUM_HID, 0, 0, sizeof(desc_hid_report), EPNUM_HID_OUT, EPNUM_HID_IN, 64, 0x01),
 };
 
 
@@ -171,7 +171,9 @@ uint8_t const *
 tud_hid_descriptor_report_cb(uint8_t instance) {
     return desc_hid_report;
 }
-uint16_t tud_hid_get_report_cb(uint8_t instance, uint8_t report_id, hid_report_type_t report_type, uint8_t* buffer, uint16_t reqlen) {
+
+uint16_t
+tud_hid_get_report_cb(uint8_t instance, uint8_t report_id, hid_report_type_t report_type, uint8_t* buffer, uint16_t reqlen) {
     return 0;
 }
 
@@ -203,21 +205,67 @@ tud_hid_set_report_cb(uint8_t instance, uint8_t report_id, hid_report_type_t rep
   }
 }
 
-bool
-report_raw_hid(uint8_t* data, uint8_t len)
+static uint8_t keyboard_modifier = 0;
+static uint8_t *keyboard_keycodes = NULL;
+static uint16_t consumer_keycode = 0;
+static uint32_t joystick_buttons = 0;
+static uint8_t joystick_hat = 0;
+static bool via_active = false;
+static void
+send_hid_report(uint8_t report_id)
 {
-  bool ret;
-  // Remote wakeup
-  if (tud_suspended()) {
-    // Wake up host if we are in suspend mode
-    // and REMOTE_WAKEUP feature is enabled by host
-    tud_remote_wakeup();
+  // skip if hid is not ready yet
+  if ( !tud_hid_ready() ) return;
+
+  switch(report_id)
+  {
+    case REPORT_ID_KEYBOARD: {
+      tud_hid_keyboard_report(REPORT_ID_KEYBOARD, keyboard_modifier, keyboard_keycodes);
+    }
+    break;
+
+    case REPORT_ID_MOUSE: {
+      int8_t const delta = 0;
+      tud_hid_mouse_report(REPORT_ID_MOUSE, 0x00, delta, delta, 0, 0);
+    }
+    break;
+
+    case REPORT_ID_CONSUMER_CONTROL: {
+      if(! via_active) {
+        static int16_t prev_keycode = 0;
+        if (prev_keycode == consumer_keycode) {
+          consumer_keycode = 0;
+        } else {
+          prev_keycode = consumer_keycode;
+        }
+        tud_hid_report(REPORT_ID_CONSUMER_CONTROL, &consumer_keycode, 2);
+      }
+    }
+    break;
+
+    case REPORT_ID_GAMEPAD: {
+      joystick_report_hid(joystick_buttons, joystick_hat);
+    }
+    break;
+
+//    case REPORT_ID_RAWHID: {
+//      tud_hid_report(REPORT_ID_RAWHID, raw_c_data, raw_len);
+//    }
+//    break;
+
+    default: break;
   }
-  /*------------- RAW HID -------------*/
-  if (tud_hid_ready()) {
-    return tud_hid_report(REPORT_ID_RAWHID, data, len);
-  } else {
-    return false;
+}
+
+void
+tud_hid_report_complete_cb(uint8_t instance, uint8_t const* report, uint8_t len)
+{
+  (void) instance;
+  (void) len;
+  uint8_t next_report_id = report[0] + 1;
+  if (next_report_id < REPORT_ID_COUNT - 1) {
+    //                 ^^^^^^^^^^^^^^^^^^^ skip REPORT_ID_RAWHID
+    send_hid_report(next_report_id);
   }
 }
 
@@ -257,7 +305,7 @@ c_get_last_received_raw_hid_report(mrb_vm *vm, mrb_value *v, int argc) {
   rb_array->n_stored = raw_hid_last_received_report_length;
   for(uint8_t i=0; i<raw_hid_last_received_report_length && i<REPORT_RAW_MAX_LEN; i++) {
     mrbc_set_integer( (rb_array->data)+i, raw_hid_last_received_report[i] );
-  } 
+  }
   raw_hid_report_received = false;
 
   SET_RETURN(rb_val_array);
@@ -267,6 +315,25 @@ void
 c_tud_task(mrb_vm *vm, mrb_value *v, int argc)
 {
   tud_task();
+}
+
+bool
+report_raw_hid(uint8_t* data, uint8_t len)
+{
+  bool ret;
+  // Remote wakeup
+  if (tud_suspended()) {
+    // Wake up host if we are in suspend mode
+    // and REMOTE_WAKEUP feature is enabled by host
+    tud_remote_wakeup();
+  }
+  /*------------- RAW HID -------------*/
+  if (tud_hid_ready()) {
+    via_active = true;
+    return tud_hid_report(REPORT_ID_RAWHID, data, len);
+  } else {
+    return false;
+  }
 }
 
 void
@@ -293,48 +360,23 @@ c_report_raw_hid(mrb_vm *vm, mrb_value *v, int argc) {
 }
 
 void
-c_mouse_report_hid(mrb_vm *vm, mrb_value *v, int argc)
+c_Keyboard_hid_task(mrb_vm *vm, mrb_value *v, int argc)
 {
-  int8_t const delta = 0;
+  keyboard_modifier = (uint8_t)GET_INT_ARG(1);
+  keyboard_keycodes = GET_STRING_ARG(2);
+  consumer_keycode  = (uint16_t)GET_INT_ARG(3);
+  joystick_buttons  = (uint32_t)GET_INT_ARG(4);
+  joystick_hat      = (uint8_t)GET_INT_ARG(5);
+
+  if (consumer_keycode != 0) {
+    via_active = false;
+  }
   if (tud_suspended()) {
     // Wake up host if we are in suspend mode
     // and REMOTE_WAKEUP feature is enabled by host
     tud_remote_wakeup();
-  }
-
-  if (tud_hid_ready()) {
-    tud_hid_mouse_report(REPORT_ID_MOUSE, 0x00, delta, delta, 0, 0);
-  }
-}
-
-void
-c_consumer_report_hid(mrb_vm *vm, mrb_value *v, int argc)
-{
-  uint16_t empty = 0;
-  if (tud_suspended()) {
-    // Wake up host if we are in suspend mode
-    // and REMOTE_WAKEUP feature is enabled by host
-    tud_remote_wakeup();
-  }
-
-  if (tud_hid_ready()) {
-    tud_hid_report(REPORT_ID_CONSUMER_CONTROL, &empty, 2);
-  }
-}
-
-void
-c_report_hid(mrb_vm *vm, mrb_value *v, int argc)
-{
-  uint8_t modifier = GET_INT_ARG(1);
-  uint8_t *keycodes = GET_STRING_ARG(2);
-  if (tud_suspended()) {
-    // Wake up host if we are in suspend mode
-    // and REMOTE_WAKEUP feature is enabled by host
-    tud_remote_wakeup();
-  }
-
-  if (tud_hid_ready()) {
-    tud_hid_keyboard_report(REPORT_ID_KEYBOARD, modifier, keycodes);
+  } else {
+    send_hid_report(REPORT_ID_KEYBOARD);
   }
 }
 

@@ -3,6 +3,7 @@ if RUBY_ENGINE == 'mruby/c'
   require "debounce"
   require "rgb"
   require "rotary_encoder"
+  require "consumer_key"
 end
 
 class Keyboard
@@ -158,14 +159,14 @@ class Keyboard
     :KC_COPY,
     :KC_PASTE,
     :KC_FIND,
-    :KC_MUTE,
-    :KC_VOLUP,                 # 0x80
-    :KC_VOLDOWN,
-    :KC_,
-    :KC_,
-    :KC_,
-    :KC_,
-    :KC_,
+    :KC_KB_MUTE,
+    :KC_KB_VOLUME_UP,                 # 0x80
+    :KC_KB_VOLUME_DOWN,
+    :KC_LOCKING_CAPS_LOCK,
+    :KC_LOCKING_NUM_LOCK,
+    :KC_LOCKING_SCROLL_LOCK,
+    :KC_KP_COMMA,
+    :KC_KP_EQUAL_AS400,
     :KC_INT1,
     :KC_INT2,
     :KC_INT3,
@@ -222,22 +223,6 @@ class Keyboard
     KC_LABK:           0x36,
     KC_RABK:           0x37,
     KC_QUES:           0x38,
-  }
-
-  KEYCODE_RGB = {
-    RGB_TOG:          0x101,
-    RGB_MODE_FORWARD: 0x102,
-    RGB_MOD:          0x103,
-    RGB_MODE_REVERSE: 0x104,
-    RGB_RMOD:         0x105,
-    RGB_HUI:          0x106,
-    RGB_HUD:          0x107,
-    RGB_SAI:          0x108,
-    RGB_SAD:          0x109,
-    RGB_VAI:          0x10a,
-    RGB_VAD:          0x10b,
-    RGB_SPI:          0x10c,
-    RGB_SPD:          0x10d
   }
 
 end
@@ -768,35 +753,35 @@ class Keyboard
 
   def find_keycode_index(key)
     key = resolve_key_alias(key)
-    keycode_index = KEYCODE.index(key)
-
-    if keycode_index
-      keycode_index * -1
-    elsif KEYCODE_SFT[key]
-      (KEYCODE_SFT[key] + 0x100) * -1
-    elsif MOD_KEYCODE[key]
-      MOD_KEYCODE[key]
-    elsif KEYCODE_RGB[key]
-      KEYCODE_RGB[key]
-    elsif key.to_s[0, 9] == "JS_BUTTON"
+    keycode = KEYCODE.index(key)
+    if keycode
+      keycode * -1
+    elsif keycode = KEYCODE_SFT[key]
+      (keycode + 0x100) * -1
+    elsif keycode = MOD_KEYCODE[key] || RGB::KEYCODE[key]
+      keycode
+    elsif keycode = ConsumerKey.keycode(key)
+      # You need to `require "consumer_key"`
+      keycode + 0x300
+    elsif key.to_s.start_with?("JS_BUTTON")
       # JS_BUTTON0 - JS_BUTTON31
       # You need to `require "joystick"`
       key.to_s[9, 10].to_i + 0x200
-    elsif key.to_s[0, 7] == "JS_HAT_"
+    elsif key.to_s.start_with?("JS_HAT_")
       case key
       when :JS_HAT_RIGHT
-        0b0001 + 0x300
+        0b0001 + 0x100
       when :JS_HAT_UP
-        0b0010 + 0x300
+        0b0010 + 0x100
       when :JS_HAT_DOWN
-        0b0100 + 0x300
+        0b0100 + 0x100
       when :JS_HAT_LEFT
-        0b1000 + 0x300
+        0b1000 + 0x100
       else
-        0 #== :KC_NO
+        key # Symbol (possibly user defined)
       end
     else
-      key
+      key # Symbol (should be user defined)
     end
   end
 
@@ -949,28 +934,46 @@ class Keyboard
   end
 
   # for Encoders
-  def send_key(symbol)
-    keycode = KEYCODE.index(symbol)
-    if keycode
-      modifier = 0
-      c = keycode.chr
+  def send_key(*args)
+    symbols = case args[0].class
+    when Symbol
+      args
+    when Array
+      args[0]
     else
-      keycode = KEYCODE_SFT[symbol]
-      if keycode
-        modifier = 0b00100000
-        c = keycode.chr
-      else
-        keycode = KEYCODE_RGB[symbol]
-        if keycode && $rgb
-          $rgb.invoke_anchor(symbol)
+      puts "[WARN] Argument for send_key is wrong"
+      []
+    end
+    modifier = 0
+    keycodes = "\000\000\000\000\000\000"
+    consumer = 0
+    if RGB::KEYCODE[symbols[0]]
+      $rgb&.invoke_anchor(symbols[0])
+      return
+    elsif keycode = ConsumerKey.keycode(symbols[0])
+      consumer = keycode
+    elsif keycode = KEYCODE_SFT[symbols[0]]
+      modifier = 0b00100000
+      keycodes = "#{keycode.chr}\000\000\000\000\000"
+    else
+      6.times do |i|
+        break i unless symbols[i]
+        if code = KEYCODE.index(symbols[i])
+         keycodes[i] = code.chr
+        elsif code = MOD_KEYCODE[symbols[i]]
+          modifier |= code
         end
-        return
       end
     end
-    report_hid(modifier, "#{c}\000\000\000\000\000")
-    sleep_ms 1
-    report_hid(0, "\000\000\000\000\000\000")
-    sleep_ms 1
+    tud_task
+    cdc_task
+    hid_task(modifier, keycodes, consumer, 0, 0)
+    (consumer > 0 ? 3 : 1).times do
+      sleep_ms 1
+      tud_task
+      cdc_task
+    end
+    hid_task(0, "\000\000\000\000\000\000", 0, 0, 0)
   end
 
   def output_report_changed(&block)
@@ -1127,23 +1130,36 @@ class Keyboard
 
         keymap = @keymaps[@locked_layer || @layer || @default_layer]
         modifier_switch_positions.clear
+        consumer_keycode = 0
         @switches.each_with_index do |switch, i|
           keycode = keymap[switch[0]][switch[1]]
           next unless keycode.is_a?(Integer)
-          if keycode < -255 # Key with SHIFT
+          # Reserved keycode range
+          #        ..-0x100 : Key with shift
+          #  -0x0FF..-0x001 : Normal key
+          #       0.. 0x100 : Modifier key
+          #   0x101.. 0x1FF : Joystick D-pad hat
+          #   0x200.. 0x2FF : Joystick button
+          #   0x300.. 0x5FF : Consumer (media) key
+          #   0x600.. 0x6FF : RGB
+          if keycode < -0xFF
             @keycodes << ((keycode + 0x100) * -1).chr
             @modifier |= 0b00100000
-          elsif keycode < 0 # Normal keys
+          elsif keycode < 0
             @keycodes << (keycode * -1).chr
-          elsif keycode > 0x300 # Joystick hat
-            joystick_hat |= (keycode - 0x300)
-          elsif keycode >= 0x200 # Joystick button
-            joystick_buttons |= (1 << (keycode - 0x200))
-          elsif keycode > 0x100 # RGB
-            rgb_message = $rgb.invoke_anchor KEYCODE_RGB.key(keycode)
-          else # Should be a modifier key
+          elsif keycode < 0x100
             @modifier |= keycode
             modifier_switch_positions.unshift i
+          elsif keycode < 0x200
+            joystick_hat |= (keycode - 0x100)
+          elsif keycode < 0x300
+            joystick_buttons |= (1 << (keycode - 0x200))
+          elsif keycode < 0x600
+            consumer_keycode = ConsumerKey.keycode_from_mapcode(keycode)
+          elsif keycode < 0x700
+            rgb_message = $rgb.invoke_anchor RGB::KEYCODE.key(keycode)
+          else
+            puts "[WARN] Wrong keycode!"
           end
         end
         # To fix https://github.com/picoruby/prk_firmware/issues/49
@@ -1199,9 +1215,15 @@ class Keyboard
           end
         end
 
-        @joystick.report_hid(joystick_buttons, joystick_hat) if @joystick
+        #@joystick&.report_hid(joystick_buttons, joystick_hat)
 
-        report_hid(@modifier, @keycodes.join)
+        hid_task(
+          @modifier,
+          @keycodes.join,
+          consumer_keycode,
+          joystick_buttons,
+          joystick_hat
+        )
 
         if @locked_layer
           # @type ivar @locked_layer: Symbol

@@ -39,7 +39,6 @@ class Keyboard
   MOD_KEYCODE: Hash[Symbol, Integer]
   KEYCODE: Array[Symbol]
   KEYCODE_SFT: Hash[Symbol, Integer]
-  KEYCODE_RGB: Hash[Symbol, Integer]
   LETTER: Array[String | Symbol | nil]
   KC_ALIASES: Hash[Symbol, Symbol]
 
@@ -116,6 +115,9 @@ class Keyboard
   def self.resume_keymap: () -> void
   def self.reload_keymap: () -> void
 
+  def self.hid_task : (Integer, String, Integer, Integer, Integer) -> void
+  def hid_task : (Integer, String, Integer, Integer, Integer) -> void
+
   def set_debounce: (debounce_type) -> void
   def set_debounce_threshold: (Integer) -> void
   def append: (append_type feature) -> void
@@ -149,7 +151,7 @@ class Keyboard
   def before_report: () { () -> void } -> void
   def keys_include?: (Symbol) -> bool
   def action_on_release: (Integer | Array[Integer] | Proc | nil) -> void
-  def send_key: (Symbol) -> void
+  def send_key: (*untyped) -> void # 気持ちとしては *(Symbol | Array) だけど書き方わからんかった
   def start!: -> void
   def raise_layer: -> void
   def lower_layer: -> void

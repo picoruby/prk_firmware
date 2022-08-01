@@ -9,7 +9,6 @@ class Object
   def sandbox_resume: () -> bool
   def autoreload_ready?: () -> bool
   def resume_task: (String) -> bool
-  def report_hid : (Integer, String) -> void
   def raw_hid_report_received?: -> bool
   def get_last_received_raw_hid_report: -> Array[Integer]
 

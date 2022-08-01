@@ -16,7 +16,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
   zip \
   python3
 
-RUN git clone https://github.com/raspberrypi/pico-sdk.git
+RUN git clone https://github.com/raspberrypi/pico-sdk.git -b 1.4.0
 RUN cd /pico-sdk/lib && git submodule update --init ./
 ENV PICO_SDK_PATH "/pico-sdk"
 
