@@ -1,4 +1,5 @@
 #include "tusb.h"
+#include "hardware/structs/scb.h"
 
 #include "usb_descriptors.h"
 #include "raw_hid.h"
@@ -21,6 +22,7 @@ uint8_t const * tud_descriptor_device_cb(void)
 #else
 #define CONFIG_TOTAL_LEN    (TUD_CONFIG_DESC_LEN + TUD_CDC_DESC_LEN + TUD_MSC_DESC_LEN + TUD_HID_INOUT_DESC_LEN)
 #endif
+#define CONFIG_BOOT_TOTAL_LEN  (TUD_CONFIG_DESC_LEN + TUD_HID_INOUT_DESC_LEN)
 
 #if CFG_TUSB_MCU == OPT_MCU_LPC175X_6X || CFG_TUSB_MCU == OPT_MCU_LPC177X_8X || CFG_TUSB_MCU == OPT_MCU_LPC40XX
   // LPC 17xx and 40xx endpoint type (bulk/interrupt/iso) are fixed by its number
@@ -64,8 +66,8 @@ uint8_t const * tud_descriptor_device_cb(void)
 
 #endif
 
-#define EPNUM_HID_IN    0x04
-#define EPNUM_HID_OUT   0x84
+#define EPNUM_HID_OUT  0x04
+#define EPNUM_HID_IN   0x84
 
 uint8_t const desc_hid_report[] =
 {
@@ -87,6 +89,22 @@ enum
   ITF_NUM_TOTAL
 };
 
+enum
+{
+  ITF_BOOT_NUM_KEYBOARD = 0,
+  ITF_BOOT_NUM_TOTAL,
+};
+
+enum
+{
+  DEVICE_MODE_BOOT = 0xDEADBEEF,
+  DEVICE_MODE_REPORT = 0x00C0FFEE,
+};
+
+#define RESET() do { scb_hw->aircr = 0x05FA0004; } while(0)
+
+uint32_t __uninitialized_ram(device_mode);
+
 uint8_t const desc_fs_configuration[] =
 {
   // Config number, interface count, string index, total length, attribute, power in mA
@@ -100,10 +118,18 @@ uint8_t const desc_fs_configuration[] =
   TUD_MSC_DESCRIPTOR(ITF_NUM_MSC, 5, EPNUM_MSC_OUT, EPNUM_MSC_IN, 64),
 #endif
 
-  // Interface number, string index, protocol, report descriptor len, EP In address, size & polling interval
-  TUD_HID_INOUT_DESCRIPTOR(ITF_NUM_HID, 0, 0, sizeof(desc_hid_report), EPNUM_HID_OUT, EPNUM_HID_IN, 64, 0x01),
+  // Interface number, string index, protocol, report descriptor len, EP In address, EP Out address, size & polling interval
+  TUD_HID_INOUT_DESCRIPTOR(ITF_NUM_HID, 0, 0, sizeof(desc_hid_report), EPNUM_HID_IN, EPNUM_HID_OUT, 64, 0x01),
 };
 
+uint8_t const boot_desc_configuration[] =
+{
+  // Config number, interface count, string index, total length, attribute, power in mA
+  TUD_CONFIG_DESCRIPTOR(1, ITF_BOOT_NUM_TOTAL, 0, CONFIG_BOOT_TOTAL_LEN, TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, 100),
+
+  // Interface number, string index, protocol, report descriptor len, EP In address, EP Out address, size & polling interval
+  TUD_HID_INOUT_DESCRIPTOR(ITF_BOOT_NUM_KEYBOARD, 0, HID_ITF_PROTOCOL_KEYBOARD, sizeof(desc_hid_report), EPNUM_HID_IN, EPNUM_HID_OUT, 64, 8),
+};
 
 // Invoked when received GET CONFIGURATION DESCRIPTOR
 // Application return pointer to descriptor
@@ -112,7 +138,15 @@ uint8_t const*
 tud_descriptor_configuration_cb(uint8_t index)
 {
   (void) index; // for multiple configurations
-  return desc_fs_configuration;
+
+  if ( device_mode==DEVICE_MODE_REPORT )
+  {
+    return desc_fs_configuration;
+  } else
+  {
+    device_mode = DEVICE_MODE_BOOT;
+    return boot_desc_configuration;
+  }
 }
 
 static uint16_t _desc_str[32];
@@ -169,7 +203,15 @@ uint8_t keyboard_output_report = 0;
 
 uint8_t const *
 tud_hid_descriptor_report_cb(uint8_t instance) {
-    return desc_hid_report;
+  (void) instance;
+
+  if( device_mode!=DEVICE_MODE_REPORT )
+  {
+    device_mode = DEVICE_MODE_REPORT;
+    RESET();
+  }
+
+  return desc_hid_report;
 }
 
 uint16_t
@@ -190,18 +232,42 @@ tud_hid_set_report_cb(uint8_t instance, uint8_t report_id, hid_report_type_t rep
   if (bufsize < 1) return;
 
   switch (report_id) {
-    case REPORT_ID_RAWHID:
-      memcpy(raw_hid_last_received_report, buffer, bufsize);
-      raw_hid_last_received_report_length = bufsize;
-      raw_hid_report_received = true;
-      break;
+    case 0:
+      if (device_mode==DEVICE_MODE_REPORT) {
+        break;
+      }
     case REPORT_ID_KEYBOARD:
       if (observing_output_report) {
         keyboard_output_report = buffer[0];
       }
       break;
+    case REPORT_ID_RAWHID:
+      memcpy(raw_hid_last_received_report, buffer, bufsize);
+      raw_hid_last_received_report_length = bufsize;
+      raw_hid_report_received = true;
+      break;
+    
     default:
       break;
+  }
+}
+
+void
+tud_hid_set_protocol_cb(uint8_t instance, uint8_t protocol) {
+  (void) instance;
+
+  if( protocol==HID_PROTOCOL_BOOT ) {
+    if( device_mode==DEVICE_MODE_REPORT ) {
+      device_mode = DEVICE_MODE_BOOT;
+      RESET();
+    } else {
+      device_mode = DEVICE_MODE_BOOT;
+    }
+  } else {
+    if( device_mode!=DEVICE_MODE_REPORT ) {
+      device_mode = DEVICE_MODE_REPORT;
+      RESET();
+    }
   }
 }
 
@@ -214,46 +280,58 @@ static bool via_active = false;
 static void
 send_hid_report(uint8_t report_id)
 {
-  // skip if hid is not ready yet
-  if ( !tud_hid_ready() ) return;
+  if( device_mode==DEVICE_MODE_REPORT ) {
+    // skip if hid is not ready yet
+    if ( !tud_hid_ready() ) return;
 
-  switch(report_id)
-  {
-    case REPORT_ID_KEYBOARD: {
-      tud_hid_keyboard_report(REPORT_ID_KEYBOARD, keyboard_modifier, keyboard_keycodes);
-    }
-    break;
+    switch(report_id)
+    {
+      case REPORT_ID_KEYBOARD: {
+        tud_hid_keyboard_report(REPORT_ID_KEYBOARD, keyboard_modifier, keyboard_keycodes);
+      }
+      break;
 
-    case REPORT_ID_MOUSE: {
-      int8_t const delta = 0;
-      tud_hid_mouse_report(REPORT_ID_MOUSE, 0x00, delta, delta, 0, 0);
-    }
-    break;
+      case REPORT_ID_MOUSE: {
+        int8_t const delta = 0;
+        tud_hid_mouse_report(REPORT_ID_MOUSE, 0x00, delta, delta, 0, 0);
+      }
+      break;
 
-    case REPORT_ID_CONSUMER_CONTROL: {
-      if(! via_active) {
-        static int16_t prev_keycode = 0;
-        if (prev_keycode == consumer_keycode) {
-          consumer_keycode = 0;
-        } else {
-          prev_keycode = consumer_keycode;
+      case REPORT_ID_CONSUMER_CONTROL: {
+        if(! via_active) {
+          static int16_t prev_keycode = 0;
+          if (prev_keycode == consumer_keycode) {
+            consumer_keycode = 0;
+          } else {
+            prev_keycode = consumer_keycode;
+          }
+          tud_hid_report(REPORT_ID_CONSUMER_CONTROL, &consumer_keycode, 2);
         }
-        tud_hid_report(REPORT_ID_CONSUMER_CONTROL, &consumer_keycode, 2);
+      }
+      break;
+
+      case REPORT_ID_GAMEPAD: {
+        joystick_report_hid(joystick_buttons, joystick_hat);
+      }
+      break;
+
+  //    case REPORT_ID_RAWHID: {
+  //      tud_hid_report(REPORT_ID_RAWHID, raw_c_data, raw_len);
+  //    }
+  //    break;
+
+      default: break;
+    }
+  } else
+  {
+    // BOOT MODE
+    if (report_id==REPORT_ID_KEYBOARD)
+    {
+      if ( tud_hid_n_ready(ITF_BOOT_NUM_KEYBOARD) )
+      {
+        tud_hid_n_keyboard_report(ITF_BOOT_NUM_KEYBOARD, 0, keyboard_modifier, keyboard_keycodes);
       }
     }
-    break;
-
-    case REPORT_ID_GAMEPAD: {
-      joystick_report_hid(joystick_buttons, joystick_hat);
-    }
-    break;
-
-//    case REPORT_ID_RAWHID: {
-//      tud_hid_report(REPORT_ID_RAWHID, raw_c_data, raw_len);
-//    }
-//    break;
-
-    default: break;
   }
 }
 
@@ -263,8 +341,10 @@ tud_hid_report_complete_cb(uint8_t instance, uint8_t const* report, uint8_t len)
   (void) instance;
   (void) len;
   uint8_t next_report_id = report[0] + 1;
-  if (next_report_id < REPORT_ID_COUNT - 1) {
-    //                 ^^^^^^^^^^^^^^^^^^^ skip REPORT_ID_RAWHID
+
+  if ( device_mode==DEVICE_MODE_REPORT && 
+       next_report_id < REPORT_ID_COUNT - 1) {
+    //                  ^^^^^^^^^^^^^^^^^^^ skip REPORT_ID_RAWHID
     send_hid_report(next_report_id);
   }
 }
@@ -328,7 +408,7 @@ report_raw_hid(uint8_t* data, uint8_t len)
     tud_remote_wakeup();
   }
   /*------------- RAW HID -------------*/
-  if (tud_hid_ready()) {
+  if ( device_mode==DEVICE_MODE_REPORT && tud_hid_ready()) {
     via_active = true;
     return tud_hid_report(REPORT_ID_RAWHID, data, len);
   } else {
@@ -375,9 +455,9 @@ c_Keyboard_hid_task(mrb_vm *vm, mrb_value *v, int argc)
     // Wake up host if we are in suspend mode
     // and REMOTE_WAKEUP feature is enabled by host
     tud_remote_wakeup();
-  } else {
-    send_hid_report(REPORT_ID_KEYBOARD);
   }
+
+  send_hid_report(REPORT_ID_KEYBOARD);
 }
 
 void
