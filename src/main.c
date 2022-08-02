@@ -331,7 +331,6 @@ typedef struct picogems {
   const uint8_t *mrb;
   const uint8_t *task;
   mrbc_tcb *tcb;
-  bool required;
 } picogems;
 
 static void
@@ -353,15 +352,15 @@ init_Joystick(void)
 }
 
 picogems gems[] = {
-  {"keyboard",       NULL,               keyboard,       NULL,     NULL, false},
-  {"debounce",       NULL,               debounce,       NULL,     NULL, false},
-  {"buffer",         NULL,               buffer,         NULL,     NULL, false},
-  {"rotary_encoder", init_RotaryEncoder, rotary_encoder, NULL,     NULL, false},
-  {"rgb",            init_RGB,           rgb,            rgb_task, NULL, false},
-  {"via",            NULL,               via,            NULL,     NULL, false},
-  {"consumer_key",   NULL,               consumer_key,   NULL,     NULL, false},
-  {"joystick",       init_Joystick,      joystick,       NULL,     NULL, false},
-  {NULL,             NULL,               NULL,           NULL,     NULL, false}
+  {"keyboard",       NULL,               keyboard,       NULL,     NULL},
+  {"debounce",       NULL,               debounce,       NULL,     NULL},
+  {"buffer",         NULL,               buffer,         NULL,     NULL},
+  {"rotary_encoder", init_RotaryEncoder, rotary_encoder, NULL,     NULL},
+  {"rgb",            init_RGB,           rgb,            rgb_task, NULL},
+  {"via",            NULL,               via,            NULL,     NULL},
+  {"consumer_key",   NULL,               consumer_key,   NULL,     NULL},
+  {"joystick",       init_Joystick,      joystick,       NULL,     NULL},
+  {NULL,             NULL,               NULL,           NULL,     NULL}
 };
 
 int
@@ -399,19 +398,19 @@ c__require(mrb_vm *vm, mrb_value *v, int argc)
   int i = gem_index(name);
   SET_FALSE_RETURN();
   if (i < 0) return;
-  if (gems[i].required) return;
   if (gems[i].initializer) gems[i].initializer();
   if (mrbc_load_model(gems[i].mrb)) {
     if (gems[i].task) {
       gems[i].tcb = mrbc_create_task(gems[i].task, 0);
-      if (gems[i].tcb == NULL) {
-        console_printf("failed to create task\n (LoadError)", name);
-        /* ToDo: Exception */
-      } else {
+      if (gems[i].tcb) {
         mrbc_suspend_task(gems[i].tcb);
+      } else {
+        console_printf("[FATAL] failed to create task -- %s\n", name);
+        SET_FALSE_RETURN();
+        return;
       }
     }
-    gems[i].required = true;
+    SET_TRUE_RETURN();
   } else {
     SET_FALSE_RETURN();
   }

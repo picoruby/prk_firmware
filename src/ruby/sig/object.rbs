@@ -28,4 +28,5 @@ class Object
 
   # PRK
   def self._prk_description : () -> String
+  def required? : (String) -> bool
 end
