@@ -1,8 +1,3 @@
-if RUBY_ENGINE == 'mruby/c'
-  require "rgb"
-  require "consumer_key"
-end
-
 class VIA
   VIA_IDs = %i[
     ID_NONE
@@ -137,9 +132,9 @@ class VIA
           return 0
         elsif key < 0x101
           return 0
-        elsif key < 0x600
+        elsif required?("consumer_key") && key < 0x600
           ConsumerKey.viacode_from_mapcode(key) || 0
-        elsif key <= (RGB::KEYCODE.values.max || 0x6FF)
+        elsif required?("rgb") && key <= (RGB::KEYCODE.values.max || 0x6FF)
           if key < 0x606
             i = [2,3,3,4,4]
             return 0x5CC0 + i[key-0x601]
@@ -195,7 +190,13 @@ class VIA
         s = "VIA_FUNC" + cs
         return s.intern
       elsif keycode<0xE0
-        return Keyboard::KEYCODE[keycode & 0x00FF] || ConsumerKey::VIACODE[keycode & 0x00FF]|| :KC_NO
+        if sym = Keyboard::KEYCODE[keycode & 0x00FF]
+          return sym
+        elsif required?("consumer_key") && sym = ConsumerKey::VIACODE[keycode & 0x00FF]
+          return sym
+        else
+          :KC_NO
+        end
       else
         i = keycode - 0xE0
         return :KC_NO if i>8
@@ -225,6 +226,7 @@ class VIA
           via_keycode_into_keysymbol(key).to_s.split("_")[1] ).intern
         return keysymbol
       when 0x5
+        return :KC_NO unless required?("rgb")
         case keycode
         when 0x5CC2
           return :RGB_TOG

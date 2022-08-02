@@ -3,7 +3,6 @@ if RUBY_ENGINE == 'mruby/c'
   require "debounce"
   require "rgb"
   require "rotary_encoder"
-  require "consumer_key"
 end
 
 class Keyboard
@@ -758,9 +757,11 @@ class Keyboard
       keycode * -1
     elsif keycode = KEYCODE_SFT[key]
       (keycode + 0x100) * -1
-    elsif keycode = MOD_KEYCODE[key] || RGB::KEYCODE[key]
+    elsif keycode = MOD_KEYCODE[key]
       keycode
-    elsif keycode = ConsumerKey.keycode(key)
+    elsif required?("rgb") && keycode = RGB::KEYCODE[key]
+      keycode
+    elsif required?("consumer_key") && keycode = ConsumerKey.keycode(key)
       # You need to `require "consumer_key"`
       keycode + 0x300
     elsif key.to_s.start_with?("JS_BUTTON")
@@ -947,10 +948,10 @@ class Keyboard
     modifier = 0
     keycodes = "\000\000\000\000\000\000"
     consumer = 0
-    if RGB::KEYCODE[symbols[0]]
+    if required?("rgb") && RGB::KEYCODE[symbols[0]]
       $rgb&.invoke_anchor(symbols[0])
       return
-    elsif keycode = ConsumerKey.keycode(symbols[0])
+    elsif required?("consumer_key") && keycode = ConsumerKey.keycode(symbols[0])
       consumer = keycode
     elsif keycode = KEYCODE_SFT[symbols[0]]
       modifier = 0b00100000
@@ -1154,12 +1155,13 @@ class Keyboard
             joystick_hat |= (keycode - 0x100)
           elsif keycode < 0x300
             joystick_buttons |= (1 << (keycode - 0x200))
-          elsif keycode < 0x600
+          # Redundant code because no need for performance from here
+          elsif required?("consumer_key") && keycode < 0x600
             consumer_keycode = ConsumerKey.keycode_from_mapcode(keycode)
-          elsif keycode < 0x700
+          elsif required?("rgb") && keycode < 0x700
             rgb_message = $rgb.invoke_anchor RGB::KEYCODE.key(keycode)
           else
-            puts "[WARN] Wrong keycode!"
+            puts "[ERROR] Wrong keycode: 0x#{keycode.to_s(16)}"
           end
         end
         # To fix https://github.com/picoruby/prk_firmware/issues/49
