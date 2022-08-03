@@ -1,5 +1,30 @@
 # Change log
 
+## 0.9.17 on 2022/08/xx
+
+### Consumer key 🔈🔇🔊
+See [wiki/Consumer key](https://github.com/picoruby/prk_firmware/wiki/Consumer-key)
+
+### Keyboard#send_key🎛️
+It now accepts multiple keycodes.
+Good for combining with rotary encoders. Check a good example on [wiki/Rotary encoder](https://github.com/picoruby/prk_firmware/wiki/Rotary-encoder).
+
+### PRK_DESCRIPTION📝
+Version number, built date, and revision hash are shown on serial console at boot time.
+
+<img src="https://user-images.githubusercontent.com/8454208/181443996-5ee02178-5e10-4196-aed5-5a9eacc62d6a.png" width="300" />
+
+### [Experimental] BIOS mode🛠️
+PRK automatically detects if it's connecting to BIOS and adjusts its behavior.
+
+But it seems not to work depending on the environment.
+We are waiting for feedback from you all! (Tell us your computer model ID)
+
+### Bug fix🐛
+- An issue related to "Startup time reduced⌨💨" [issues/120](https://github.com/picoruby/prk_firmware/pull/120)
+- An issue of RGB [issue/122](https://github.com/picoruby/prk_firmware/issues/122)
+- Improve serial console print that used to be often tangled
+
 ## 0.9.16 on 2022/07/20
 
 ### Improvement
