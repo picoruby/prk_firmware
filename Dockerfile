@@ -1,20 +1,21 @@
 # Document:
 # https://github.com/picoruby/prk_firmware/wiki/Docker
 
-FROM --platform=amd64 ruby:3.1.2-slim AS build
+FROM --platform=amd64 manjarolinux/base AS build
 
-RUN apt-get update && apt-get install --no-install-recommends -y \
+RUN pacman -S --noconfirm \
   cmake \
-  gcc-arm-none-eabi \
-  libnewlib-arm-none-eabi \
-  libstdc++-arm-none-eabi-newlib \
+  arm-none-eabi-gcc \
+  arm-none-eabi-newlib \
   ca-certificates \
   git \
   gcc \
   make \
-  g++ \
   zip \
-  python3
+  python \
+  ruby \
+  ruby-rake \
+  ruby-bundler
 
 RUN git clone https://github.com/raspberrypi/pico-sdk.git -b 1.4.0
 RUN cd /pico-sdk/lib && git submodule update --init ./
@@ -25,3 +26,5 @@ VOLUME "${PRK_HOME}"
 WORKDIR "${PRK_HOME}"
 COPY . .
 RUN rake setup
+RUN git config --global --add safe.directory /prk_firmware
+
