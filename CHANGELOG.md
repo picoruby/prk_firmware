@@ -1,24 +1,40 @@
 # Change log
 
-## 0.9.17 on 2022/08/xx
-
-### Consumer key 🔈🔇🔊
-See [wiki/Consumer key](https://github.com/picoruby/prk_firmware/wiki/Consumer-key)
-
-### Keyboard#send_key🎛️
-It now accepts multiple keycodes.
-Good for combining with rotary encoders. Check a good example on [wiki/Rotary encoder](https://github.com/picoruby/prk_firmware/wiki/Rotary-encoder).
-
-### PRK_DESCRIPTION📝
-Version number, built date, and revision hash are shown on serial console at boot time.
-
-<img src="https://user-images.githubusercontent.com/8454208/181443996-5ee02178-5e10-4196-aed5-5a9eacc62d6a.png" width="300" />
+## 0.9.18 on 2022/xx/xx
 
 ### [Experimental] BIOS mode🛠️
 PRK automatically detects if it's connecting to BIOS and adjusts its behavior.
 
 But it seems not to work depending on the environment.
 We are waiting for feedback from you all! (Tell us your computer model ID)
+
+## 0.9.17 on 2022/08/06
+
+### Consumer key 🔈🔇🔊
+See [wiki/Consumer key](https://github.com/picoruby/prk_firmware/wiki/Consumer-key)
+
+### Keyboard#send_key🎛️
+It now accepts multiple keycodes.
+Good for combining with rotary encoders. Check an example on [wiki/Rotary encoder](https://github.com/picoruby/prk_firmware/wiki/Rotary-encoder).
+
+### PRK_DESCRIPTION📝
+Version number, built date, and revision hash are shown on serial console at boot time.
+
+<img src="https://user-images.githubusercontent.com/8454208/181443996-5ee02178-5e10-4196-aed5-5a9eacc62d6a.png" width="300" />
+
+### PicoRuby version 3.1🔥
+
+The programming processing system, PicoRuby, upgraded from 3.0 to 3.1.
+This shouldn't affect any external behavior regarding keyboard (hopefully🤞).
+
+One beneficial thing to users is that the functionality of exceptions improved.
+Let's say you are mistakenly write `kbd = Keyb_oard.new`, not `kbd = Keyboard.new`, an error message will show on the serial console:
+
+<img src="https://user-images.githubusercontent.com/8454208/183228184-04b77485-7de2-4af9-8816-151f919711b6.png" width="300" />
+
+In such a situation, your keyboard doesn't work as a keyboard but the PRKFirmware storage drive keeps alive. Until version 0.9.16, the drive was unexpectedly unmounted and you might have difficulty rewriting your keymap.rb.
+
+Again, we strongly recommend using a serial console when your keymap.rb doesn't work. See [wiki/Debug print](https://github.com/picoruby/prk_firmware/wiki/Debug-print)
 
 ### Bug fix🐛
 - An issue related to "Startup time reduced⌨💨" [issues/120](https://github.com/picoruby/prk_firmware/pull/120)
