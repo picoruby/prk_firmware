@@ -28,7 +28,7 @@ The programming processing system, PicoRuby, upgraded from 3.0 to 3.1.
 This shouldn't affect any external behavior regarding keyboard (hopefully🤞).
 
 One beneficial thing to users is that the functionality of exceptions improved.
-Let's say you are mistakenly write `kbd = Keyb_oard.new`, not `kbd = Keyboard.new`, an error message will show on the serial console:
+Let's say you mistakenly write `kbd = Keyb_oard.new`, not `kbd = Keyboard.new`, an error message will show on the serial console:
 
 <img src="https://user-images.githubusercontent.com/8454208/183228184-04b77485-7de2-4af9-8816-151f919711b6.png" width="300" />
 
