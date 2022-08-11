@@ -2,6 +2,22 @@
 
 ## 0.9.18 on 2022/xx/xx
 
+### Keyboard#inject_switch
+You can arbitrarily inject a switch position in the keymap as if it was tapped.
+A typical use case will be to invoke by a rotary encoder like this:
+
+```ruby
+encoder.clockwise do
+  kbd.inject_switch(0, 0)
+  #                 ^  ^ col position
+  #                 |
+  #                 row position
+end
+encoder.counterclockwise do
+  kbd.inject_switch(0, 1)
+end
+```
+
 ### [Experimental] BIOS mode🛠️
 PRK automatically detects if it's connecting to BIOS and adjusts its behavior.
 
