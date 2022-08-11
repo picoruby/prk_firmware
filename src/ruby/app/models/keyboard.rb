@@ -442,6 +442,7 @@ class Keyboard
     @composite_keys = Array.new
     @mode_keys = Hash.new
     @switches = Array.new
+    @injected_switches = Array.new
     @layer_names = Array.new
     @layer = :default
     @split = false
@@ -982,6 +983,10 @@ class Keyboard
     start_observing_output_report
   end
 
+  def inject_switch(row, col)
+    @injected_switches << [row, col]
+  end
+
   # **************************************************************
   #  For those who are willing to contribute to PRK Firmware:
   #
@@ -1022,7 +1027,8 @@ class Keyboard
       now = board_millis
       @keycodes.clear
 
-      @switches.clear
+      @switches = @injected_switches.dup
+      @injected_switches.clear
       @modifier = 0
       joystick_hat = 0
       joystick_buttons = 0
