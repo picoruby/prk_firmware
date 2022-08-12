@@ -70,6 +70,7 @@ class Keyboard
     }
   ]
   @switches: Array[Array[Integer]]
+  @injected_switches: Array[Array[Integer]]
   @layer_names: Array[Symbol]
   @layer: Symbol | nil
   @default_layer: Symbol
@@ -172,4 +173,5 @@ class Keyboard
   def start_observing_output_report: () -> void
   def stop_observing_output_report: () -> void
   def output_report: () -> Integer
+  def inject_switch: (Integer row, Integer col) -> void
 end

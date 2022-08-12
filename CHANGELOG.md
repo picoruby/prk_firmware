@@ -2,6 +2,11 @@
 
 ## 0.9.18 on 2022/xx/xx
 
+### Keyboard#inject_switch
+You can arbitrarily inject a switch position of the matrix as if it was tapped.
+
+See [wiki/Keyboard#inject_switch](https://github.com/picoruby/prk_firmware/wiki/Keyboard-inject_switch).
+
 ### [Experimental] BIOS mode🛠️
 PRK automatically detects if it's connecting to BIOS and adjusts its behavior.
 
