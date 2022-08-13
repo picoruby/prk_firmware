@@ -20,6 +20,8 @@ static int32_t dma_ws2812_grb_pixels[MAX_PIXEL_SIZE];
 static int dma_ws2812_channel = -1;
 static uint8_t dma_ws2812_last_append_index = 0;
 
+static uint8_t pixel_pos[MAX_PIXEL_SIZE][2];
+
 static inline uint32_t
 rgb2grb(int32_t val) {
   return
@@ -144,6 +146,114 @@ c_ws2812_rand_show(mrb_vm *vm, mrb_value *v, int argc)
       put_pixel(0);
     }
     i++;
+  }
+  show_pixels();
+}
+
+static uint32_t pixel_distance[MAX_PIXEL_SIZE];
+static uint8_t circle_diameter = 0;
+
+void
+c_ws2812_set_pos(mrb_vm *vm, mrb_value *v, int argc)
+{
+  mrbc_array *rb_ary = GET_ARY_ARG(1).array;
+  for(uint16_t i=0; i<rb_ary->n_stored; i++) {
+    mrbc_array *item = rb_ary->data[i].array;
+    pixel_pos[i][0] = mrbc_integer(item->data[0]);
+    pixel_pos[i][1] = mrbc_integer(item->data[1]);
+    int32_t x = pixel_pos[i][0]-112;
+    int32_t y = (pixel_pos[i][1]-32)*3;
+    pixel_distance[i] = x*x + y*y;
+  }
+}
+
+static inline uint8_t get_distance_group(uint32_t d) {
+  if(d<400) {
+    // 20
+    return 0;
+  } else if(d<1600) {
+    // 40
+    return 1;
+  } else if(d<3600) {
+    // 60
+    return 2;
+  } else if(d<6400) {
+    // 80
+    return 3;
+  } else if(d<10000) {
+    // 100
+    return 4; 
+  } else if(d<14400) {
+    // 120
+    return 5;
+  } else if(d<19600) {
+    // 140
+    return 6;
+  } else {
+    return 7;
+  }
+}
+
+#define RGB(r,g,b) ( r<<16 | g<<8 | b )
+
+void
+c_ws2812_circle(mrb_vm *vm, mrb_value *v, int argc)
+{
+  int count = GET_INT_ARG(1);
+  int value = GET_INT_ARG(2);
+
+  uint8_t lv = value;
+
+  if(circle_diameter==0) {
+    circle_diameter = 11;
+  } else {
+    --circle_diameter;
+  }
+  for(uint16_t i=0; i<count; i++) {
+    uint8_t b = get_distance_group(pixel_distance[i]);
+    
+    b = (b+circle_diameter) %12;
+    switch(b) {
+      case 0:
+        put_pixel( RGB(lv*4, 0 ,0 ) );
+        break;
+      case 1:
+        put_pixel( RGB(lv*3, lv, 0) );
+        break;
+      case 2:
+        put_pixel( RGB(lv*2, lv*2, 0) );
+        break;
+      case 3:
+        put_pixel( RGB(lv, lv*3, 0) );
+        break;
+      case 4:
+        put_pixel( RGB(0, lv*4, 0) );
+        break;
+      case 5:
+        put_pixel( RGB(0, lv*3, lv) );
+        break;
+      case 6:
+        put_pixel( RGB(0, lv*2, lv*2) );
+        break;
+      case 7:
+        put_pixel( RGB(0, lv, lv*3) );
+        break;
+      case 8:
+        put_pixel( RGB(0, 0, lv*4) );
+        break;
+      case 9:
+        put_pixel( RGB(lv, 0, lv*3) );
+        break;
+      case 10:
+        put_pixel( RGB(lv*2, 0, lv*2) );
+        break;
+      case 11:
+        put_pixel( RGB(lv*3, 0, lv) );
+        break;
+      default:
+        put_pixel( RGB(lv, lv, lv) );
+        break;
+    }
   }
   show_pixels();
 }
