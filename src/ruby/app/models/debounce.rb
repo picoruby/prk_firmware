@@ -58,24 +58,24 @@ class DebouncePerRow < DebounceBase
     if pin_val
       unless status[:pin_val] || status[:in_pin] != in_pin
         if status[:in_pin] == in_pin && @now - status[:time] < @threshold
-          false
+          return false
         else
           @pr_table[out_pin] = { in_pin: in_pin, pin_val: true, time: @now }
-          true
+          return true
         end
       else
-        true
+        return true
       end
     else
       if status[:pin_val]
         if status[:in_pin] == in_pin && @now - status[:time] < @threshold
-          true
+          return true
         else
           @pr_table[out_pin] = { in_pin: in_pin, pin_val: false, time: @now }
-          false
+          return false
         end
       else
-        false
+        return false
       end
     end
   end
