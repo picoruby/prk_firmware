@@ -906,6 +906,10 @@ class Keyboard
     !keycode.nil? && @keycodes.include?(keycode.chr)
   end
 
+  def keys_press?
+    return @keycodes[0].ord != 0
+  end
+
   def action_on_release(mode_key)
     case mode_key.class
     when Integer

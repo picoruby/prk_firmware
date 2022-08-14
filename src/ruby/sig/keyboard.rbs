@@ -151,6 +151,7 @@ class Keyboard
   def invert_sft: -> void
   def before_report: () { () -> void } -> void
   def keys_include?: (Symbol) -> bool
+  def keys_press?: () -> bool
   def action_on_release: (Integer | Array[Integer] | Proc | nil) -> void
   def send_key: (*untyped) -> void # 気持ちとしては *(Symbol | Array) だけど書き方わからんかった
   def start!: -> void
