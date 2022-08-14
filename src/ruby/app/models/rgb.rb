@@ -62,7 +62,7 @@ class RGB
       ((rgb[2] + m) * 255).ceil_to_i
   end
 
-  EFFECTS = %i|swirl rainbow_mood breath nokogiri static|
+  EFFECTS = %i|swirl rainbow_mood breath nokogiri static circle|
 
   def effect=(name)
     turn_off
@@ -144,6 +144,8 @@ class RGB
       ws2812_fill(hsv2rgb(@hue, @saturation, @value), @pixel_size)
     when :static
       ws2812_fill(hsv2rgb(@hue, @saturation, @max_value), @pixel_size)
+    when :circle
+      ws2812_circle(@pixel_size, @max_value)
     end
     sleep_ms @delay
   end

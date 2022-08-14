@@ -9,6 +9,7 @@ type effect_type = :swirl
                  | :ruby
                  | :nokogiri
                  | :static
+                 | :circle
 
 # Classes
 class RGB
@@ -25,6 +26,8 @@ class RGB
   def ws2812_set_pixel_at: (Integer, Integer) -> void
   def ws2812_rotate_swirl: (Integer) -> bool
   def ws2812_reset_swirl_index: () -> bool
+  def ws2812_circle: (Integer, Integer) -> void
+  def ws2812_set_pos: (Array[ [Integer, Integer] ]) -> void
 
   @fifo: Array[true]
   @effect: effect_type
