@@ -49,6 +49,7 @@ add_executable(${PROJECT}
   src/ws2812.c
   src/rotary_encoder.c
   src/joystick.c
+  src/pwm.c
   lib/picoruby/build/repos/host/mruby-bin-picoirb/tools/picoirb/sandbox.c
 )
 
@@ -82,6 +83,7 @@ add_custom_target(models
   COMMAND ${RBC} -Bbuffer         buffer.rb
   COMMAND ${RBC} -Bdebounce       debounce.rb
   COMMAND ${RBC} -Bjoystick       joystick.rb
+  COMMAND ${RBC} -Bpwm            pwm.rb
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src/ruby/app/models
 )
 

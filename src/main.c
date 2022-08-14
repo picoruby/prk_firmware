@@ -15,6 +15,7 @@
 #include "usb_descriptors.h"
 #include "uart.h"
 #include "ws2812.h"
+#include "pwm.h"
 #include "rotary_encoder.h"
 #include "joystick.h"
 #include <sandbox.h>
@@ -28,6 +29,7 @@
 #include "ruby/app/models/rgb.c"
 #include "ruby/app/models/buffer.c"
 #include "ruby/app/models/via.c"
+#include "ruby/app/models/pwm.c"
 #include "ruby/app/models/consumer_key.c"
 #include "ruby/app/models/debounce.c"
 #include "ruby/app/models/joystick.c"
@@ -351,6 +353,12 @@ init_Joystick(void)
   JOYSTICK_INIT();
 }
 
+static void
+init_PWM(void)
+{
+  PWM_INIT();
+}
+
 picogems gems[] = {
   {"keyboard",       NULL,               keyboard,       NULL,     NULL},
   {"debounce",       NULL,               debounce,       NULL,     NULL},
@@ -360,6 +368,7 @@ picogems gems[] = {
   {"via",            NULL,               via,            NULL,     NULL},
   {"consumer_key",   NULL,               consumer_key,   NULL,     NULL},
   {"joystick",       init_Joystick,      joystick,       NULL,     NULL},
+  {"pwm",            init_PWM,           pwm,            NULL,     NULL},
   {NULL,             NULL,               NULL,           NULL,     NULL}
 };
 
