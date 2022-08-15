@@ -3,7 +3,7 @@
 ## 0.9.18 on 2022/xx/xx
 
 ### RGB Matrix🌈
-See [[RGB Matrix]]
+See [wiki/RGB Matrix](https://github.com/picoruby/prk_firmware/wiki/RGB-Matrix).
 
 ### Keyboard#inject_switch
 You can arbitrarily inject a switch position of the matrix as if it was tapped.
