@@ -1,5 +1,6 @@
 target :lib do
   signature "sig"
+  signature "../../#{(ENV['PROJECT_BINARY_DIR'] || 'keyboards/**/build').split('/')[-3..-2].join('/')}/keymap.rbs"
 
   check "app"
   # PROJECT_BINARY_DIR is configured in CMakeLists.txt
