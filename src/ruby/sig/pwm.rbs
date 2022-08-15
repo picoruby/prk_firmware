@@ -3,4 +3,5 @@ class PWM
   def pwm_enable: () -> void
 
   def initialize: (Integer, Integer, ?Integer) -> void
+  def enable: () -> void
 end
