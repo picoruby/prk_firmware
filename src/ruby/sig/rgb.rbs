@@ -67,4 +67,5 @@ class RGB
   def fifo_push: (true data) -> void
   def thunder: -> void
   def ping?: () -> bool
+  def plot_matrix: (Array[ [Integer, Integer] ]) -> void
 end

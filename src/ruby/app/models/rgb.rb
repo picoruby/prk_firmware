@@ -307,4 +307,8 @@ class RGB
     @fifo.shift
   end
 
+  def plot_matrix(map)
+    ws2812_set_pos(map)
+  end
+
 end
