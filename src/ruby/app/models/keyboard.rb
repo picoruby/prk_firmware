@@ -983,7 +983,7 @@ class Keyboard
     start_observing_output_report
   end
 
-  def inject_switch(row, col)
+  def inject_switch(col, row)
     @injected_switches << [row, col]
   end
 
