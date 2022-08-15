@@ -163,7 +163,6 @@ class Keyboard
   def ruby: () -> void
   def scan_matrix!: () -> void
   def scan_direct!: () -> void
-  def switch_exists?: (Integer row, Integer col) -> bool
   def entire_cols_size: () -> Integer
   def skip_position?: (Integer row_index, Integer col_index) -> bool
   def resolve_key_alias: (Symbol) -> Symbol
