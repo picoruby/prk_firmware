@@ -1,0 +1,45 @@
+.program tone
+
+.wrap_target
+    pull;       blocks
+    out ISR, 12;
+    out Y, 20;
+    mov X, ISR;
+loopOUTER:
+    set pins, 1;
+loopHI:
+    jmp X--, loopHI [5];
+    mov X, ISR;
+    set pins, 0;
+loopLO:
+    jmp X--, loopLO [5];
+    mov X, ISR
+    jmp Y--, loopOUTER;
+.wrap
+
+% c-sdk {
+#include "hardware/clocks.h"
+
+static inline void tone_program_init(PIO pio, uint sm, uint offset, uint pin)
+{
+    pio_gpio_init(pio, pin);
+    pio_sm_set_consecutive_pindirs(pio, sm, pin, 1, true);
+
+    pio_sm_config c = tone_program_get_default_config(offset);
+    
+    // OSR shift_right, auto_pull, threshould
+    sm_config_set_out_shift(&c, true, false, 32);
+    
+    sm_config_set_out_pins(&c, pin, 1);
+    sm_config_set_set_pins(&c, pin, 1);
+    
+    // all the FIFOs is TX
+    //sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_TX);
+    sm_config_set_clkdiv(&c, (float)clock_get_hz(clk_sys) / (1000000UL));
+
+    // start state machine
+    pio_sm_init(pio, sm, offset, &c);
+    pio_sm_set_enabled(pio, sm, true);
+}
+
+%}
