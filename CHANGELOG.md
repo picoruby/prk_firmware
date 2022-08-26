@@ -13,7 +13,7 @@ See [wiki/Keyboard#inject_switch](https://github.com/picoruby/prk_firmware/wiki/
 ### [Experimental] BIOS mode🛠️
 PRK automatically detects if it's connecting to BIOS and adjusts its behavior.
 
-But it seems not to work depending on the environment.
+But it doesn't work depending on the environment.
 We are waiting for feedback from you all! (Tell us your computer model ID)
 
 ## 0.9.17 on 2022/08/06
