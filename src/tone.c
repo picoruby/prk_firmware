@@ -20,7 +20,7 @@ static void
 init_dma_tone(void)
 {
   if(tone_dma_channel < 0) {
-    tone_dma_channel = 2; //dma_claim_unused_channel(true);
+    tone_dma_channel = dma_claim_unused_channel(true);
   }
   
   dma_channel_config c = dma_channel_get_default_config(tone_dma_channel);
@@ -64,11 +64,12 @@ c_tone_set_tones(mrb_vm *vm, mrb_value *v, int argc)
     uint16_t tone = mrbc_integer(item->data[0]);
     uint16_t tone_ms = mrbc_integer(item->data[1]);
     
-    if (tone==0)
+    if (tone)
     {
-      tone = 1;
+      tone_data[i] = ( (TONE_BASE_HZ/tone) & 0x0FFF ) | ( (tone_ms*tone<<2) & 0xFFFFF000UL );
+    } else {
+      tone_data[i] = (tone_ms<<12);
     }
-    tone_data[i] = ( (TONE_BASE_HZ/tone) & 0x0FFF ) | ( (tone_ms*tone<<2) & 0xFFFFF000UL );
   }
 
   for (uint8_t i=tone_count; i<TONE_MAX_LEN; i++)

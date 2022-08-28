@@ -4,8 +4,9 @@
     pull;       blocks
     out ISR, 12;
     out Y, 20;
-    mov X, ISR;
 loopOUTER:
+    mov X, ISR;
+    jmp !X, noTone;
     set pins, 1;
 loopHI:
     jmp X--, loopHI [5];
@@ -13,7 +14,12 @@ loopHI:
     set pins, 0;
 loopLO:
     jmp X--, loopLO [5];
-    mov X, ISR
+    jmp loopOuterEND;
+noTone:
+    set X, 0x1F; set 0b00011111
+loopZERO:
+    jmp X--, loopZERO [31]; wait for 900 clocks
+loopOuterEND:
     jmp Y--, loopOUTER;
 .wrap
 
@@ -30,7 +36,7 @@ static inline void tone_program_init(PIO pio, uint sm, uint offset, uint pin)
     // OSR shift_right, auto_pull, threshould
     sm_config_set_out_shift(&c, true, false, 32);
     
-    sm_config_set_out_pins(&c, pin, 1);
+    //sm_config_set_out_pins(&c, pin, 1);
     sm_config_set_set_pins(&c, pin, 1);
     
     // all the FIFOs is TX
