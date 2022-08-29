@@ -462,7 +462,7 @@ class Keyboard
     @sandbox.resume
   end
 
-  attr_accessor :split, :uart_pin, :default_layer
+  attr_accessor :split, :uart_pin, :default_layer, :sounder
   attr_reader :layer, :split_style, :sandbox, :cols_size, :rows_size
 
   def bootsel!
@@ -537,6 +537,9 @@ class Keyboard
     when "Joystick"
       # @type var feature: Joystick
       @joystick = feature
+    when "Sounder"
+      # @type var feature: Sounder
+      @sounder = feature
     end
   end
 
@@ -861,6 +864,7 @@ class Keyboard
               on_hold
             end
             switch = [row_index, col_index]
+            # @type var switch: [Integer, Integer]
             @mode_keys[switch] ||= {
               prev_state:        :released,
               pushed_at:         0,
@@ -906,8 +910,8 @@ class Keyboard
     !keycode.nil? && @keycodes.include?(keycode.chr)
   end
 
-  def keys_press?
-    return @keycodes[0].ord != 0
+  def key_reporting?
+    @keycodes[0].ord != 0
   end
 
   def action_on_release(mode_key)
@@ -1062,6 +1066,7 @@ class Keyboard
             else
               switch = [data >> 5, data & 0b00011111]
               # To avoid chattering
+              # @type var switch: [Integer, Integer]
               @switches << switch unless @switches.include?(switch)
             end
           end

@@ -33,6 +33,7 @@
 #include "ruby/app/models/debounce.c"
 #include "ruby/app/models/joystick.c"
 #include "ruby/app/models/sounder.c"
+#include "ruby/app/models/mml.c"
 /* tasks */
 #include "ruby/app/tasks/usb_task.c"
 #include "ruby/app/tasks/rgb_task.c"
@@ -369,6 +370,7 @@ picogems gems[] = {
   {"consumer_key",   NULL,               consumer_key,   NULL,     NULL},
   {"joystick",       init_Joystick,      joystick,       NULL,     NULL},
   {"sounder",        init_Sounder,       sounder,        NULL,     NULL},
+  {"mml",            NULL,               mml,            NULL,     NULL},
   {NULL,             NULL,               NULL,           NULL,     NULL}
 };
 

@@ -13,6 +13,7 @@ add_definitions(
   -DMAX_REGS_SIZE=256
   -DMAX_VM_COUNT=20
   -DMRBC_CONVERT_CRLF
+  -DMRBC_USE_MATH
   -DPICORBC_PTR_SIZE=4
 )
 if(PRK_NO_MSC)
@@ -85,6 +86,7 @@ add_custom_target(models
   COMMAND ${RBC} -Bdebounce       debounce.rb
   COMMAND ${RBC} -Bjoystick       joystick.rb
   COMMAND ${RBC} -Bsounder        sounder.rb
+  COMMAND ${RBC} -Bmml            mml.rb
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src/ruby/app/models
 )
 

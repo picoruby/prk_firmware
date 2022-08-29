@@ -13,7 +13,8 @@
 static PIO pio = pio1;
 static uint sm = 2;
 
-static uint32_t song_data[SONG_MAX_LEN];
+static uint32_t song_data[SONG_MAX_LEN] = {0};
+static uint8_t  song_data_index = 0;
 static int sounder_dma_channel = -1;
 
 static void
@@ -53,33 +54,35 @@ c_sounder_init(mrb_vm *vm, mrb_value *v, int argc)
 }
 
 void
-c_sounder_set_tones(mrb_vm *vm, mrb_value *v, int argc)
+c_sounder_clear_song(mrb_vm *vm, mrb_value *v, int argc)
 {
-  mrbc_array *rb_ary = GET_ARY_ARG(1).array;
-  uint8_t sounder_count = ( rb_ary->n_stored < SONG_MAX_LEN ) ? (rb_ary->n_stored) : (SONG_MAX_LEN);
-
-  for (uint8_t i=0; i<sounder_count; i++)
-  {
-    mrbc_array *item = rb_ary->data[i].array;
-    uint16_t frequency = mrbc_integer(item->data[0]);
-    uint16_t duration = mrbc_integer(item->data[1]);
-    
-    if (frequency)
-    {
-      song_data[i] = ( (SOUNDER_BASE_HZ/frequency) & 0x0FFF ) | ( (duration*frequency<<2) & 0xFFFFF000UL );
-    } else {
-      song_data[i] = (duration<<12);
-    }
-  }
-
-  for (uint8_t i=sounder_count; i<SONG_MAX_LEN; i++)
-  {
-    song_data[i] = 0;
-  }
+  song_data_index = 0;
+  memset(song_data, 0, sizeof(song_data));
 }
 
 void
-c_sounder_start(mrb_vm *vm, mrb_value *v, int argc)
+c_sounder_add_note(mrb_vm *vm, mrb_value *v, int argc)
+{
+  uint16_t pitch = GET_INT_ARG(1);
+  uint16_t duration = GET_INT_ARG(2);
+
+  if (SONG_MAX_LEN == song_data_index+1) {
+    console_printf("SONG_MAX_LEN overflowed\n");
+    SET_FALSE_RETURN();
+    return;
+  }
+
+  if (0 < pitch) {
+    song_data[song_data_index] = ( (SOUNDER_BASE_HZ/pitch) & 0x0FFF ) | ( (duration*pitch<<2) & 0xFFFFF000UL );
+  } else {
+    song_data[song_data_index] = (duration<<12);
+  }
+  song_data_index++;
+  SET_TRUE_RETURN();
+}
+
+void
+c_sounder_replay(mrb_vm *vm, mrb_value *v, int argc)
 {
   dma_channel_abort(sounder_dma_channel);
   pio_sm_drain_tx_fifo(pio, sm);

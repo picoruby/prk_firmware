@@ -16,6 +16,7 @@ class Keyboard
                    | RotaryEncoder
                    | VIA
                    | Joystick
+                   | Sounder
                    | DebounceNone
                    | DebouncePerRow
                    | DebouncePerKey
@@ -54,7 +55,7 @@ class Keyboard
     keycodes:          Array[Integer],
     switch:            [Integer, Integer],
   }]
-  @mode_keys: Hash[Array[Integer],
+  @mode_keys: Hash[[Integer, Integer],
     {
       prev_state:        Symbol,
       pushed_at:         Integer,
@@ -69,15 +70,14 @@ class Keyboard
       ]
     }
   ]
-  @switches: Array[Array[Integer]]
-  @injected_switches: Array[Array[Integer]]
+  @injected_switches: Array[[Integer, Integer]]
   @layer_names: Array[Symbol]
   @layer: Symbol | nil
   @default_layer: Symbol
   @anchor: bool
   @anchor_left: bool
   @direct_pins: Array[Integer]
-  @matrix: Hash[Integer, Hash[Integer, Array[Integer]]]
+  @matrix: Hash[Integer, Hash[Integer, [Integer, Integer]]]
   @locked_layer: Symbol | nil
   @keycodes: Array[String]
   @macro_keys: Array[Integer]
@@ -89,7 +89,7 @@ class Keyboard
   @offset_a: Integer
   @offset_b: Integer
   @entire_cols_size: Integer
-  @skip_positions: Array[Array[Integer]]
+  @skip_positions: Array[[Integer, Integer]]
   @joystick: Joystick
   @output_report_cb: ^(Integer)->void
   @prev_rgb_effect: effect_type
@@ -101,10 +101,12 @@ class Keyboard
   @layer_changed_delay: Integer
   @partner_encoders: Array[RotaryEncoder]
   @macro_keycodes: Array[Integer]
+  @switches: Array[[Integer, Integer]]
 
   attr_accessor split: bool
   attr_accessor uart_pin: Integer
   attr_accessor default_layer: Symbol
+  attr_accessor sounder: Sounder
 
   attr_reader layer: Symbol | nil
   attr_reader split_style: split_style_type
@@ -151,7 +153,6 @@ class Keyboard
   def invert_sft: -> void
   def before_report: () { () -> void } -> void
   def keys_include?: (Symbol) -> bool
-  def keys_press?: () -> bool
   def action_on_release: (Integer | Array[Integer] | Proc | nil) -> void
   def send_key: (*untyped) -> void # 気持ちとしては *(Symbol | Array) だけど書き方わからんかった
   def start!: -> void
@@ -174,4 +175,5 @@ class Keyboard
   def stop_observing_output_report: () -> void
   def output_report: () -> Integer
   def inject_switch: (Integer col, Integer row) -> void
+  def key_reporting?: () -> bool
 end

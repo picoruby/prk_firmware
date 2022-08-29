@@ -1,9 +1,16 @@
 class Sounder
-  def sounder_init: (Integer) -> void
-  def sounder_set_tones: (Array[[Integer,Integer]]) -> void
-  def sounder_start: () -> void
+  PRESET_SONGS: Hash[Symbol, String]
 
+  attr_accessor playing: bool
+
+  def sounder_init: (Integer) -> void
+  def sounder_replay: () -> void
+
+  def replay: () -> void
+  def play: (*String) -> void
+  def set_song: (*String) -> void
   def initialize: (Integer) -> void
-  def set_tones: (Array[[Integer,Integer]]) -> void
-  def start: () -> void
+  def add_note: (Integer frequency, Integer duration) -> bool
+  def clear_song: () -> void
+  def replay_if_key_pressed: () -> void
 end
