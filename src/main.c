@@ -17,7 +17,7 @@
 #include "ws2812.h"
 #include "rotary_encoder.h"
 #include "joystick.h"
-#include "tone.h"
+#include "sounder.h"
 #include <sandbox.h>
 
 /* ruby */
@@ -32,7 +32,7 @@
 #include "ruby/app/models/consumer_key.c"
 #include "ruby/app/models/debounce.c"
 #include "ruby/app/models/joystick.c"
-#include "ruby/app/models/tone.c"
+#include "ruby/app/models/sounder.c"
 /* tasks */
 #include "ruby/app/tasks/usb_task.c"
 #include "ruby/app/tasks/rgb_task.c"
@@ -354,9 +354,9 @@ init_Joystick(void)
 }
 
 static void
-init_Tone(void)
+init_Sounder(void)
 {
-  TONE_INIT();
+  SOUNDER_INIT();
 }
 
 picogems gems[] = {
@@ -368,7 +368,7 @@ picogems gems[] = {
   {"via",            NULL,               via,            NULL,     NULL},
   {"consumer_key",   NULL,               consumer_key,   NULL,     NULL},
   {"joystick",       init_Joystick,      joystick,       NULL,     NULL},
-  {"tone",           init_Tone,          tone,           NULL,     NULL},
+  {"sounder",        init_Sounder,       sounder,        NULL,     NULL},
   {NULL,             NULL,               NULL,           NULL,     NULL}
 };
 

@@ -1,14 +1,14 @@
-class Tone
+class Sounder
   def initialize(pin)
     puts "Init Tone"
-    tone_init pin
+    sounder_init pin
   end
 
   def set_tones(tones)
-    tone_set_tones tones
+    sounder_set_tones tones
   end
 
   def start
-    tone_start
+    sounder_start
   end
 end

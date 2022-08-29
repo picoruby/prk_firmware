@@ -1,0 +1,9 @@
+class Sounder
+  def sounder_init: (Integer) -> void
+  def sounder_set_tones: (Array[[Integer,Integer]]) -> void
+  def sounder_start: () -> void
+
+  def initialize: (Integer) -> void
+  def set_tones: (Array[[Integer,Integer]]) -> void
+  def start: () -> void
+end

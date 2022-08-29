@@ -49,13 +49,13 @@ add_executable(${PROJECT}
   src/ws2812.c
   src/rotary_encoder.c
   src/joystick.c
-  src/tone.c
+  src/sounder.c
   lib/picoruby/build/repos/host/mruby-bin-picoirb/tools/picoirb/sandbox.c
 )
 
 pico_generate_pio_header(${PROJECT} ${CMAKE_CURRENT_LIST_DIR}/src/uart_tx.pio)
 pico_generate_pio_header(${PROJECT} ${CMAKE_CURRENT_LIST_DIR}/src/ws2812.pio)
-pico_generate_pio_header(${PROJECT} ${CMAKE_CURRENT_LIST_DIR}/src/tone.pio)
+pico_generate_pio_header(${PROJECT} ${CMAKE_CURRENT_LIST_DIR}/src/sounder.pio)
 
 set(RBC ${CMAKE_CURRENT_SOURCE_DIR}/lib/picoruby/bin/picorbc)
 #set(RBC RBENV_VERSION=mruby-3.0.0 mrbc) # In case of PicoRuby compiler enbugged 😵
@@ -84,7 +84,7 @@ add_custom_target(models
   COMMAND ${RBC} -Bbuffer         buffer.rb
   COMMAND ${RBC} -Bdebounce       debounce.rb
   COMMAND ${RBC} -Bjoystick       joystick.rb
-  COMMAND ${RBC} -Btone           tone.rb
+  COMMAND ${RBC} -Bsounder        sounder.rb
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src/ruby/app/models
 )
 

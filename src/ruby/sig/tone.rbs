@@ -1,9 +1,0 @@
-class Tone
-  def tone_init: (Integer) -> void
-  def tone_set_tones: (Array[[Integer,Integer]]) -> void
-  def tone_start: () -> void
-
-  def initialize: (Integer) -> void
-  def set_tones: (Array[[Integer,Integer]]) -> void
-  def start: () -> void
-end
