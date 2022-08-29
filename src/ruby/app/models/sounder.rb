@@ -1,6 +1,6 @@
 class Sounder
   def initialize(pin)
-    puts "Init Tone"
+    puts "Init Sounder"
     sounder_init pin
   end
 

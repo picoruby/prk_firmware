@@ -7,13 +7,13 @@
 #include "sounder.pio.h"
 
 #define PIO_SOUNDER_INST_HEAD ( uart_tx_program.length + ws2812_program.length )
-#define SOUNDER_MAX_LEN 64
+#define SONG_MAX_LEN 128
 #define SOUNDER_BASE_HZ (100000UL)
 
 static PIO pio = pio1;
 static uint sm = 2;
 
-static uint32_t sounder_data[SOUNDER_MAX_LEN];
+static uint32_t song_data[SONG_MAX_LEN];
 static int sounder_dma_channel = -1;
 
 static void
@@ -34,8 +34,8 @@ init_dma_sounder(void)
       sounder_dma_channel, // Channel to be configured
       &c,               // The configuration we just created
       pio->txf+sm,      // The initial write address
-      sounder_data,        // The initial read address
-      SOUNDER_MAX_LEN,     // Number of transfers; in this case each is 4 byte.
+      song_data,        // The initial read address
+      SONG_MAX_LEN,     // Number of transfers; in this case each is 4 byte.
       false             // Start immediately.
   );
 }
@@ -56,25 +56,25 @@ void
 c_sounder_set_tones(mrb_vm *vm, mrb_value *v, int argc)
 {
   mrbc_array *rb_ary = GET_ARY_ARG(1).array;
-  uint8_t sounder_count = ( rb_ary->n_stored < SOUNDER_MAX_LEN ) ? (rb_ary->n_stored) : (SOUNDER_MAX_LEN);
+  uint8_t sounder_count = ( rb_ary->n_stored < SONG_MAX_LEN ) ? (rb_ary->n_stored) : (SONG_MAX_LEN);
 
   for (uint8_t i=0; i<sounder_count; i++)
   {
     mrbc_array *item = rb_ary->data[i].array;
-    uint16_t sounder = mrbc_integer(item->data[0]);
-    uint16_t sounder_ms = mrbc_integer(item->data[1]);
+    uint16_t frequency = mrbc_integer(item->data[0]);
+    uint16_t duration = mrbc_integer(item->data[1]);
     
-    if (sounder)
+    if (frequency)
     {
-      sounder_data[i] = ( (SOUNDER_BASE_HZ/sounder) & 0x0FFF ) | ( (sounder_ms*sounder<<2) & 0xFFFFF000UL );
+      song_data[i] = ( (SOUNDER_BASE_HZ/frequency) & 0x0FFF ) | ( (duration*frequency<<2) & 0xFFFFF000UL );
     } else {
-      sounder_data[i] = (sounder_ms<<12);
+      song_data[i] = (duration<<12);
     }
   }
 
-  for (uint8_t i=sounder_count; i<SOUNDER_MAX_LEN; i++)
+  for (uint8_t i=sounder_count; i<SONG_MAX_LEN; i++)
   {
-    sounder_data[i] = 0;
+    song_data[i] = 0;
   }
 }
 
@@ -83,5 +83,5 @@ c_sounder_start(mrb_vm *vm, mrb_value *v, int argc)
 {
   dma_channel_abort(sounder_dma_channel);
   pio_sm_drain_tx_fifo(pio, sm);
-  dma_channel_set_read_addr(sounder_dma_channel, sounder_data, true);
+  dma_channel_set_read_addr(sounder_dma_channel, song_data, true);
 }
