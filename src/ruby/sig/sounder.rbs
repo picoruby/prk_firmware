@@ -1,5 +1,5 @@
 class Sounder
-  PRESET_SONGS: Hash[Symbol, String]
+  SONGS: Hash[Symbol, String]
 
   attr_accessor playing: bool
 
@@ -8,7 +8,7 @@ class Sounder
 
   def replay: () -> void
   def play: (*String) -> void
-  def set_song: (*String) -> void
+  def create_song: (*String) -> void
   def initialize: (Integer) -> void
   def add_note: (Integer frequency, Integer duration) -> bool
   def clear_song: () -> void

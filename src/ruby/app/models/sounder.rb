@@ -3,9 +3,9 @@ if RUBY_ENGINE == 'mruby/c'
 end
 
 class Sounder
-  PRESET_SONGS = {
+  SONGS = {
     beepo:    "T140 a32 < a32",
-    pobee:    "T140 O5 a32 > a32",
+    pobeep:   "T140 O5 a32 > a32",
     beepbeep: "T250 O2 c8 r8 c4",
     oneup:    "T320 L8 O5 e g < e c d g",
   }
@@ -20,11 +20,11 @@ class Sounder
   attr_accessor :playing
 
   def play(*measures)
-    set_song(*measures)
+    create_song(*measures)
     replay
   end
 
-  def set_song(*measures)
+  def create_song(*measures)
     clear_song
     measures.each do |measure|
       MML.compile measure do |f, d|
