@@ -77,9 +77,23 @@ class MmlTest < MrubycTestCase
   end
 
   description "Specify Q value"
-  def q_case
+  def q_1_case
     assert_equal [[440,250],[0,250],[440,500]], compile("Q4aQ8a")
+  end
+
+  description "Specify Q value"
+  def q_1_without_block_case
     assert_equal [[440,250],[0,250],[440,500]], compile_without_block("Q4aQ8a")
+  end
+
+  description "Rest after Q note"
+  def q_2_case
+    assert_equal [[440,250],[0,250]], compile("Q4a")
+  end
+
+  description "Rest after Q note"
+  def q_2_without_block_case
+    assert_equal [[440,250],[0,250]], compile_without_block("Q4a")
   end
 
   description "Q value of a rest"
@@ -91,5 +105,41 @@ class MmlTest < MrubycTestCase
   def q_note_following_rest_case
     assert_equal [[440,250],[0,750]], compile("Q4ar")
     assert_equal [[440,250],[0,750]], compile_without_block("Q4ar")
+  end
+
+  description "Super Mario A part"
+  def mario_a_case
+    [
+      #"T200 L8 O5 Q4 e e r e r c e r g r4. > g r4.",
+      #"T200 L8 Q6 < c r4 > g r4 e r4 a r b r b- a r",
+      #"T200 L8 Q6 g6 < e6 g6 a r f g r e r c d > b r4",
+      "T200 L8 Q6 r4 < g g- f d+ r e",
+      "T200 L8 Q6 r > g+ a < c r > a < c d",
+      #"T200 L8 Q6 r4   g g- f d+ r e r < c r c c r4.",
+      "T200 L8 Q6 r4 > g g- f d+ r e",
+      "T200 L8 Q6 r > g+ a < c r > a < c d",
+      #"T200 L8 Q6 r4 e-8 r4 d r4 c r r4 r2"
+    ].each do |measure|
+      duration = 0
+      p compile(measure).each { |note| duration += note[1] }
+      assert_equal 1200, duration
+    end
+  end
+
+  description "Super Mario B part"
+  def mario_b_case
+    [
+      "T200 L8 O3 Q4 d d r d r d d r g r4. > g r4.",
+      "T200 L8 Q6 < g r4 e r4 c r4 f r g r g- f r",
+      "T200 L8 Q6 e6 < c6 e6 f r d e r c r > a b g r4",
+      "T200 L8 Q6 c r4 g r4 < c r > f r4 < c r4 > f r",
+      "T200 L8 Q6 c r4 e r4 g < c r < f r f f r >> g r",
+      "T200 L8 Q6 c r4 g r4 < c r > f r4 < c r4 > f r",
+      "T200 L8 Q6 c r a- r4 b- r4 < c r4 > g g r c r"
+    ].each do |measure|
+      duration = 0
+      compile(measure).each { |note| duration += note[1] }
+      assert_equal 2400, duration
+    end
   end
 end

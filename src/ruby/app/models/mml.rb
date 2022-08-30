@@ -142,6 +142,9 @@ class MML
         end
       end
     end
+    if block_given? && 0 < lazy_sustain
+      yield(0, lazy_sustain)
+    end
     return notes
   end
 end
