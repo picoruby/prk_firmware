@@ -100,7 +100,7 @@ class MML
         when "-"
           if note == 0
             note = 11
-            octave_fix = -1
+            octave_fix = 0
           else
             note -= 1
           end

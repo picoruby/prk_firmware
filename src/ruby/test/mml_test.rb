@@ -26,6 +26,16 @@ class MmlTest < MrubycTestCase
     assert_equal [[440, 500]], compile("a")
   end
 
+  description "A flat"
+  def a_flat_case
+    assert_equal [[440, 500],[415,500]], compile("AA-")
+  end
+
+  description "C flat"
+  def c_flat_case
+    assert_equal [[261, 500],[246,500]], compile("CC-")
+  end
+
   description "Change tempo"
   def tempo_case
     assert_equal [[440, 250]], compile("T240a")
