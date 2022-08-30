@@ -30,14 +30,15 @@ class Sounder
 
   def compile(*measures)
     clear_song
+    mml = MML.new
     if (name = measures[0]) && name.is_a?(Symbol)
-      MML.compile SONGS[name].to_s do |f, d|
-        add_note f, d
+      mml.compile SONGS[name].to_s do |pitch, duration|
+        add_note pitch, duration
       end
     else
       measures.each do |measure|
-        MML.compile measure.to_s do |f, d|
-          add_note f, d
+        mml.compile measure.to_s do |pitch, duration|
+          add_note pitch, duration
         end
       end
     end

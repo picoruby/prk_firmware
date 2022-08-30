@@ -32,8 +32,14 @@ class MML
 
   DURATION_BASE = (1000 * 60 * 4).to_f
 
-  def self.compile(str)
-    notes = Array.new
+  def initialize
+    @octave = 4
+    @tempo = 120
+    @common_duration = (DURATION_BASE / @tempo / 4).to_i
+    @q = 8
+  end
+
+  def compile(str)
     i = 0
     str.each_char do |c|
       ord = c.ord
@@ -44,9 +50,7 @@ class MML
     end
     i = -1
     size = str.length
-    octave = 4
-    tempo = 120
-    common_duration = (DURATION_BASE / tempo / 4).to_i
+    lazy_sustain = 0
     while true do
       i += 1
       break if i == size
@@ -63,22 +67,26 @@ class MML
       else
         case str[i]
         when "t"
-          tempo_str, i = number_str(str, i)
-          tempo = tempo_str.to_i if 0 < tempo_str.size
-          common_duration = (DURATION_BASE / tempo / 4).to_i
+          tempo_str, i = MML.number_str(str, i)
+          @tempo = tempo_str.to_i if 0 < tempo_str.size
+          @common_duration = (DURATION_BASE / @tempo / 4).to_i
         when "o"
           i += 1
-          octave = str[i].to_i
+          @octave = str[i].to_i
+        when "q"
+          i += 1
+          @q = str[i].to_i
+          @q = 8 if @q < 1 || 8 < @q
         when ">"
-          octave -= 1
+          @octave -= 1
         when "<"
-          octave += 1
+          @octave += 1
         when "l"
-          fraction_str, i = number_str(str, i)
+          fraction_str, i = MML.number_str(str, i)
           fraction = 0 < fraction_str.size ? fraction_str.to_i : nil
           if fraction
-            punti, i = count_punto(str, i)
-            common_duration = (DURATION_BASE / tempo / fraction * coef(punti)).to_i
+            punti, i = MML.count_punto(str, i)
+            @common_duration = (DURATION_BASE / @tempo / fraction * MML.coef(punti)).to_i
           end
         end
         -2 # Neither a note nor a rest
@@ -102,20 +110,36 @@ class MML
           i += 1
         end
         # @type var note: Integer
-        (6.875 * (2<<(octave + octave_fix)) * 2 ** (note / 12.0)).to_i
+        (6.875 * (2<<(@octave + octave_fix)) * 2 ** (note / 12.0)).to_i
       end
-        fraction_str, i = number_str(str, i)
-        punti, i = count_punto(str, i)
+        fraction_str, i = MML.number_str(str, i)
+        punti, i = MML.count_punto(str, i)
         duration = if 0 < fraction_str.size
-        (DURATION_BASE / tempo / fraction_str.to_i * coef(punti)).to_i
-      else
-        common_duration
-      end
+          (DURATION_BASE / @tempo / fraction_str.to_i * MML.coef(punti)).to_i
+        else
+          (@common_duration * MML.coef(punti)).to_i
+        end
       next unless pitch
+      sustain = (pitch == 0 || @q == 8) ? duration : (duration / 8.0 * @q).to_i
+      release = duration - sustain
       if block_given?
-        yield(pitch, duration)
+        if pitch == 0
+          yield(0, lazy_sustain + sustain)
+          lazy_sustain = 0
+        else
+          yield(0, lazy_sustain) if 0 < lazy_sustain
+          yield(pitch, sustain)
+        end
+        lazy_sustain = release
       else
-        notes << [pitch, duration]
+        notes ||= Array.new
+        notes << [pitch, sustain]
+        notes << [0, sustain] if 0 < release
+        # Unites consecutive rests
+        if notes[-1][0] == 0 && notes[-2][0] == 0
+          last_note = notes.pop
+          notes[-1][1] += last_note[1]
+        end
       end
     end
     return notes
