@@ -13,7 +13,6 @@ class Sounder
   def initialize(pin)
     puts "Init Sounder"
     sounder_init pin
-    clear_song
     @playing = false
   end
 
@@ -29,18 +28,22 @@ class Sounder
   end
 
   def compile(*measures)
-    clear_song
-    mml = MML.new
     if (name = measures[0]) && name.is_a?(Symbol)
-      mml.compile SONGS[name].to_s do |pitch, duration|
+      return if @last_compiled_song == name
+      clear_song
+      MML.new.compile SONGS[name].to_s do |pitch, duration|
         add_note pitch, duration
       end
+      @last_compiled_song = name
     else
+      clear_song
+      mml = MML.new
       measures.each do |measure|
         mml.compile measure.to_s do |pitch, duration|
           add_note pitch, duration
         end
       end
+      @last_compiled_song = nil
     end
   end
 
