@@ -19,16 +19,26 @@ class Sounder
 
   attr_accessor :playing
 
+  def add_song(name, *measures)
+    SONGS[name] = measures.join
+  end
+
   def play(*measures)
-    create_song(*measures)
+    compile(*measures)
     replay
   end
 
-  def create_song(*measures)
+  def compile(*measures)
     clear_song
-    measures.each do |measure|
-      MML.compile measure do |f, d|
+    if (name = measures[0]) && name.is_a?(Symbol)
+      MML.compile SONGS[name].to_s do |f, d|
         add_note f, d
+      end
+    else
+      measures.each do |measure|
+        MML.compile measure.to_s do |f, d|
+          add_note f, d
+        end
       end
     end
   end

@@ -7,8 +7,9 @@ class Sounder
   def sounder_replay: () -> void
 
   def replay: () -> void
-  def play: (*String) -> void
-  def create_song: (*String) -> void
+  def play: (*String | Symbol) -> void
+  def compile: (*String | Symbol) -> void
+  def add_song: (Symbol name, *String measures) -> void
   def initialize: (Integer) -> void
   def add_note: (Integer frequency, Integer duration) -> bool
   def clear_song: () -> void
