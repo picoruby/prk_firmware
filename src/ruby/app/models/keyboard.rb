@@ -905,13 +905,17 @@ class Keyboard
     @before_filters << block
   end
 
+  def on_start(&block)
+    @on_start_proc = block
+  end
+
   def keys_include?(key)
     keycode = KEYCODE.index(key)
     !keycode.nil? && @keycodes.include?(keycode.chr)
   end
 
-  def key_reporting?
-    !@switches.empty?
+  def key_pressed?
+    @key_pressed
   end
 
   def action_on_release(mode_key)
@@ -1009,6 +1013,8 @@ class Keyboard
 
     puts "Keyboard started"
 
+    @on_start_proc&.call
+
     # To avoid unintentional report on startup
     # which happens only on Sparkfun Pro Micro RP2040
     if @split && @anchor
@@ -1042,6 +1048,7 @@ class Keyboard
       joystick_buttons = 0
 
       @scan_mode == :matrix ? scan_matrix! : scan_direct!
+      @key_pressed = !@switches.empty? # Independent even on split type
 
       # TODO: more features
       $rgb.fifo_push(true) if $rgb && !@switches.empty?

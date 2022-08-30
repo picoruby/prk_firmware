@@ -49,6 +49,7 @@ class Keyboard
   @SHIFT_LETTER_THRESHOLD_UNDS: Integer
 
   @before_filters: Array[^() -> void]
+  @on_start_proc: ^() -> void
   @keymaps: Hash[Symbol, Array[Array[Integer | Symbol | Proc]]]
   @composite_keys: Array[{
     layer:             Symbol | nil,
@@ -101,6 +102,7 @@ class Keyboard
   @partner_encoders: Array[RotaryEncoder]
   @macro_keycodes: Array[Integer]
   @switches: Array[[Integer, Integer]]
+  @key_pressed: bool
 
   attr_accessor split: bool
   attr_accessor uart_pin: Integer
@@ -152,6 +154,7 @@ class Keyboard
   def define_mode_key: (Symbol key_name, [Symbol | Array[Symbol] | Proc | nil, Symbol | Proc | nil, Integer?, Integer?] param, ?bool from_via) -> void
   def invert_sft: -> void
   def before_report: () { () -> void } -> void
+  def on_start: () { () -> void } -> void
   def keys_include?: (Symbol) -> bool
   def action_on_release: (Integer | Array[Integer] | Proc | nil) -> void
   def send_key: (*untyped) -> void # 気持ちとしては *(Symbol | Array) だけど書き方わからんかった
@@ -175,5 +178,5 @@ class Keyboard
   def stop_observing_output_report: () -> void
   def output_report: () -> Integer
   def inject_switch: (Integer col, Integer row) -> void
-  def key_reporting?: () -> bool
+  def key_pressed?: () -> bool
 end
