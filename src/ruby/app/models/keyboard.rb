@@ -463,7 +463,7 @@ class Keyboard
   end
 
   attr_accessor :split, :uart_pin, :default_layer, :sounder
-  attr_reader :layer, :split_style, :sandbox, :cols_size, :rows_size
+  attr_reader :layer, :split_style, :sandbox, :cols_size, :rows_size, :anchor
 
   def bootsel!
     puts "Rebooting into BOOTSEL mode!"
@@ -911,7 +911,7 @@ class Keyboard
   end
 
   def key_reporting?
-    @keycodes[0].ord != 0
+    !@switches.empty?
   end
 
   def action_on_release(mode_key)
@@ -1250,6 +1250,9 @@ class Keyboard
         end
       else
         # Partner
+        @before_filters.each do |block|
+          block.call
+        end
         @encoders.each do |encoder|
           data = encoder.consume_rotation_partner
           uart_partner_push8(data) if data && data > 0

@@ -74,7 +74,6 @@ class Keyboard
   @layer_names: Array[Symbol]
   @layer: Symbol | nil
   @default_layer: Symbol
-  @anchor: bool
   @anchor_left: bool
   @direct_pins: Array[Integer]
   @matrix: Hash[Integer, Hash[Integer, [Integer, Integer]]]
@@ -113,6 +112,7 @@ class Keyboard
   attr_reader sandbox: Sandbox
   attr_reader cols_size: Integer
   attr_reader rows_size: Integer
+  attr_reader anchor: bool
 
   def self.suspend_keymap: () -> void
   def self.resume_keymap: () -> void
