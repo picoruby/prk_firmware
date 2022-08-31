@@ -142,4 +142,16 @@ class MmlTest < MrubycTestCase
       assert_equal 2400, duration
     end
   end
+
+  description "Danger Zone"
+  def danger_zone_case
+    [
+      "T120 Q6 L8 r O2 c d f g4 f4 < g a r4 a4. a r4 a a a4 a4 g a r4 a4. a r4 a a < c4 c4 > Q8 g1 Q6 g1 g a r4 a4. a r4 a a a4 a4 g a r4 a4. a r4 a a a4 a4",
+      "T120 Q6 L8 r O2 c d f g4 f4 d << d r4 d4. d >> r c d f g4 f4 d << d r4 d4. d >> r c d f g4 f4 c4. > g < c2 d c4 > g < c4 c4 d4. d d2 r c d f g4 f4 d4. d d2 r c d f g4 f4"
+    ].each do |measure|
+      duration = 0
+      compile(measure).each { |note| duration += note[1] }
+      assert_equal 22000, duration
+    end
+  end
 end
