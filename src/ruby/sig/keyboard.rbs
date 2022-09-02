@@ -103,6 +103,7 @@ class Keyboard
   @macro_keycodes: Array[Integer]
   @switches: Array[[Integer, Integer]]
   @key_pressed: bool
+  @anchor: bool
 
   attr_accessor split: bool
   attr_accessor uart_pin: Integer
@@ -114,7 +115,6 @@ class Keyboard
   attr_reader sandbox: Sandbox
   attr_reader cols_size: Integer
   attr_reader rows_size: Integer
-  attr_reader anchor: bool
 
   def self.suspend_keymap: () -> void
   def self.resume_keymap: () -> void
@@ -136,6 +136,7 @@ class Keyboard
   def uart_partner_init : (Integer) -> void
 
   def initialize: -> void
+  def anchor?: -> bool
   def via=: (bool) -> void
   def via_layer_count=: (Integer) -> void
   def bootsel!: -> void

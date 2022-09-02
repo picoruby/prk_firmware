@@ -463,7 +463,11 @@ class Keyboard
   end
 
   attr_accessor :split, :uart_pin, :default_layer, :sounder
-  attr_reader :layer, :split_style, :sandbox, :cols_size, :rows_size, :anchor
+  attr_reader :layer, :split_style, :sandbox, :cols_size, :rows_size
+
+  def anchor?
+    @anchor
+  end
 
   def bootsel!
     puts "Rebooting into BOOTSEL mode!"
