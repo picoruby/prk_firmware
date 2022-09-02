@@ -840,48 +840,43 @@ class Keyboard
     @keymaps.each do |layer, map|
       map.each_with_index do |row, row_index|
         row.each_with_index do |key_symbol, col_index|
-          if key_name == key_symbol
-            # @type var on_release_action: Integer | Array[Integer] | Proc | nil
-            on_release_action = case on_release.class
-            when Symbol
-              # @type var on_release: Symbol
-              key = resolve_key_alias(on_release)
-              keycode_index = KEYCODE.index(key)
-              if keycode_index
-                keycode_index * -1
-              elsif KEYCODE_SFT[key]
-                (KEYCODE_SFT[key] + 0x100) * -1
-              end
-            when Array
-              # @type var on_release: Array[Symbol]
-              # @type var ary: Array[Integer]
-              convert_composite_keys(on_release)
-            when Proc
-              # @type var on_release: Proc
-              on_release
+          on_release_action = case on_release.class
+          when Symbol
+            # @type var on_release: Symbol
+            key = resolve_key_alias(on_release)
+            keycode_index = KEYCODE.index(key)
+            if keycode_index
+              keycode_index * -1
+            elsif KEYCODE_SFT[key]
+              (KEYCODE_SFT[key] + 0x100) * -1
             end
-            on_hold_action = if on_hold.is_a?(Symbol)
-              # @type var on_hold: Symbol
-              MOD_KEYCODE[on_hold] ? MOD_KEYCODE[on_hold] : on_hold
-            else
-              # @type var on_hold: Proc
-              on_hold
-            end
-            switch = [row_index, col_index]
-            # @type var switch: [Integer, Integer]
-            @mode_keys[switch] ||= {
-              prev_state:        :released,
-              pushed_at:         0,
-              released_at:       0,
-              layers:            Hash.new
-            }
-            @mode_keys[switch][:layers][layer] = {
-              on_release:        on_release_action,
-              on_hold:           on_hold_action,
-              release_threshold: (release_threshold || 0),
-              repush_threshold:  (repush_threshold || 0)
-            }
+          when Array
+            # @type var on_release: Array[Symbol]
+            convert_composite_keys(on_release)
+          when Proc
+            # @type var on_release: Proc
+            on_release
           end
+          on_hold_action = if on_hold.is_a?(Symbol)
+            MOD_KEYCODE[on_hold] ? MOD_KEYCODE[on_hold] : on_hold
+          else
+            # @type var on_hold: Proc
+            on_hold
+          end
+          switch = [row_index, col_index]
+          # @type var switch: [Integer, Integer]
+          @mode_keys[switch] ||= {
+            prev_state:        :released,
+            pushed_at:         0,
+            released_at:       0,
+            layers:            Hash.new
+          }
+          @mode_keys[switch][:layers][layer] = {
+            on_release:        on_release_action,
+            on_hold:           on_hold_action,
+            release_threshold: (release_threshold || 0),
+            repush_threshold:  (repush_threshold || 0)
+          }
         end
       end
     end
