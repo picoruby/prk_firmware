@@ -13,10 +13,20 @@ class Sounder
   def initialize(pin)
     puts "Init Sounder"
     sounder_init pin
-    @playing = false
+    @playing_until = 0
+    @total_duration = 0
+    @locked = false
   end
 
   attr_accessor :playing
+
+  def lock
+    @locked = true
+  end
+
+  def unlock
+    @locked = false
+  end
 
   def add_song(name, *measures)
     SONGS[name] = measures.join
@@ -31,24 +41,30 @@ class Sounder
     if (name = measures[0]) && name.is_a?(Symbol)
       return if @last_compiled_song == name
       clear_song
-      MML.new.compile SONGS[name].to_s do |pitch, duration|
+      @total_duration = MML.new.compile SONGS[name].to_s do |pitch, duration|
         add_note pitch, duration
       end
       @last_compiled_song = name
     else
       clear_song
       mml = MML.new
+      @total_duration = 0
       measures.each do |measure|
-        mml.compile measure.to_s do |pitch, duration|
+        @total_duration += (mml.compile measure.to_s do |pitch, duration|
           add_note pitch, duration
-        end
+        end)
       end
       @last_compiled_song = nil
     end
   end
 
+  # If `sounder.replay` in keymap.rb doesn't work,
+  # inserting `sleep_ms 1` may solve the problem.
   def replay
-    @playing = true
+    return if @locked
+    now = board_millis
+    return if now < @playing_until
+    @playing_until = now + @total_duration
     sounder_replay
   end
 end
