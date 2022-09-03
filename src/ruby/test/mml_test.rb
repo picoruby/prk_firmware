@@ -121,7 +121,7 @@ class MmlTest < MrubycTestCase
       #"T200 L8 Q6 r4 e-8 r4 d r4 c r r4 r2"
     ].each do |measure|
       duration = 0
-      p compile(measure).each { |note| duration += note[1] }
+      compile(measure).each { |note| duration += note[1] }
       assert_equal 1200, duration
     end
   end

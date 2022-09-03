@@ -48,7 +48,6 @@ class Sounder
   end
 
   def replay
-    return if @playing
     @playing = true
     sounder_replay
   end

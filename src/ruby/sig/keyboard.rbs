@@ -42,14 +42,17 @@ class Keyboard
   KEYCODE_SFT: Hash[Symbol, Integer]
   LETTER: Array[String | Symbol | nil]
   KC_ALIASES: Hash[Symbol, Symbol]
+  SIGNALS_MAX_INDEX: Integer
 
   @SHIFT_LETTER_OFFSET_A: Integer
   @SHIFT_LETTER_OFFSET_UNDS: Integer
   @SHIFT_LETTER_THRESHOLD_A: Integer
   @SHIFT_LETTER_THRESHOLD_UNDS: Integer
 
-  @before_filters: Array[^() -> void]
-  @on_start_proc: ^() -> void
+  @before_filters: Array[^() -> void] | nil
+  @on_start_procs: Array[^() -> void] | nil
+  @partner_signals: Array[^() -> void] | nil
+  @anker_signals: Array[Symbol] | nil
   @keymaps: Hash[Symbol, Array[Array[Integer | Symbol | Proc]]]
   @composite_keys: Array[{
     layer:             Symbol | nil,
@@ -58,16 +61,16 @@ class Keyboard
   }]
   @mode_keys: Hash[[Integer, Integer],
     {
-      prev_state:        Symbol,
-      pushed_at:         Integer,
-      released_at:       Integer,
-      layers: Hash[Symbol,
-        {
-          on_release:        Integer | Array[Integer] | Proc | nil,
-          on_hold:           Integer | Symbol | Proc,
-          release_threshold: Integer,
-          repush_threshold:  Integer
-        }
+      prev_state:  Symbol,
+      pushed_at:   Integer,
+      released_at: Integer,
+      layers:      Hash[Symbol,
+                        {
+                          on_release:        Integer | Array[Integer] | Proc | nil,
+                          on_hold:           Integer | Symbol | Proc,
+                          release_threshold: Integer,
+                          repush_threshold:  Integer
+                        }
       ]
     }
   ]
@@ -156,6 +159,7 @@ class Keyboard
   def invert_sft: -> void
   def before_report: () { () -> void } -> void
   def on_start: () { () -> void } -> void
+  def signal_partner: (Symbol key) { () -> void } -> void
   def keys_include?: (Symbol) -> bool
   def action_on_release: (Integer | Array[Integer] | Proc | nil) -> void
   def send_key: (*untyped) -> void # 気持ちとしては *(Symbol | Array) だけど書き方わからんかった

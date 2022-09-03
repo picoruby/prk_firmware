@@ -437,7 +437,6 @@ class Keyboard
     @SHIFT_LETTER_OFFSET_A       = @SHIFT_LETTER_THRESHOLD_A - KEYCODE.index(:KC_A).to_i
     @SHIFT_LETTER_THRESHOLD_UNDS = LETTER.index('_').to_i
     @SHIFT_LETTER_OFFSET_UNDS    = @SHIFT_LETTER_THRESHOLD_UNDS - KEYCODE_SFT[:KC_UNDS]
-    @before_filters = Array.new
     @keymaps = Hash.new
     @composite_keys = Array.new
     @mode_keys = Hash.new
@@ -840,6 +839,7 @@ class Keyboard
     @keymaps.each do |layer, map|
       map.each_with_index do |row, row_index|
         row.each_with_index do |key_symbol, col_index|
+          next if key_symbol != key_name
           on_release_action = case on_release.class
           when Symbol
             # @type var on_release: Symbol
@@ -866,10 +866,10 @@ class Keyboard
           switch = [row_index, col_index]
           # @type var switch: [Integer, Integer]
           @mode_keys[switch] ||= {
-            prev_state:        :released,
-            pushed_at:         0,
-            released_at:       0,
-            layers:            Hash.new
+            prev_state:  :released,
+            pushed_at:   0,
+            released_at: 0,
+            layers:      Hash.new
           }
           @mode_keys[switch][:layers][layer] = {
             on_release:        on_release_action,
@@ -901,11 +901,31 @@ class Keyboard
   end
 
   def before_report(&block)
+    @before_filters ||= Array.new
+    # @type ivar @before_filters: Array[^() -> void]
     @before_filters << block
   end
 
   def on_start(&block)
-    @on_start_proc = block
+    @on_start_procs ||= Array.new
+    # @type ivar @on_start_procs: Array[^() -> void]
+    @on_start_procs << block
+  end
+
+  SIGNALS_MAX_INDEX = 7
+
+  def signal_partner(key, &block)
+    return unless @split
+    @partner_signals ||= Array.new
+    @anchor_signals ||= Array.new
+    # @type ivar @partner_signals: Array[^() -> void]
+    # @type ivar @anchor_signals: Array[Symbol]
+    if SIGNALS_MAX_INDEX == @partner_signals.count
+      puts "No more signals can register"
+      return
+    end
+    @partner_signals << block
+    @anchor_signals << key
   end
 
   def keys_include?(key)
@@ -1012,7 +1032,7 @@ class Keyboard
 
     puts "Keyboard started"
 
-    @on_start_proc&.call
+    @on_start_procs&.each{ |my_proc| my_proc.call }
 
     # To avoid unintentional report on startup
     # which happens only on Sparkfun Pro Micro RP2040
@@ -1030,7 +1050,7 @@ class Keyboard
     @keycodes = Array.new
     prev_layer = @default_layer
     modifier_switch_positions = Array.new
-    rgb_message = 0
+    message_to_partner = 0
     earlier_report_size = 0
 
     prev_output_report = 0
@@ -1056,9 +1076,9 @@ class Keyboard
         # Receive max 3 switches from partner
         if @split
           sleep_ms 3
-          if rgb_message > 0
-            data24 = uart_anchor(rgb_message)
-            rgb_message = 0
+          if message_to_partner > 0
+            data24 = uart_anchor(message_to_partner)
+            message_to_partner = 0
           elsif $rgb && $rgb.ping?
             data24 = uart_anchor(0b11100000) # adjusts RGB time
           else
@@ -1155,6 +1175,9 @@ class Keyboard
         consumer_keycode = 0
         @switches.each_with_index do |switch, i|
           keycode = keymap[switch[0]][switch[1]]
+          if signal = @anchor_signals&.index(keycode)
+            message_to_partner = signal + 1
+          end
           next unless keycode.is_a?(Integer)
           # Reserved keycode range
           #        ..-0x100 : Key with shift
@@ -1180,7 +1203,7 @@ class Keyboard
           elsif required?("consumer_key") && keycode < 0x600
             consumer_keycode = ConsumerKey.keycode_from_mapcode(keycode)
           elsif required?("rgb") && keycode < 0x700
-            rgb_message = $rgb.invoke_anchor RGB::KEYCODE.key(keycode)
+            message_to_partner = $rgb.invoke_anchor RGB::KEYCODE.key(keycode)
           else
             puts "[ERROR] Wrong keycode: 0x#{keycode.to_s(16)}"
           end
@@ -1207,7 +1230,7 @@ class Keyboard
           @keycodes << "\000"
         end
 
-        @before_filters.each do |block|
+        @before_filters&.each do |block|
           block.call
         end
 
@@ -1256,7 +1279,7 @@ class Keyboard
         end
       else
         # Partner
-        @before_filters.each do |block|
+        @before_filters&.each do |block|
           block.call
         end
         @encoders.each do |encoder|
@@ -1269,8 +1292,16 @@ class Keyboard
           #      ^^^^^ col number (0 to 31)
           uart_partner_push8((switch[0] << 5) + switch[1])
         end
-        rgb_message = uart_partner
-        $rgb.invoke_partner rgb_message if $rgb
+        message_from_anchor = uart_partner
+        if message_from_anchor == 0
+          # Do nothing
+        elsif message_from_anchor <= SIGNALS_MAX_INDEX
+          @partner_signals&.at(message_from_anchor - 1)&.call
+        elsif message_from_anchor <= 0b00011111
+          # Reserved
+        else
+          $rgb&.invoke_partner message_from_anchor
+        end
       end
 
       @via&.task
