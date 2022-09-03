@@ -51,6 +51,7 @@ class MML
     i = -1
     size = str.length
     lazy_sustain = 0
+    total_duration = 0
     while true do
       i += 1
       break if i == size
@@ -120,31 +121,19 @@ class MML
           (@common_duration * MML.coef(punti)).to_i
         end
       next unless pitch
+      total_duration += duration
       sustain = (pitch == 0 || @q == 8) ? duration : (duration / 8.0 * @q).to_i
       release = duration - sustain
-      if block_given?
-        if pitch == 0
-          yield(0, lazy_sustain + sustain)
-          lazy_sustain = 0
-        else
-          yield(0, lazy_sustain) if 0 < lazy_sustain
-          yield(pitch, sustain)
-        end
-        lazy_sustain = release
+      if pitch == 0
+        yield(0, lazy_sustain + sustain)
+        lazy_sustain = 0
       else
-        notes ||= Array.new
-        notes << [pitch, sustain]
-        notes << [0, sustain] if 0 < release
-        # Unites consecutive rests
-        if notes[-1][0] == 0 && notes[-2][0] == 0
-          last_note = notes.pop
-          notes[-1][1] += last_note[1]
-        end
+        yield(0, lazy_sustain) if 0 < lazy_sustain
+        yield(pitch, sustain)
       end
+      lazy_sustain = release
     end
-    if block_given? && 0 < lazy_sustain
-      yield(0, lazy_sustain)
-    end
-    return notes
+    yield(0, lazy_sustain) if 0 < lazy_sustain
+    return total_duration
   end
 end

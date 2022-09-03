@@ -10,5 +10,5 @@ class MML
   def self.count_punto: (String, Integer) -> [Integer, Integer]
   def self.coef: (Integer) -> Float
 
-  def compile: (String) ?{ (Integer, Integer) -> bool } -> void
+  def compile: (String) { (Integer, Integer) -> bool } -> Integer
 end
