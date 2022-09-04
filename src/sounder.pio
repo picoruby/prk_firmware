@@ -1,4 +1,4 @@
-.program tone
+.program sounder
 
 .wrap_target
     pull;       blocks
@@ -26,12 +26,12 @@ loopOuterEND:
 % c-sdk {
 #include "hardware/clocks.h"
 
-static inline void tone_program_init(PIO pio, uint sm, uint offset, uint pin)
+static inline void sounder_program_init(PIO pio, uint sm, uint offset, uint pin)
 {
     pio_gpio_init(pio, pin);
     pio_sm_set_consecutive_pindirs(pio, sm, pin, 1, true);
 
-    pio_sm_config c = tone_program_get_default_config(offset);
+    pio_sm_config c = sounder_program_get_default_config(offset);
     
     // OSR shift_right, auto_pull, threshould
     sm_config_set_out_shift(&c, true, false, 32);

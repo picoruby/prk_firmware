@@ -248,7 +248,7 @@ class RGB
       puts "speed: #{@speed}"
       message |= @speed
     else
-      puts "unknown method"
+      puts "Error: Unknown method"
     end
     sleep 0.2
     return message
@@ -259,8 +259,6 @@ class RGB
   def invoke_partner(message)
     val = message & 0b00011111
     case message >> 5
-    when 0
-      return;
     when 1
       if val <= 1
         @offed = (val == 1)
@@ -286,6 +284,8 @@ class RGB
         @ascent = true
         @value = 0.0
       end
+    when 0
+      puts "ERROR: This should not happen"
     end
   end
 

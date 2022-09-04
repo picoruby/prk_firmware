@@ -16,6 +16,7 @@ class Keyboard
                    | RotaryEncoder
                    | VIA
                    | Joystick
+                   | Sounder
                    | DebounceNone
                    | DebouncePerRow
                    | DebouncePerKey
@@ -41,43 +42,45 @@ class Keyboard
   KEYCODE_SFT: Hash[Symbol, Integer]
   LETTER: Array[String | Symbol | nil]
   KC_ALIASES: Hash[Symbol, Symbol]
+  SIGNALS_MAX_INDEX: Integer
 
   @SHIFT_LETTER_OFFSET_A: Integer
   @SHIFT_LETTER_OFFSET_UNDS: Integer
   @SHIFT_LETTER_THRESHOLD_A: Integer
   @SHIFT_LETTER_THRESHOLD_UNDS: Integer
 
-  @before_filters: Array[^() -> void]
+  @before_filters: Array[^() -> void] | nil
+  @on_start_procs: Array[^() -> void] | nil
+  @partner_signals: Array[^() -> void] | nil
+  @anker_signals: Array[Symbol] | nil
   @keymaps: Hash[Symbol, Array[Array[Integer | Symbol | Proc]]]
   @composite_keys: Array[{
     layer:             Symbol | nil,
     keycodes:          Array[Integer],
     switch:            [Integer, Integer],
   }]
-  @mode_keys: Hash[Array[Integer],
+  @mode_keys: Hash[[Integer, Integer],
     {
-      prev_state:        Symbol,
-      pushed_at:         Integer,
-      released_at:       Integer,
-      layers: Hash[Symbol,
-        {
-          on_release:        Integer | Array[Integer] | Proc | nil,
-          on_hold:           Integer | Symbol | Proc,
-          release_threshold: Integer,
-          repush_threshold:  Integer
-        }
+      prev_state:  Symbol,
+      pushed_at:   Integer,
+      released_at: Integer,
+      layers:      Hash[Symbol,
+                        {
+                          on_release:        Integer | Array[Integer] | Proc | nil,
+                          on_hold:           Integer | Symbol | Proc,
+                          release_threshold: Integer,
+                          repush_threshold:  Integer
+                        }
       ]
     }
   ]
-  @switches: Array[Array[Integer]]
-  @injected_switches: Array[Array[Integer]]
+  @injected_switches: Array[[Integer, Integer]]
   @layer_names: Array[Symbol]
   @layer: Symbol | nil
   @default_layer: Symbol
-  @anchor: bool
   @anchor_left: bool
   @direct_pins: Array[Integer]
-  @matrix: Hash[Integer, Hash[Integer, Array[Integer]]]
+  @matrix: Hash[Integer, Hash[Integer, [Integer, Integer]]]
   @locked_layer: Symbol | nil
   @keycodes: Array[String]
   @macro_keys: Array[Integer]
@@ -89,7 +92,7 @@ class Keyboard
   @offset_a: Integer
   @offset_b: Integer
   @entire_cols_size: Integer
-  @skip_positions: Array[Array[Integer]]
+  @skip_positions: Array[[Integer, Integer]]
   @joystick: Joystick
   @output_report_cb: ^(Integer)->void
   @prev_rgb_effect: effect_type
@@ -101,10 +104,14 @@ class Keyboard
   @layer_changed_delay: Integer
   @partner_encoders: Array[RotaryEncoder]
   @macro_keycodes: Array[Integer]
+  @switches: Array[[Integer, Integer]]
+  @key_pressed: bool
+  @anchor: bool
 
   attr_accessor split: bool
   attr_accessor uart_pin: Integer
   attr_accessor default_layer: Symbol
+  attr_accessor sounder: Sounder
 
   attr_reader layer: Symbol | nil
   attr_reader split_style: split_style_type
@@ -132,6 +139,7 @@ class Keyboard
   def uart_partner_init : (Integer) -> void
 
   def initialize: -> void
+  def anchor?: -> bool
   def via=: (bool) -> void
   def via_layer_count=: (Integer) -> void
   def bootsel!: -> void
@@ -150,8 +158,9 @@ class Keyboard
   def define_mode_key: (Symbol key_name, [Symbol | Array[Symbol] | Proc | nil, Symbol | Proc | nil, Integer?, Integer?] param, ?bool from_via) -> void
   def invert_sft: -> void
   def before_report: () { () -> void } -> void
+  def on_start: () { () -> void } -> void
+  def signal_partner: (Symbol key) { () -> void } -> void
   def keys_include?: (Symbol) -> bool
-  def keys_press?: () -> bool
   def action_on_release: (Integer | Array[Integer] | Proc | nil) -> void
   def send_key: (*untyped) -> void # 気持ちとしては *(Symbol | Array) だけど書き方わからんかった
   def start!: -> void
@@ -174,4 +183,5 @@ class Keyboard
   def stop_observing_output_report: () -> void
   def output_report: () -> Integer
   def inject_switch: (Integer col, Integer row) -> void
+  def key_pressed?: () -> bool
 end

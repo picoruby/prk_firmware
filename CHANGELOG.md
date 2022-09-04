@@ -5,6 +5,9 @@
 ### RGB Matrix🌈
 See [wiki/RGB Matrix](https://github.com/picoruby/prk_firmware/wiki/RGB-Matrix).
 
+### Sounder🎸 & Music Macro Language🎼
+See [wiki/Sounder](https://github.com/picoruby/prk_firmware/wiki/Sounder) and [wiki/Music Macro Languagel](https://github.com/picoruby/prk_firmware/wiki/Music-Macro-Language)
+
 ### Keyboard#inject_switch
 You can arbitrarily inject a switch position of the matrix as if it was tapped.
 
