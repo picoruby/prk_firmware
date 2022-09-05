@@ -41,7 +41,7 @@ show_pixels(void) {
 }
 
 static void
-init_dma_ws2812(void)
+init_dma_ws2812(uint16_t leds_count)
 {
   if(dma_ws2812_channel < 0) {
     dma_ws2812_channel = dma_claim_unused_channel(true);
@@ -59,7 +59,7 @@ init_dma_ws2812(void)
     &c,                  // The configuration we just created
     pio->txf+sm,         // The initial write address
     dma_ws2812_grb_pixels,      // The initial read address
-    MAX_PIXEL_SIZE,      // Number of transfers; in this case each is 4 byte.
+    leds_count,          // Number of transfers; in this case each is 4 byte.
     false                // Not start
   );
 }
@@ -79,7 +79,7 @@ c_ws2812_init(mrb_vm *vm, mrb_value *v, int argc)
     ws2812_program_init(pio, sm, PIO_WS2812_INST_HEAD, GET_INT_ARG(1), is_rgbw);
   }
 
-  init_dma_ws2812();
+  init_dma_ws2812(GET_INT_ARG(2));
 }
 
 void
