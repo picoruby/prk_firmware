@@ -20,7 +20,6 @@ static int32_t dma_ws2812_grb_pixels[MAX_PIXEL_SIZE];
 static int dma_ws2812_channel = -1;
 static uint8_t dma_ws2812_last_append_index = 0;
 
-static uint8_t pixel_pos[MAX_PIXEL_SIZE][2];
 
 static inline uint32_t
 rgb2grb(int32_t val) {
@@ -69,7 +68,7 @@ void
 c_ws2812_init(mrb_vm *vm, mrb_value *v, int argc)
 {
   bool is_rgbw;
-  if (GET_ARG(3).tt == MRBC_TT_TRUE) {
+  if (GET_ARG(2).tt == MRBC_TT_TRUE) {
     is_rgbw = true;
   } else {
     is_rgbw = false;
@@ -79,7 +78,7 @@ c_ws2812_init(mrb_vm *vm, mrb_value *v, int argc)
     pio_add_program_at_offset(pio, &ws2812_program, PIO_WS2812_INST_HEAD);
     ws2812_program_init(pio, sm, PIO_WS2812_INST_HEAD, GET_INT_ARG(1), is_rgbw);
   }
-  
+
   init_dma_ws2812();
 }
 
@@ -150,20 +149,34 @@ c_ws2812_rand_show(mrb_vm *vm, mrb_value *v, int argc)
   show_pixels();
 }
 
+
+/******************************************************
+ *
+ * Functions and variables for RGB MATRIX
+ *
+ ******************************************************/
+
+static uint8_t matrix_coordinate[MAX_PIXEL_SIZE][2];
 static uint32_t pixel_distance[MAX_PIXEL_SIZE];
 static uint8_t circle_diameter = 0;
 
 void
-c_ws2812_set_pos(mrb_vm *vm, mrb_value *v, int argc)
+c_ws2812_add_matrix_pixel_at(mrb_vm *vm, mrb_value *v, int argc)
 {
-  mrbc_array *rb_ary = GET_ARY_ARG(1).array;
-  for(uint16_t i=0; i<rb_ary->n_stored; i++) {
-    mrbc_array *item = rb_ary->data[i].array;
-    pixel_pos[i][0] = mrbc_integer(item->data[0]);
-    pixel_pos[i][1] = mrbc_integer(item->data[1]);
-    int32_t x = pixel_pos[i][0]-112;
-    int32_t y = (pixel_pos[i][1]-32)*3;
-    pixel_distance[i] = x*x + y*y;
+  uint16_t i = GET_INT_ARG(1);
+  matrix_coordinate[i][0] = (uint8_t)GET_INT_ARG(2);
+  matrix_coordinate[i][1] = (uint8_t)GET_INT_ARG(3);
+}
+
+void
+c_ws2812_init_pixel_distance(mrb_vm *vm, mrb_value *v, int argc)
+{
+  int32_t x;
+  int32_t y;
+  for (int i=0; i < GET_INT_ARG(1); i++) {
+    x = matrix_coordinate[i][0] - 112;
+    y = (matrix_coordinate[i][1] - 32) * 3;
+    pixel_distance[i] = x * x + y * y;
   }
 }
 
@@ -257,3 +270,4 @@ c_ws2812_circle(mrb_vm *vm, mrb_value *v, int argc)
   }
   show_pixels();
 }
+
