@@ -27,10 +27,12 @@ class RGB
   def ws2812_rotate_swirl: (Integer) -> bool
   def ws2812_reset_swirl_index: () -> bool
   def ws2812_circle: (Integer, Integer) -> void
-  def ws2812_set_pos: (Array[ [Integer, Integer] ]) -> void
+  def ws2812_add_matrix_pixel_at: (Integer, Integer, Integer) -> void
+  def ws2812_init_pixel_distance: (Integer) -> void
 
   @fifo: Array[true]
   @effect: effect_type
+  @effect_init: boolish
   @speed: Integer
   @delay: Integer
   @max_value: Integer
@@ -42,6 +44,7 @@ class RGB
   @last_key: Symbol?
   @saturation: Integer
   @ping: bool
+  @pixel_index: Integer?
 
   def hsv2rgb: (Float | Integer h, Integer s, Float | Integer v) -> Integer
 
@@ -67,5 +70,5 @@ class RGB
   def fifo_push: (true data) -> void
   def thunder: -> void
   def ping?: () -> bool
-  def plot_matrix: (Array[ [Integer, Integer] ]) -> void
+  def add_pixel: (Integer, Integer) -> void
 end

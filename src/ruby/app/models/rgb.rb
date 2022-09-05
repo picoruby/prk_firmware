@@ -65,8 +65,13 @@ class RGB
   EFFECTS = %i|swirl rainbow_mood breath nokogiri static circle|
 
   def effect=(name)
+    unless EFFECTS.include?(name)
+      puts "Error: Unknown RGB effect `:#{name}`"
+      return
+    end
     turn_off
     @effect = name
+    @effect_init = false
     init_values
     reset_pixel
     turn_on
@@ -145,6 +150,10 @@ class RGB
     when :static
       ws2812_fill(hsv2rgb(@hue, @saturation, @max_value), @pixel_size)
     when :circle
+      unless @effect_init
+        ws2812_init_pixel_distance(@pixel_size)
+        @effect_init = true
+      end
       ws2812_circle(@pixel_size, @max_value)
     end
     sleep_ms @delay
@@ -307,8 +316,15 @@ class RGB
     @fifo.shift
   end
 
-  def plot_matrix(map)
-    ws2812_set_pos(map)
+  def add_pixel(x, y)
+    @pixel_index ||= 0
+    # @type ivar @pixel_index: Integer
+    if 150 <= @pixel_index
+      puts "Error: MAX_PIXEL_SIZE reached"
+      return
+    end
+    ws2812_add_matrix_pixel_at(@pixel_index, x, y)
+    @pixel_index += 1
   end
 
 end
