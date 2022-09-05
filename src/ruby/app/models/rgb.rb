@@ -23,7 +23,7 @@ class RGB
     @fifo = Array.new
     # TODO: @underglow_size, @backlight_size
     @pixel_size = underglow_size + backlight_size
-    ws2812_init(pin, is_rgbw)
+    ws2812_init(pin, @pixel_size, is_rgbw)
     @max_value = 13 # default
     init_values
   end

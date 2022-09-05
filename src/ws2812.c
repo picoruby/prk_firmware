@@ -68,7 +68,7 @@ void
 c_ws2812_init(mrb_vm *vm, mrb_value *v, int argc)
 {
   bool is_rgbw;
-  if (GET_ARG(2).tt == MRBC_TT_TRUE) {
+  if (GET_ARG(3).tt == MRBC_TT_TRUE) {
     is_rgbw = true;
   } else {
     is_rgbw = false;

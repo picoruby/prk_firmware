@@ -19,7 +19,7 @@ class RGB
   KEYCODE: Hash[Symbol, Integer]
   EFFECTS: Array[effect_type]
 
-  def ws2812_init: (Integer, bool) -> void
+  def ws2812_init: (Integer, Integer, bool) -> void
   def ws2812_show: () -> void
   def ws2812_fill: (Integer, Integer) -> void
   def ws2812_rand_show: (Integer, Integer, Integer) -> void
