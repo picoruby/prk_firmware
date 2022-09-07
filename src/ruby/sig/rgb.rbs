@@ -26,7 +26,7 @@ class RGB
   def ws2812_set_pixel_at: (Integer, Integer) -> void
   def ws2812_rotate_swirl: (Integer) -> bool
   def ws2812_reset_swirl_index: () -> bool
-  def ws2812_circle: (Integer, Integer) -> void
+  def ws2812_circle: (Integer, Integer, Integer) -> void
   def ws2812_add_matrix_pixel_at: (Integer, Integer, Integer) -> void
   def ws2812_init_pixel_distance: (Integer) -> void
 
@@ -38,6 +38,7 @@ class RGB
   @max_value: Integer
   @value: Float
   @hue: Integer
+  @circle_diameter: Integer
   @srand: bool
   @ascent: bool
   @offed: bool

@@ -158,7 +158,6 @@ c_ws2812_rand_show(mrb_vm *vm, mrb_value *v, int argc)
 
 static uint8_t matrix_coordinate[MAX_PIXEL_SIZE][2];
 static uint32_t pixel_distance[MAX_PIXEL_SIZE];
-static uint8_t circle_diameter = 0;
 
 void
 c_ws2812_add_matrix_pixel_at(mrb_vm *vm, mrb_value *v, int argc)
@@ -214,14 +213,10 @@ c_ws2812_circle(mrb_vm *vm, mrb_value *v, int argc)
 {
   int count = GET_INT_ARG(1);
   int value = GET_INT_ARG(2);
+  int circle_diameter = GET_INT_ARG(3);
 
-  uint8_t lv = value;
+  uint8_t lv = value*2;
 
-  if(circle_diameter==0) {
-    circle_diameter = 11;
-  } else {
-    --circle_diameter;
-  }
   for(uint16_t i=0; i<count; i++) {
     uint8_t b = get_distance_group(pixel_distance[i]);
     
