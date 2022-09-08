@@ -158,6 +158,7 @@ c_ws2812_rand_show(mrb_vm *vm, mrb_value *v, int argc)
 
 static uint8_t matrix_coordinate[MAX_PIXEL_SIZE][2];
 static uint32_t pixel_distance[MAX_PIXEL_SIZE];
+static uint8_t circle_center[2] = { 112, 32 };
 
 void
 c_ws2812_add_matrix_pixel_at(mrb_vm *vm, mrb_value *v, int argc)
@@ -168,13 +169,20 @@ c_ws2812_add_matrix_pixel_at(mrb_vm *vm, mrb_value *v, int argc)
 }
 
 void
+c_ws2812_circle_set_center(mrb_vm *vm, mrb_value *v, int argc)
+{
+  circle_center[0] = GET_INT_ARG(1);
+  circle_center[1] = GET_INT_ARG(2);
+}
+
+void
 c_ws2812_init_pixel_distance(mrb_vm *vm, mrb_value *v, int argc)
 {
   int32_t x;
   int32_t y;
   for (int i=0; i < GET_INT_ARG(1); i++) {
-    x = matrix_coordinate[i][0] - 112;
-    y = (matrix_coordinate[i][1] - 32) * 3;
+    x = matrix_coordinate[i][0] - circle_center[0];
+    y = (matrix_coordinate[i][1] - circle_center[1]) * 3;
     pixel_distance[i] = x * x + y * y;
   }
 }
@@ -201,8 +209,23 @@ static inline uint8_t get_distance_group(uint32_t d) {
   } else if(d<19600) {
     // 140
     return 6;
-  } else {
+  } else if(d<25600) {
+    // 160
     return 7;
+  } else if(d<32800) {
+    // 180
+    return 8;
+  } else if(d<40000) {
+    // 200
+    return 9;
+  } else if(d<48400) {
+    // 220
+    return 10;
+  } else if(d<57600) {
+    // 240
+    return 11;
+  } else {
+    return 12;
   }
 }
 

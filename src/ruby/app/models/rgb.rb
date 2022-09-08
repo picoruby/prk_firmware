@@ -213,7 +213,7 @@ class RGB
     @delay = (33 - @speed) * 10
     unless @anchor
       # speed tuning (partner is slower due to blocking UART)
-      @delay = (@delay * 0.9).ceil_to_i
+      @delay = (@delay * 0.97).ceil_to_i
     end
   end
 
@@ -299,7 +299,7 @@ class RGB
         @ascent = true
         @value = 0.0
       when :circle
-        @circle_diameter = 10
+        @circle_diameter = 11
       end
     when 0
       puts "ERROR: This should not happen"

@@ -11,6 +11,7 @@ void c_ws2812_reset_swirl_index(mrb_vm *vm, mrb_value *v, int argc);
 void c_ws2812_circle(mrb_vm *vm, mrb_value *v, int argc);
 void c_ws2812_add_matrix_pixel_at(mrb_vm *vm, mrb_value *v, int argc);
 void c_ws2812_init_pixel_distance(mrb_vm *vm, mrb_value *v, int argc);
+void c_ws2812_circle_set_center(mrb_vm *vm, mrb_value *v, int argc);
 
 #define WS2812_INIT() do { \
   mrbc_class *mrbc_class_RGB = mrbc_define_class(0, "RGB", mrbc_class_object);         \
@@ -24,5 +25,6 @@ void c_ws2812_init_pixel_distance(mrb_vm *vm, mrb_value *v, int argc);
   mrbc_define_method(0, mrbc_class_RGB, "ws2812_add_matrix_pixel_at", c_ws2812_add_matrix_pixel_at); \
   mrbc_define_method(0, mrbc_class_RGB, "ws2812_init_pixel_distance", c_ws2812_init_pixel_distance); \
   mrbc_define_method(0, mrbc_class_RGB, "ws2812_circle",       c_ws2812_circle); \
+  mrbc_define_method(0, mrbc_class_RGB, "ws2812_circle_set_center", c_ws2812_circle_set_center); \
 } while (0)
 
