@@ -1148,7 +1148,7 @@ class Keyboard
               if (earlier_report_size == 0) &&
                   (now - mode_key[:pushed_at] <= layer_action[:release_threshold])
                 action_on_release(layer_action[:on_release])
-                mode_key[:prev_state] = :pushed_then_released
+                mode_key[:prev_state] = (layer_action[:repush_threshold]==0) ? :released : :pushed_then_released
               else
                 mode_key[:prev_state] = :released
               end
