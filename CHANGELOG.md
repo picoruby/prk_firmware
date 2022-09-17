@@ -1,6 +1,6 @@
 # Change log
 
-## 0.9.18 on 2022/xx/xx
+## 0.9.18 on 2022/09/17
 
 ### RGB Matrix🌈
 See [wiki/RGB Matrix](https://github.com/picoruby/prk_firmware/wiki/RGB-Matrix).
@@ -14,10 +14,8 @@ You can arbitrarily inject a switch position of the matrix as if it was tapped.
 See [wiki/Keyboard#inject_switch](https://github.com/picoruby/prk_firmware/wiki/Keyboard-inject_switch).
 
 ### [Experimental] BIOS mode🛠️
-PRK automatically detects if it's connecting to BIOS and adjusts its behavior.
 
-But it doesn't work depending on the environment.
-We are waiting for feedback from you all! (Tell us your computer model ID)
+See [wiki/BIOS mode](https://github.com/picoruby/prk_firmware/wiki/BIOS-mode).
 
 ## 0.9.17 on 2022/08/06
 
