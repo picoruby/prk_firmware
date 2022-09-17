@@ -511,6 +511,21 @@ class Keyboard
       # @type var feature: RGB
       $rgb = feature
       $rgb.anchor = @anchor
+      if @split
+        if @anchor==@anchor_left
+          # left
+          $rgb.ws2812_circle_set_center(224,32)
+        else
+          # right
+          if @split_style == :right_side_flipped_split
+            $rgb.ws2812_circle_set_center(0,32)
+          else
+            $rgb.ws2812_circle_set_center(224,32)
+          end
+        end
+      else
+        $rgb.ws2812_circle_set_center(112,32)
+      end
     when "RotaryEncoder"
       # @type var feature: RotaryEncoder
       if @split

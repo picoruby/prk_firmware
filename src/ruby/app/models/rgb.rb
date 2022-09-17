@@ -152,9 +152,15 @@ class RGB
     when :circle
       unless @effect_init
         ws2812_init_pixel_distance(@pixel_size)
+        @circle_diameter = 0
         @effect_init = true
       end
-      ws2812_circle(@pixel_size, @max_value)
+      @circle_diameter -= 1
+      if @circle_diameter < 0
+        @ping = true
+        @circle_diameter = 11
+      end
+      ws2812_circle(@pixel_size, @max_value, @circle_diameter)
     end
     sleep_ms @delay
   end
@@ -207,7 +213,7 @@ class RGB
     @delay = (33 - @speed) * 10
     unless @anchor
       # speed tuning (partner is slower due to blocking UART)
-      @delay = (@delay * 0.9).ceil_to_i
+      @delay = (@delay * 0.97).ceil_to_i
     end
   end
 
@@ -292,6 +298,8 @@ class RGB
       when :breath, :nokogiri
         @ascent = true
         @value = 0.0
+      when :circle
+        @circle_diameter = 11
       end
     when 0
       puts "ERROR: This should not happen"
