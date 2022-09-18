@@ -14,7 +14,6 @@ class Object
 
   # Raspi
   def board_millis : -> Integer
-  def cdc_task : -> void
   def tud_task : -> void
   def tud_mounted? : () -> bool
   def gpio_init : (Integer) -> void
