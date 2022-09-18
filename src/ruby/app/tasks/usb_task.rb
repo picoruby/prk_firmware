@@ -1,6 +1,5 @@
 200.times do
   tud_task
-  cdc_task
   sleep_ms 2
 end
 print "\e[2J\e[1;1H" # clear all & home
@@ -14,7 +13,6 @@ $mutex = false
 
 while true
   tud_task
-  cdc_task
   if autoreload_ready?
     if autoreload_tick == 0
       puts "\nReloading keymap"
@@ -26,14 +24,12 @@ while true
       Keyboard.reload_keymap
       10.times do
         tud_task
-        cdc_task
         sleep_ms 2
       end
       Keyboard.resume_keymap
     end
     autoreload_tick -= 1
     tud_task
-    cdc_task
     sleep_ms 2
   end
 end

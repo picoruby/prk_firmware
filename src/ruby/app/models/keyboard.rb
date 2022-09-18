@@ -1014,12 +1014,10 @@ class Keyboard
       end
     end
     tud_task
-    cdc_task
     hid_task(modifier, keycodes, consumer, 0, 0)
     (consumer > 0 ? 3 : 1).times do
       sleep_ms 1
       tud_task
-      cdc_task
     end
     hid_task(0, "\000\000\000\000\000\000", 0, 0, 0)
   end
