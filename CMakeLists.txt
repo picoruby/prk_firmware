@@ -44,6 +44,7 @@ add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/lib)
 add_executable(${PROJECT}
   src/main.c
   src/msc_disk.c
+  src/usb_cdc.c
   src/usb_descriptors.c
   src/gpio.c
   src/uart.c

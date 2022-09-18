@@ -10,6 +10,7 @@
 #include "hardware/clocks.h"
 
 /* mrbc_class */
+#include "usb_cdc.h"
 #include "msc_disk.h"
 #include "gpio.h"
 #include "usb_descriptors.h"
