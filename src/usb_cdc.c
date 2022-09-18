@@ -1,8 +1,19 @@
-
+#include "tusb_config.h"
 #include "tusb.h"
 
-#include "usb_cdc.h"
 #include <mrubyc.h>
+#include "usb_cdc.h"
+
+#ifndef CFG_TUSB_MCU
+  #error CFG_TUSB_MCU must be defined
+#endif
+
+int hal_write(int fd, const void *buf, int nbytes)
+{
+  tud_cdc_write(buf, nbytes);
+  tud_cdc_write_flush();
+  return nbytes;
+}
 
 void
 c_cdc_task(mrb_vm *vm, mrb_value *v, int argc)

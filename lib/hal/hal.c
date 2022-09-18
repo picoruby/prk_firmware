@@ -72,30 +72,22 @@ void hal_init(void){
   2. Comment out the putchar for hal_write.
   3. Uncomment uart_putc_raw for hal_write.
 */
-//int hal_write(int fd, const void *buf, int nbytes)
-//{
-//  int i = nbytes;
-//  const uint8_t *p = buf;
-//
-//  while( --i >= 0 ) {
-//    putchar( *p++ );
-//    // uart_putc_raw(uart0, *p++ );
-//  }
-//
-//  return nbytes;
-//}
 /*
- * hal_write() using tinyusb
- */
-#define CFG_TUSB_MCU 1
-#include "tusb_config.h"
-#include "tusb.h"
+ * The implementation moved to prk_firmware/src/usb_cdc.c
+ *
 int hal_write(int fd, const void *buf, int nbytes)
 {
-  tud_cdc_write(buf, nbytes);
-  tud_cdc_write_flush();
+  int i = nbytes;
+  const uint8_t *p = buf;
+
+  while( --i >= 0 ) {
+    putchar( *p++ );
+    // uart_putc_raw(uart0, *p++ );
+  }
+
   return nbytes;
 }
+*/
 
 //================================================================
 /*!@brief
@@ -124,4 +116,3 @@ void hal_abort(const char *s)
 
   abort();
 }
-
