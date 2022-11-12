@@ -155,10 +155,10 @@ joystick_report_hid(uint32_t buttons, uint8_t hat)
     }
   }
   if (memcmp(&report, &zero_report, sizeof(report))) {
-    tud_hid_report(REPORT_ID_GAMEPAD, &report, sizeof(report));
+    tud_hid_n_report(1, REPORT_ID_GAMEPAD, &report, sizeof(report));
     zero_reported = false;
   } else if (!zero_reported) {
-    tud_hid_report(REPORT_ID_GAMEPAD, &report, sizeof(report));
+    tud_hid_n_report(1, REPORT_ID_GAMEPAD, &report, sizeof(report));
     zero_reported = true;
   }
 }
