@@ -452,7 +452,7 @@ class Keyboard
     @encoders = Array.new
     @partner_encoders = Array.new
     @macro_keycodes = Array.new
-    @buffer = Buffer.new("picoirb")
+    @buffer = Terminal::Buffer.new
     @scan_mode = :matrix
     @skip_positions = Array.new
     @layer_changed_delay = 20
@@ -1468,10 +1468,11 @@ class Keyboard
     end
   end
 
+  # FIXME: ruby_mode now doesn't work due to picoruby/picoruby as of Nov 2022
   def ruby
     if @ruby_mode
       @macro_keycodes << (LETTER.index(:ENTER) || 0)
-      @buffer.adjust_screen
+      #@buffer.adjust_screen
       eval @buffer.dump
       @buffer.clear
       @ruby_mode = false
@@ -1479,7 +1480,7 @@ class Keyboard
         $rgb.effect = @prev_rgb_effect || :rainbow_mood
       end
     else
-      @buffer.refresh_screen
+      #@buffer.refresh_screen
       @ruby_mode = true
       @ruby_mode_stop = false
       if $rgb

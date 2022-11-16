@@ -4,14 +4,13 @@ cmake_minimum_required(VERSION 3.13)
 # note: this must happen before project()
 include(pico_sdk_import.cmake)
 
-project(prk_firmware)
-
 add_definitions(
   -DNDEBUG
   -DMRBC_USE_HAL_RP2040
   -DMRBC_REQUIRE_32BIT_ALIGNMENT
   -DMAX_REGS_SIZE=256
-  -DMAX_VM_COUNT=20
+  -DMAX_VM_COUNT=255
+  -DMAX_SYMBOLS_COUNT=1000
   -DMRBC_CONVERT_CRLF
   -DMRBC_USE_MATH
   -DPICORBC_PTR_SIZE=4
@@ -28,38 +27,27 @@ pico_sdk_init()
 
 execute_process (COMMAND date +%Y%m%d OUTPUT_VARIABLE CMAKE_BUILDDATE OUTPUT_STRIP_TRAILING_WHITESPACE)
 execute_process (COMMAND git rev-parse --short HEAD OUTPUT_VARIABLE CMAKE_REVISION OUTPUT_STRIP_TRAILING_WHITESPACE)
-set (PRK_VERSION   0.9.18)
+execute_process (COMMAND git describe --tags --abbrev=0 OUTPUT_VARIABLE CMAKE_VERSION_NUMBER OUTPUT_STRIP_TRAILING_WHITESPACE)
+set (PRK_VERSION   ${CMAKE_VERSION_NUMBER})
 set (PRK_BUILDDATE ${CMAKE_BUILDDATE})
 set (PRK_REVISION  ${CMAKE_REVISION})
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/src/version.h.in" "${CMAKE_CURRENT_SOURCE_DIR}/src/version.h")
 
 if(PRK_NO_MSC)
-  set(PROJECT "prk_firmware-${PRK_VERSION}-${PRK_BUILDDATE}-no_msc")
+  project("prk_firmware-${PRK_VERSION}-${PRK_BUILDDATE}-no_msc")
 else()
-  set(PROJECT "prk_firmware-${PRK_VERSION}-${PRK_BUILDDATE}-${PRK_REVISION}")
+  project("prk_firmware-${PRK_VERSION}-${PRK_BUILDDATE}-${PRK_REVISION}")
 endif()
 
-add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/lib)
+file(GLOB SRCS src/*.c)
+add_executable(${PROJECT_NAME} ${SRCS})
 
-add_executable(${PROJECT}
-  src/main.c
-  src/msc_disk.c
-  src/usb_descriptors.c
-  src/gpio.c
-  src/uart.c
-  src/ws2812.c
-  src/rotary_encoder.c
-  src/joystick.c
-  src/sounder.c
-  lib/picoruby/build/repos/host/mruby-bin-picoirb/tools/picoirb/sandbox.c
-)
-
-pico_generate_pio_header(${PROJECT} ${CMAKE_CURRENT_LIST_DIR}/src/uart_tx.pio)
-pico_generate_pio_header(${PROJECT} ${CMAKE_CURRENT_LIST_DIR}/src/ws2812.pio)
-pico_generate_pio_header(${PROJECT} ${CMAKE_CURRENT_LIST_DIR}/src/sounder.pio)
+pico_generate_pio_header(${PROJECT_NAME} ${CMAKE_CURRENT_LIST_DIR}/src/uart_tx.pio)
+pico_generate_pio_header(${PROJECT_NAME} ${CMAKE_CURRENT_LIST_DIR}/src/ws2812.pio)
+pico_generate_pio_header(${PROJECT_NAME} ${CMAKE_CURRENT_LIST_DIR}/src/sounder.pio)
 
 set(RBC ${CMAKE_CURRENT_SOURCE_DIR}/lib/picoruby/bin/picorbc)
-#set(RBC RBENV_VERSION=mruby-3.0.0 mrbc) # In case of PicoRuby compiler enbugged 😵
+#set(RBC RBENV_VERSION=mruby-3.1.0 mrbc) # In case of PicoRuby compiler enbugged 😵
 
 if(PRK_NO_MSC)
   add_custom_target(keymap
@@ -104,22 +92,24 @@ add_dependencies(ruby
   models
   tasks
 )
-add_dependencies(${PROJECT}
-  picoruby
+add_dependencies(${PROJECT_NAME}
   ruby
 )
 if(PRK_NO_MSC)
-  add_dependencies(${PROJECT}
+  add_dependencies(${PROJECT_NAME}
     keymap
   )
 endif()
 
-target_link_libraries(${PROJECT}
+target_link_directories(${PROJECT_NAME} PRIVATE
+  ${CMAKE_SOURCE_DIR}/lib/picoruby/build/r2p2-cortex-m0plus/lib
+)
+
+target_link_libraries(${PROJECT_NAME}
   pico_stdlib
   pico_bootsel_via_double_reset
   tinyusb_device
   tinyusb_board
-  picoruby
   hardware_pio
   hardware_pwm
   pico_multicore
@@ -127,22 +117,23 @@ target_link_libraries(${PROJECT}
   hardware_adc
   hardware_dma
   hardware_sync
+  mruby
 )
 
-include_directories(${PROJECT} PRIVATE
+include_directories(${PROJECT_NAME} PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}
   ${CMAKE_CURRENT_LIST_DIR}/include
-  ${CMAKE_CURRENT_LIST_DIR}/lib/picoruby/build/repos/host/mruby-bin-picoirb/tools/picoirb
   ${CMAKE_CURRENT_LIST_DIR}/lib/picoruby/build/repos/host/mruby-pico-compiler/include
-  ${CMAKE_CURRENT_LIST_DIR}/lib/picoruby/build/repos/host/mruby-mrubyc/repos/mrubyc/src
+  ${CMAKE_CURRENT_LIST_DIR}/lib/picoruby/mrbgems/picoruby-mrubyc/repos/mrubyc/src
+  ${CMAKE_CURRENT_LIST_DIR}/lib/picoruby/mrbgems/picoruby-sandbox/src
 )
 
 # create map/bin/hex/uf2 file in addition to ELF.
-pico_add_extra_outputs(${PROJECT})
+pico_add_extra_outputs(${PROJECT_NAME})
 
 add_custom_command(
-  TARGET ${PROJECT}
+  TARGET ${PROJECT_NAME}
   POST_BUILD
-  COMMAND gzip -kf ${PROJECT}.uf2
-  COMMAND zip -r ${PROJECT}.uf2.zip ${PROJECT}.uf2
+  COMMAND gzip -kf ${PROJECT_NAME}.uf2
+  COMMAND zip -r ${PROJECT_NAME}.uf2.zip ${PROJECT_NAME}.uf2
 )
