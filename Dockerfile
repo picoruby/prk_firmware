@@ -3,7 +3,7 @@
 
 FROM --platform=amd64 manjarolinux/base AS build
 
-RUN pacman -S --noconfirm \
+RUN pacman -Sy --noconfirm \
   cmake \
   arm-none-eabi-gcc \
   arm-none-eabi-newlib \

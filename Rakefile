@@ -1,29 +1,47 @@
 require "fileutils"
 
-MAX_SYMBOLS_COUNT = 1000
+MRUBY_CONFIG = "r2p2-cortex-m0plus"
 
 task :default => :all
 
-desc "build PRK Firmware in build directory"
-task :all => %i(check_setup test_all make_without_test)
+desc "build production"
+task :all => [:check_setup, :libmruby, :test_all, :cmake_production, :build]
 
-desc "build debug built and start gdb-multiarch"
-task :debug => :debug_all
+desc "build debug (you may need to rake clean before this)"
+task :debug => [:check_setup, :libmruby, :test_all, :cmake_debug, :build]
 
-task :debug_all => %i(check_setup test_all debug_make_without_test)
+file "lib/picoruby" do
+  sh "git submodule update --init --recursive"
+end
 
-# Build without tests
-task :make_without_test do
-  FileUtils.cd "build" do
-    sh "CFLAGS=-DMAX_SYMBOLS_COUNT=#{MAX_SYMBOLS_COUNT} cmake .. && make"
+task :libmruby => "lib/picoruby" do
+  FileUtils.cd "lib/picoruby" do
+    sh "MRUBY_CONFIG=#{MRUBY_CONFIG} rake"
   end
 end
 
-task :debug_make_without_test do
-  FileUtils.cd "build" do
-    sh "CFLAGS=-DMAX_SYMBOLS_COUNT=#{MAX_SYMBOLS_COUNT} cmake -DCMAKE_BUILD_TYPE=Debug .. && make"
-    elf_file = Dir.glob("prk_firmware-*.elf").sort_by{ |fn| File.mtime(fn) }.last
-    sh "gdb-multiarch #{elf_file}"
+task :cmake_debug do
+  sh "cmake -DCMAKE_BUILD_TYPE=Debug -B build"
+end
+
+task :cmake_production do
+  sh "cmake -B build"
+end
+
+desc "build without cmake preparation"
+task :build do
+  sh "cmake --build build"
+end
+
+file "src/ruby/app/models/buffer.rb" do
+  FileUtils.cd "src/ruby/app/models" do
+    FileUtils.ln_sf "../../../../lib/picoruby/mrbgems/picoruby-terminal/mrblib/buffer.rb", "buffer.rb"
+  end
+end
+
+file "src/ruby/sig/buffer.rbs" do
+  FileUtils.cd "src/ruby/sig" do
+    FileUtils.ln_sf "../../../lib/picoruby/mrbgems/picoruby-terminal/sig/buffer.rbs", "buffer.rbs"
   end
 end
 
@@ -32,10 +50,11 @@ task :build_with_keymap, ['keyboard_name'] => :test_all do |_t, args|
   unless args.keyboard_name
     raise "Argument `keyboard_name` missing.\nUsage: rake build_with_keymap[prk_meishi2]"
   end
-  dir = "keyboards/#{args.keyboard_name}/build"
-  FileUtils.mkdir_p dir
+  dir = "keyboards/#{args.keyboard_name}"
+  FileUtils.mkdir_p "#{dir}/build"
   FileUtils.cd dir do
-    sh "cmake -DPRK_NO_MSC=1 ../../.. && make"
+    sh "cmake -DPRK_NO_MSC=1 -B build"
+    sh "cmake --build build"
   end
 end
 
@@ -52,9 +71,16 @@ desc "run :steep_check and :mrubyc_test"
 task :test_all => %i(steep_check mrubyc_test)
 
 desc "run steep check for ruby program"
-task :steep_check do
+task :steep_check => ["src/ruby/app/models/buffer.rb", "src/ruby/sig/buffer.rbs"] do
   FileUtils.cd "src/ruby" do
     sh "rake steep"
+  end
+end
+
+desc "you have to run this task once before build"
+task :setup do
+  FileUtils.cd "src/ruby" do
+    sh "bundle exec steep -h || bundle install"
   end
 end
 
@@ -80,46 +106,33 @@ task :check_setup do
   end
 end
 
-desc "you have to run this task once before build"
-task :setup do
-  sh "git submodule update --recursive"
-  FileUtils.cd "src/ruby" do
-    sh "bundle exec steep -h || bundle install"
-  end
-  FileUtils.cd "lib/picoruby" do
-    # Just to prepare picorbc. So hal should be hal_posix
-    sh "rake all MAX_SYMBOLS_COUNT=#{MAX_SYMBOLS_COUNT}"
-  end
-  FileUtils.cd "src/ruby/app/models" do
-    FileUtils.ln_sf "../../../../lib/picoruby/build/repos/host/mruby-bin-picoirb/tools/picoirb/buffer.rb", "buffer.rb"
-  end
-  FileUtils.cd "src/ruby/sig" do
-    FileUtils.ln_sf "../../../lib/picoruby/build/repos/host/mruby-bin-picoirb/tools/picoirb/buffer.rbs", "buffer.rbs"
-  end
-  FileUtils.cd "src/ruby/test/tmp" do
-    FileUtils.ln_sf "../../../../lib/picoruby/build/repos/host/mruby-mrubyc/repos/mrubyc/src/hal_posix", "hal"
-  end
-end
-
 desc "clean built"
 task :clean do
+  FileUtils.cd "lib/picoruby" do
+    sh "MRUBY_CONFIG=#{MRUBY_CONFIG} rake clean"
+  end
   FileUtils.cd "build" do
-    sh "rm -rf *"
+    FileUtils.rm_rf Dir.glob("prk_firmware-*.*")
+  end
+  begin
+    sh "cmake --build build --target clean"
+  rescue => e
+    puts "Ignoring an error: #{e.message}"
   end
 end
 
-desc "clean everything (Then you'll need to do `rake setup`"
+desc "deep clean built"
 task :deep_clean do
-  FileUtils.rm_r Dir.glob("build/*")
-  FileUtils.rm_rf "lib/picoruby"
-  FileUtils.rm_rf "src/ruby/app/models/buffer.rb"
-  FileUtils.rm_rf "src/ruby/sig/buffer.rbs"
-  FileUtils.rm_rf "src/ruby/test/tmp/hal"
+  FileUtils.cd "lib/picoruby" do
+    sh "MRUBY_CONFIG=#{MRUBY_CONFIG} rake deep_clean"
+  end
+  FileUtils.cd "build" do
+    FileUtils.rm_rf Dir.glob("*")
+  end
 end
 
 # Add a new tag then push it
 task :release => :test_all do
-  regexp = /(set \(PRK_VERSION\s+)([\d\.]+)/
   git_status = `git status`
   branch = git_status.split("\n")[0].match(/\AOn branch (.+)\z/)[1]
   if branch != "master"
@@ -134,16 +147,6 @@ task :release => :test_all do
   end
   unless git_status.include?("nothing to commit")
     puts "You still have things to commit!"
-    exit 1
-  end
-  current_version = `cat CMakeLists.txt`.match(regexp)[2]
-  unless current_version
-    puts "No PRK_VERSION was found in CMakeLists.txt!"
-    exit 1
-  end
-  tags = `git tag`.chomp.split("\n").sort_by{ |v| Gem::Version.new(v) }
-  if tags.last != current_version
-    puts "Inconsistent between PRK_VERSION and the newest tag!"
     exit 1
   end
   puts "Existing tags:"
@@ -164,10 +167,6 @@ task :release => :test_all do
     break if %w(y Y).include?(line)
     new_version = line
   end
-  buffer = File.read()
-  File.write("CMakeLists.txt", buffer.sub(regexp, "\\1#{new_version}"))
-  sh "git add CMakeLists.txt"
-  sh "git commit -m 'new version: #{new_version}'"
   sh "git tag #{new_version}"
   sh "git push origin #{new_version}"
   Rake::Task['clean'].invoke

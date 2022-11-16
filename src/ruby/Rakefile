@@ -7,24 +7,16 @@ end
 
 namespace :steep do
   task :check do
-    exec %q(bundle exec steep check)
+    sh %q(bundle exec steep check)
   end
   task :stats do
-    exec %q(bundle exec steep stats --log-level=error --format=table)
+    sh %q(bundle exec steep stats --log-level=error --format=table)
   end
   task :watch do
-    exec %q(bundle exec steep watch lib sig)
+    sh %q(bundle exec steep watch lib sig)
   end
 end
 
 task :test do
-  mrblib_dst = "../../lib/picoruby/build/repos/host/mruby-mrubyc/repos/mrubyc/src/mrblib.c"
-  mrblib_src = "../../lib/picoruby/build/host/mrbgems/mruby-mrubyc/src/mrblib.c"
-  unless File.exists? mrblib_dst
-    unless File.exists? mrblib_src
-      raise "No mrblib.c found!\nYou probably need to `rake setup`"
-    end
-    FileUtils.cp mrblib_src, mrblib_dst
-  end
-  exec %q(RUBYLIB=./app/models CFLAGS=-DMAX_SYMBOLS_COUNT=1000 bundle exec mrubyc-test)
+  sh %q(RUBYLIB=./app/models CFLAGS=-DMAX_SYMBOLS_COUNT=1000 bundle exec mrubyc-test)
 end
