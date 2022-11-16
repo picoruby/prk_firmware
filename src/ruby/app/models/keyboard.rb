@@ -458,7 +458,6 @@ class Keyboard
     @layer_changed_delay = 20
     @sandbox = Sandbox.new
     @sandbox.compile("_ = nil")
-    @sandbox.resume
   end
 
   attr_accessor :split, :uart_pin, :default_layer, :sounder
@@ -1451,17 +1450,13 @@ class Keyboard
 
   def eval(script)
     if @sandbox.compile(script)
-      if @sandbox.resume
-        n = 0
-        while @sandbox.state != 0 do # 0: TASKSTATE_DORMANT == finished(?)
-          sleep_ms 50
-          n += 50
-          if n > 10000
-            puts "Error: Timeout (@sandbox.state: #{@sandbox.state})"
-            break;
-          end
+      if @sandbox.execute
+        if @sandbox.wait && error = @sandbox.error
+          macro "=> #{error.message} (#{error.class})"
+        else
+          macro "=> #{@sandbox.result.inspect}"
         end
-        macro("=> #{@sandbox.result.inspect}")
+        @sandbox.suspend
       end
     else
       macro("Error: Compile failed")

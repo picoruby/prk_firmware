@@ -5,10 +5,10 @@ MRUBY_CONFIG = "r2p2-cortex-m0plus"
 task :default => :all
 
 desc "build production"
-task :all => [:libmruby, :test_all, :cmake_production, :build]
+task :all => [:check_setup, :libmruby, :test_all, :cmake_production, :build]
 
 desc "build debug (you may need to rake clean before this)"
-task :debug => [:libmruby, :test_all, :cmake_debug, :build]
+task :debug => [:check_setup, :libmruby, :test_all, :cmake_debug, :build]
 
 file "lib/picoruby" do
   sh "git submodule update --init --recursive"
@@ -85,7 +85,7 @@ task :setup do
 end
 
 desc "run unit test for ruby program"
-task :mrubyc_test => "src/ruby/test/tmp/hal" do
+task :mrubyc_test do
   FileUtils.cd "src/ruby" do
     sh "rake test"
   end

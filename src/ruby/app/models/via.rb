@@ -529,17 +529,13 @@ class VIA
   
   def eval_val(script)
     if @kbd.sandbox.compile(script)
-      if @kbd.sandbox.resume
-        n = 0
-        while @kbd.sandbox.state != 0 do # 0: TASKSTATE_DORMANT == finished(?)
-          sleep_ms 50
-          n += 50
-          if n > 10000
-            puts "Error: Timeout (@kbd.sandbox.state: #{@kbd.sandbox.state})"
-            break;
-          end
+      if @kbd.sandbox.execute
+        if @kbd.sandbox.wait && error = @kbd.sandbox.error
+          return error.message
+        else
+          return @kbd.sandbox.result
         end
-        return @kbd.sandbox.result
+        @kbd.sandbox.suspend
       end
     else
       puts "Error: Compile failed"
