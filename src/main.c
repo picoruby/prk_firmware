@@ -219,7 +219,7 @@ create_keymap_task(mrbc_tcb *tcb)
   hal_disable_irq();
   DirEnt entry;
   StreamInterface *si;
-  ParserState *p = Compiler_parseInitState(NODE_BOX_SIZE);
+  ParserState *p = Compiler_parseInitState(NULL, NODE_BOX_SIZE);
   msc_findDirEnt("KEYMAP  RB ", &entry);
   uint8_t *keymap_rb = NULL;
   if (entry.Name[0] != '\0') {
@@ -244,7 +244,7 @@ create_keymap_task(mrbc_tcb *tcb)
     console_printf("Compiling keymap.rb failed!\n");
     Compiler_parserStateFree(p);
     StreamInterface_free(si);
-    p = Compiler_parseInitState(NODE_BOX_SIZE);
+    p = Compiler_parseInitState(NULL, NODE_BOX_SIZE);
     si = StreamInterface_new(NULL, SUSPEND_TASK, STREAM_TYPE_MEMORY);
     Compiler_compile(p, si, NULL);
   }
@@ -456,13 +456,12 @@ int main() {
   GPIO_INIT();
   USB_INIT();
   UART_INIT();
-  SANDBOX_INIT();
+  mrbc_sandbox_init();
   mrbc_load_model(object);
   mrbc_load_model(float_ext);
   mrbc_load_model(buffer);
   mrbc_load_model(keyboard);
   mrbc_create_task(usb_task, 0);
-  create_sandbox();
   mrbc_define_method(0, mrbc_class_object, "autoreload_ready?", c_autoreload_ready_q);
 #ifdef PRK_NO_MSC
   mrbc_create_task(keymap, 0);
