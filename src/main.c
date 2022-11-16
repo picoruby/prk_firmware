@@ -10,6 +10,7 @@
 #include "hardware/clocks.h"
 
 /* mrbc_class */
+#include "usb_cdc.h"
 #include "msc_disk.h"
 #include "gpio.h"
 #include "usb_descriptors.h"
@@ -452,7 +453,6 @@ int main() {
 #ifndef PRK_NO_MSC
   msc_init();
 #endif
-  CDC_INIT();
   GPIO_INIT();
   USB_INIT();
   UART_INIT();
