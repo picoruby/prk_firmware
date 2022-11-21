@@ -236,9 +236,12 @@ tud_hid_set_protocol_cb(uint8_t instance, uint8_t protocol) {
   (void) instance;
 }
 
+#define HID0_REPORT_ID_BITS ( \
+    (1<<REPORT_ID_KEYBOARD) | (1<<REPORT_ID_MOUSE) | \
+    (1<<REPORT_ID_CONSUMER_CONTROL) | (1<<REPORT_ID_RAWHID) )
+
 static uint8_t prev_keyboard_keycodes[6] = {0, 0, 0, 0, 0, 0};
 static uint8_t input_updated_bitmap = 0;
-
 static uint8_t keyboard_modifier = 0;
 static uint8_t *keyboard_keycodes = NULL;
 static uint16_t consumer_keycode = 0;
@@ -248,11 +251,18 @@ static bool via_active = false;
 static void
 send_hid_report()
 {
-  // skip if hid is not ready yet
-  if ( !tud_hid_n_ready(0) ) return;
-
   // skip if report is not updated
-  if ( !input_updated_bitmap ) return;
+  if ( input_updated_bitmap ) {
+    // skip if hid is not ready yet
+    if ( !tud_hid_n_ready(0) ) {
+      input_updated_bitmap &= ~(HID0_REPORT_ID_BITS);
+    }
+    if ( !tud_hid_n_ready(1) ) {
+      input_updated_bitmap &= ~(1<<REPORT_ID_GAMEPAD);
+    }
+  } else {
+    return;
+  }
 
   for(uint8_t i=1;i<6;i++) {
     if(input_updated_bitmap & (1<<i) ) {
@@ -260,27 +270,25 @@ send_hid_report()
 
       switch(i)
       {
-        case 1:
-        case 2:
-        {
+        case REPORT_ID_KEYBOARD: {
           tud_hid_n_keyboard_report(0, REPORT_ID_KEYBOARD, keyboard_modifier, keyboard_keycodes);
         }
         break;
 
-        case 3: {
+        case REPORT_ID_MOUSE: {
           int8_t const delta = 0;
           tud_hid_n_mouse_report(0, REPORT_ID_MOUSE, 0x00, delta, delta, 0, 0);
         }
         break;
 
-        case 4: {
+        case REPORT_ID_CONSUMER_CONTROL: {
           if(! via_active) {
             tud_hid_n_report(0, REPORT_ID_CONSUMER_CONTROL, &consumer_keycode, 2);
           }
         }
         break;
 
-        case 5: {
+        case REPORT_ID_GAMEPAD: {
           joystick_report_hid(joystick_buttons, joystick_hat);
         }
         break;
@@ -391,25 +399,33 @@ c_report_raw_hid(mrb_vm *vm, mrb_value *v, int argc) {
   }
 }
 
-#define UPDATE_REPORT_INT(variable,position) \
-  do {if( variable!=GET_INT_ARG(position) ) { variable = (typeof(variable))GET_INT_ARG(position); input_updated_bitmap |= 1<<position; } } while(0)
-
 void
 c_Keyboard_hid_task(mrb_vm *vm, mrb_value *v, int argc)
 {
   input_updated_bitmap = 0;
 
-  UPDATE_REPORT_INT(keyboard_modifier, 1);
+  if( keyboard_modifier!=GET_INT_ARG(1) ) {
+    keyboard_modifier = (uint8_t)GET_INT_ARG(1);
+    input_updated_bitmap |= 1<<REPORT_ID_KEYBOARD;
+  }
 
   if( memcmp(prev_keyboard_keycodes, GET_STRING_ARG(2), 6) ) {
     keyboard_keycodes = GET_STRING_ARG(2);
     memcpy(prev_keyboard_keycodes, GET_STRING_ARG(2), 6);
-    input_updated_bitmap |= 1<<2;
+    input_updated_bitmap |= 1<<REPORT_ID_KEYBOARD;
   }
 
-  UPDATE_REPORT_INT(consumer_keycode, 3);
-  UPDATE_REPORT_INT(joystick_buttons, 4);
-  UPDATE_REPORT_INT(joystick_hat,     5);
+  if( consumer_keycode!=GET_INT_ARG(3) ) {
+    consumer_keycode = (uint16_t)GET_INT_ARG(3);
+    input_updated_bitmap |= 1<<REPORT_ID_CONSUMER_CONTROL;
+  }
+
+  if( 1 ) {
+    // always call joystick_report_hid() to read ADC
+    joystick_buttons = (uint32_t)GET_INT_ARG(4);
+    joystick_hat     = (uint8_t)GET_INT_ARG(5);
+    input_updated_bitmap |= 1<<REPORT_ID_GAMEPAD;
+  }
   
   if (consumer_keycode != 0) {
     via_active = false;
