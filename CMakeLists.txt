@@ -127,6 +127,7 @@ target_link_libraries(${PROJECT}
   hardware_adc
   hardware_dma
   hardware_sync
+  hardware_irq
 )
 
 include_directories(${PROJECT} PRIVATE

@@ -14,14 +14,14 @@ class MmlTest < MrubycTestCase
 
   description "A flat"
   def a_flat_case
-    duration = MML.new.compile("AA-") { |p, d| @data << [p, d] }
+    duration = MML.new.compile("AA-") { |p, d| @data << [p.to_i, d] }
     assert_equal [[440, 500],[415,500]], @data
     assert_equal 1000, duration
   end
 
   description "C flat"
   def c_flat_case
-    duration = MML.new.compile("CC-") { |p, d| @data << [p, d] }
+    duration = MML.new.compile("CC-") { |p, d| @data << [p.to_i, d] }
     assert_equal [[261, 500],[246,500]], @data
     assert_equal 1000, duration
   end

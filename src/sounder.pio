@@ -2,26 +2,18 @@
 
 .wrap_target
     pull;       blocks
-    out ISR, 12;
-    out Y, 20;
-loopOUTER:
-    mov X, ISR;
-    jmp !X, noTone;
-    set pins, 1;
-loopHI:
-    jmp X--, loopHI [5];
-    mov X, ISR;
-    set pins, 0;
-loopLO:
-    jmp X--, loopLO [5];
-    jmp loopOuterEND;
-noTone:
-    set X, 0x1F; set 0b00011111
-loopZERO:
-    jmp X--, loopZERO [31]; wait for 900 clocks
-loopOuterEND:
-    jmp Y--, loopOUTER;
+    out X, 31;
+    out Y, 1;
+loop:
+    set pins, 0     [31];
+    jmp !Y, noSound [31];
+    set pins, 1     [ 0];
+noSound:
+    nop             [30];
+    jmp X--, loop   [31];
+    irq 1;
 .wrap
+
 
 % c-sdk {
 #include "hardware/clocks.h"
@@ -41,7 +33,7 @@ static inline void sounder_program_init(PIO pio, uint sm, uint offset, uint pin)
     
     // all the FIFOs is TX
     //sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_TX);
-    sm_config_set_clkdiv(&c, (float)clock_get_hz(clk_sys) / (1000000UL));
+    sm_config_set_clkdiv(&c, (float)clock_get_hz(clk_sys) / (2000UL));
 
     // start state machine
     pio_sm_init(pio, sm, offset, &c);
