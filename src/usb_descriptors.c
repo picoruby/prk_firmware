@@ -18,11 +18,10 @@ uint8_t const * tud_descriptor_device_cb(void)
 //--------------------------------------------------------------------+
 
 #ifdef PRK_NO_MSC
-#define CONFIG_TOTAL_LEN    (TUD_CONFIG_DESC_LEN + TUD_CDC_DESC_LEN + TUD_HID_INOUT_DESC_LEN)
+#define CONFIG_TOTAL_LEN    (TUD_CONFIG_DESC_LEN + TUD_CDC_DESC_LEN + TUD_HID_INOUT_DESC_LEN + TUD_HID_DESC_LEN)
 #else
-#define CONFIG_TOTAL_LEN    (TUD_CONFIG_DESC_LEN + TUD_CDC_DESC_LEN + TUD_MSC_DESC_LEN + TUD_HID_INOUT_DESC_LEN)
+#define CONFIG_TOTAL_LEN    (TUD_CONFIG_DESC_LEN + TUD_CDC_DESC_LEN + TUD_MSC_DESC_LEN + TUD_HID_INOUT_DESC_LEN + TUD_HID_DESC_LEN)
 #endif
-#define CONFIG_BOOT_TOTAL_LEN  (TUD_CONFIG_DESC_LEN + TUD_HID_INOUT_DESC_LEN)
 
 #if CFG_TUSB_MCU == OPT_MCU_LPC175X_6X || CFG_TUSB_MCU == OPT_MCU_LPC177X_8X || CFG_TUSB_MCU == OPT_MCU_LPC40XX
   // LPC 17xx and 40xx endpoint type (bulk/interrupt/iso) are fixed by its number
@@ -68,14 +67,19 @@ uint8_t const * tud_descriptor_device_cb(void)
 
 #define EPNUM_HID_OUT  0x04
 #define EPNUM_HID_IN   0x84
+#define EPNUM_JOYSTICK_IN 0x85
 
 uint8_t const desc_hid_report[] =
 {
   TUD_HID_REPORT_DESC_KEYBOARD( HID_REPORT_ID(REPORT_ID_KEYBOARD         )),
   TUD_HID_REPORT_DESC_MOUSE   ( HID_REPORT_ID(REPORT_ID_MOUSE            )),
   TUD_HID_REPORT_DESC_CONSUMER( HID_REPORT_ID(REPORT_ID_CONSUMER_CONTROL )),
-  TUD_HID_REPORT_DESC_GAMEPAD ( HID_REPORT_ID(REPORT_ID_GAMEPAD          )),
   RAW_HID_REPORT_DESC(          HID_REPORT_ID(REPORT_ID_RAWHID           )),
+};
+
+uint8_t const desc_joystick_report[] =
+{
+  TUD_HID_REPORT_DESC_GAMEPAD ( HID_REPORT_ID(REPORT_ID_GAMEPAD          )),
 };
 
 enum
@@ -83,27 +87,12 @@ enum
   ITF_NUM_CDC = 0,
   ITF_NUM_CDC_DATA,
   ITF_NUM_HID,
+  ITF_NUM_JOYSTICK,
 #ifndef PRK_NO_MSC
   ITF_NUM_MSC,
 #endif
   ITF_NUM_TOTAL
 };
-
-enum
-{
-  ITF_BOOT_NUM_KEYBOARD = 0,
-  ITF_BOOT_NUM_TOTAL,
-};
-
-enum
-{
-  DEVICE_MODE_BOOT = 0xDEADBEEF,
-  DEVICE_MODE_REPORT = 0x00C0FFEE,
-};
-
-#define RESET() do { scb_hw->aircr = 0x05FA0004; } while(0)
-
-uint32_t __uninitialized_ram(device_mode);
 
 uint8_t const desc_fs_configuration[] =
 {
@@ -119,16 +108,10 @@ uint8_t const desc_fs_configuration[] =
 #endif
 
   // Interface number, string index, protocol, report descriptor len, EP In address, EP Out address, size & polling interval
-  TUD_HID_INOUT_DESCRIPTOR(ITF_NUM_HID, 0, 0, sizeof(desc_hid_report), EPNUM_HID_IN, EPNUM_HID_OUT, 64, 0x01),
-};
+  TUD_HID_INOUT_DESCRIPTOR(ITF_NUM_HID, 0, 0, sizeof(desc_hid_report), EPNUM_HID_IN, EPNUM_HID_OUT, 64, 0x08 ),
 
-uint8_t const boot_desc_configuration[] =
-{
-  // Config number, interface count, string index, total length, attribute, power in mA
-  TUD_CONFIG_DESCRIPTOR(1, ITF_BOOT_NUM_TOTAL, 0, CONFIG_BOOT_TOTAL_LEN, TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, 100),
-
-  // Interface number, string index, protocol, report descriptor len, EP In address, EP Out address, size & polling interval
-  TUD_HID_INOUT_DESCRIPTOR(ITF_BOOT_NUM_KEYBOARD, 0, HID_ITF_PROTOCOL_KEYBOARD, sizeof(desc_hid_report), EPNUM_HID_IN, EPNUM_HID_OUT, 64, 8),
+  // Interface number, string index, protocol, report descriptor len, EP In address, size & polling interval
+  TUD_HID_DESCRIPTOR(ITF_NUM_JOYSTICK, 0, 0, sizeof(desc_joystick_report), EPNUM_JOYSTICK_IN, 20, 0x08 )
 };
 
 // Invoked when received GET CONFIGURATION DESCRIPTOR
@@ -139,14 +122,7 @@ tud_descriptor_configuration_cb(uint8_t index)
 {
   (void) index; // for multiple configurations
 
-  if ( device_mode==DEVICE_MODE_REPORT )
-  {
-    return desc_fs_configuration;
-  } else
-  {
-    device_mode = DEVICE_MODE_BOOT;
-    return boot_desc_configuration;
-  }
+  return desc_fs_configuration;
 }
 
 static uint16_t _desc_str[32];
@@ -203,15 +179,22 @@ uint8_t keyboard_output_report = 0;
 
 uint8_t const *
 tud_hid_descriptor_report_cb(uint8_t instance) {
-  (void) instance;
+  switch(instance) {
+    case 0: {
+      return desc_hid_report;
+    }
+    break;
+    
+    case 1: {
+      return desc_joystick_report;
+    }
+    break;
 
-  if( device_mode!=DEVICE_MODE_REPORT )
-  {
-    device_mode = DEVICE_MODE_REPORT;
-    RESET();
+    default: {
+      return desc_hid_report;
+    }
+    break;
   }
-
-  return desc_hid_report;
 }
 
 uint16_t
@@ -232,10 +215,6 @@ tud_hid_set_report_cb(uint8_t instance, uint8_t report_id, hid_report_type_t rep
   if (bufsize < 1) return;
 
   switch (report_id) {
-    case 0:
-      if (device_mode==DEVICE_MODE_REPORT) {
-        break;
-      }
     case REPORT_ID_KEYBOARD:
       if (observing_output_report) {
         keyboard_output_report = buffer[0];
@@ -255,22 +234,14 @@ tud_hid_set_report_cb(uint8_t instance, uint8_t report_id, hid_report_type_t rep
 void
 tud_hid_set_protocol_cb(uint8_t instance, uint8_t protocol) {
   (void) instance;
-
-  if( protocol==HID_PROTOCOL_BOOT ) {
-    if( device_mode==DEVICE_MODE_REPORT ) {
-      device_mode = DEVICE_MODE_BOOT;
-      RESET();
-    } else {
-      device_mode = DEVICE_MODE_BOOT;
-    }
-  } else {
-    if( device_mode!=DEVICE_MODE_REPORT ) {
-      device_mode = DEVICE_MODE_REPORT;
-      RESET();
-    }
-  }
 }
 
+#define HID0_REPORT_ID_BITS ( \
+    (1<<REPORT_ID_KEYBOARD) | (1<<REPORT_ID_MOUSE) | \
+    (1<<REPORT_ID_CONSUMER_CONTROL) | (1<<REPORT_ID_RAWHID) )
+
+static uint8_t prev_keyboard_keycodes[6] = {0, 0, 0, 0, 0, 0};
+static uint8_t input_updated_bitmap = 0;
 static uint8_t keyboard_modifier = 0;
 static uint8_t *keyboard_keycodes = NULL;
 static uint16_t consumer_keycode = 0;
@@ -278,59 +249,53 @@ static uint32_t joystick_buttons = 0;
 static uint8_t joystick_hat = 0;
 static bool via_active = false;
 static void
-send_hid_report(uint8_t report_id)
+send_hid_report()
 {
-  if( device_mode==DEVICE_MODE_REPORT ) {
+  // skip if report is not updated
+  if ( input_updated_bitmap ) {
     // skip if hid is not ready yet
-    if ( !tud_hid_ready() ) return;
-
-    switch(report_id)
-    {
-      case REPORT_ID_KEYBOARD: {
-        tud_hid_keyboard_report(REPORT_ID_KEYBOARD, keyboard_modifier, keyboard_keycodes);
-      }
-      break;
-
-      case REPORT_ID_MOUSE: {
-        int8_t const delta = 0;
-        tud_hid_mouse_report(REPORT_ID_MOUSE, 0x00, delta, delta, 0, 0);
-      }
-      break;
-
-      case REPORT_ID_CONSUMER_CONTROL: {
-        if(! via_active) {
-          static int16_t prev_keycode = 0;
-          if (prev_keycode == consumer_keycode) {
-            consumer_keycode = 0;
-          } else {
-            prev_keycode = consumer_keycode;
-          }
-          tud_hid_report(REPORT_ID_CONSUMER_CONTROL, &consumer_keycode, 2);
-        }
-      }
-      break;
-
-      case REPORT_ID_GAMEPAD: {
-        joystick_report_hid(joystick_buttons, joystick_hat);
-      }
-      break;
-
-  //    case REPORT_ID_RAWHID: {
-  //      tud_hid_report(REPORT_ID_RAWHID, raw_c_data, raw_len);
-  //    }
-  //    break;
-
-      default: break;
+    if ( !tud_hid_n_ready(0) ) {
+      input_updated_bitmap &= ~(HID0_REPORT_ID_BITS);
     }
-  } else
-  {
-    // BOOT MODE
-    if (report_id==REPORT_ID_KEYBOARD)
-    {
-      if ( tud_hid_n_ready(ITF_BOOT_NUM_KEYBOARD) )
+    if ( !tud_hid_n_ready(1) ) {
+      input_updated_bitmap &= ~(1<<REPORT_ID_GAMEPAD);
+    }
+  } else {
+    return;
+  }
+
+  for(uint8_t i=1;i<6;i++) {
+    if(input_updated_bitmap & (1<<i) ) {
+      input_updated_bitmap &= ~(1<<i);
+
+      switch(i)
       {
-        tud_hid_n_keyboard_report(ITF_BOOT_NUM_KEYBOARD, 0, keyboard_modifier, keyboard_keycodes);
+        case REPORT_ID_KEYBOARD: {
+          tud_hid_n_keyboard_report(0, REPORT_ID_KEYBOARD, keyboard_modifier, keyboard_keycodes);
+        }
+        break;
+
+        case REPORT_ID_MOUSE: {
+          int8_t const delta = 0;
+          tud_hid_n_mouse_report(0, REPORT_ID_MOUSE, 0x00, delta, delta, 0, 0);
+        }
+        break;
+
+        case REPORT_ID_CONSUMER_CONTROL: {
+          if(! via_active) {
+            tud_hid_n_report(0, REPORT_ID_CONSUMER_CONTROL, &consumer_keycode, 2);
+          }
+        }
+        break;
+
+        case REPORT_ID_GAMEPAD: {
+          joystick_report_hid(joystick_buttons, joystick_hat);
+        }
+        break;
+
+        default: break;
       }
+      return;
     }
   }
 }
@@ -340,13 +305,8 @@ tud_hid_report_complete_cb(uint8_t instance, uint8_t const* report, uint8_t len)
 {
   (void) instance;
   (void) len;
-  uint8_t next_report_id = report[0] + 1;
-
-  if ( device_mode==DEVICE_MODE_REPORT && 
-       next_report_id < REPORT_ID_COUNT - 1) {
-    //                  ^^^^^^^^^^^^^^^^^^^ skip REPORT_ID_RAWHID
-    send_hid_report(next_report_id);
-  }
+  
+  send_hid_report();
 }
 
 //--------------------------------------------------------------------+
@@ -408,9 +368,9 @@ report_raw_hid(uint8_t* data, uint8_t len)
     tud_remote_wakeup();
   }
   /*------------- RAW HID -------------*/
-  if ( device_mode==DEVICE_MODE_REPORT && tud_hid_ready()) {
+  if (tud_hid_n_ready(0)) {
     via_active = true;
-    return tud_hid_report(REPORT_ID_RAWHID, data, len);
+    return tud_hid_n_report(0, REPORT_ID_RAWHID, data, len);
   } else {
     return false;
   }
@@ -442,22 +402,42 @@ c_report_raw_hid(mrb_vm *vm, mrb_value *v, int argc) {
 void
 c_Keyboard_hid_task(mrb_vm *vm, mrb_value *v, int argc)
 {
-  keyboard_modifier = (uint8_t)GET_INT_ARG(1);
-  keyboard_keycodes = GET_STRING_ARG(2);
-  consumer_keycode  = (uint16_t)GET_INT_ARG(3);
-  joystick_buttons  = (uint32_t)GET_INT_ARG(4);
-  joystick_hat      = (uint8_t)GET_INT_ARG(5);
+  input_updated_bitmap = 0;
 
+  if( keyboard_modifier!=GET_INT_ARG(1) ) {
+    keyboard_modifier = (uint8_t)GET_INT_ARG(1);
+    input_updated_bitmap |= 1<<REPORT_ID_KEYBOARD;
+  }
+
+  if( memcmp(prev_keyboard_keycodes, GET_STRING_ARG(2), 6) ) {
+    keyboard_keycodes = GET_STRING_ARG(2);
+    memcpy(prev_keyboard_keycodes, GET_STRING_ARG(2), 6);
+    input_updated_bitmap |= 1<<REPORT_ID_KEYBOARD;
+  }
+
+  if( consumer_keycode!=GET_INT_ARG(3) ) {
+    consumer_keycode = (uint16_t)GET_INT_ARG(3);
+    input_updated_bitmap |= 1<<REPORT_ID_CONSUMER_CONTROL;
+  }
+
+  if( 1 ) {
+    // always call joystick_report_hid() to read ADC
+    joystick_buttons = (uint32_t)GET_INT_ARG(4);
+    joystick_hat     = (uint8_t)GET_INT_ARG(5);
+    input_updated_bitmap |= 1<<REPORT_ID_GAMEPAD;
+  }
+  
   if (consumer_keycode != 0) {
     via_active = false;
   }
+
   if (tud_suspended()) {
     // Wake up host if we are in suspend mode
     // and REMOTE_WAKEUP feature is enabled by host
     tud_remote_wakeup();
   }
 
-  send_hid_report(REPORT_ID_KEYBOARD);
+  send_hid_report();
 }
 
 void
