@@ -452,13 +452,12 @@ class Keyboard
     @encoders = Array.new
     @partner_encoders = Array.new
     @macro_keycodes = Array.new
-    @buffer = Buffer.new("picoirb")
+    @buffer = Terminal::Buffer.new
     @scan_mode = :matrix
     @skip_positions = Array.new
     @layer_changed_delay = 20
     @sandbox = Sandbox.new
     @sandbox.compile("_ = nil")
-    @sandbox.resume
   end
 
   attr_accessor :split, :uart_pin, :default_layer, :sounder
@@ -1014,12 +1013,10 @@ class Keyboard
       end
     end
     tud_task
-    cdc_task
     hid_task(modifier, keycodes, consumer, 0, 0)
     (consumer > 0 ? 3 : 1).times do
       sleep_ms 1
       tud_task
-      cdc_task
     end
     hid_task(0, "\000\000\000\000\000\000", 0, 0, 0)
   end
@@ -1451,27 +1448,24 @@ class Keyboard
 
   def eval(script)
     if @sandbox.compile(script)
-      if @sandbox.resume
-        n = 0
-        while @sandbox.state != 0 do # 0: TASKSTATE_DORMANT == finished(?)
-          sleep_ms 50
-          n += 50
-          if n > 10000
-            puts "Error: Timeout (@sandbox.state: #{@sandbox.state})"
-            break;
-          end
+      if @sandbox.execute
+        if @sandbox.wait && error = @sandbox.error
+          macro "=> #{error.message} (#{error.class})"
+        else
+          macro "=> #{@sandbox.result.inspect}"
         end
-        macro("=> #{@sandbox.result.inspect}")
+        @sandbox.suspend
       end
     else
       macro("Error: Compile failed")
     end
   end
 
+  # FIXME: ruby_mode now doesn't work due to picoruby/picoruby as of Nov 2022
   def ruby
     if @ruby_mode
       @macro_keycodes << (LETTER.index(:ENTER) || 0)
-      @buffer.adjust_screen
+      #@buffer.adjust_screen
       eval @buffer.dump
       @buffer.clear
       @ruby_mode = false
@@ -1479,7 +1473,7 @@ class Keyboard
         $rgb.effect = @prev_rgb_effect || :rainbow_mood
       end
     else
-      @buffer.refresh_screen
+      #@buffer.refresh_screen
       @ruby_mode = true
       @ruby_mode_stop = false
       if $rgb
