@@ -117,6 +117,7 @@ target_link_libraries(${PROJECT_NAME}
   hardware_adc
   hardware_dma
   hardware_sync
+  hardware_irq
   mruby
 )
 

@@ -16,7 +16,7 @@ class Sounder
   def compile: (*String | Symbol) -> void
   def add_song: (Symbol name, *String measures) -> void
   def initialize: (Integer) -> void
-  def add_note: (Integer frequency, Integer duration) -> bool
+  def add_note: (Float frequency, Integer duration) -> bool
   def clear_song: () -> void
   def replay_if_key_pressed: () -> void
 end

@@ -111,7 +111,7 @@ class MML
           i += 1
         end
         # @type var note: Integer
-        (6.875 * (2<<(@octave + octave_fix)) * 2 ** (note / 12.0)).to_i
+        6.875 * (2<<(@octave + octave_fix)) * 2 ** (note / 12.0)
       end
         fraction_str, i = MML.number_str(str, i)
         punti, i = MML.count_punto(str, i)
@@ -125,15 +125,15 @@ class MML
       sustain = (pitch == 0 || @q == 8) ? duration : (duration / 8.0 * @q).to_i
       release = duration - sustain
       if pitch == 0
-        yield(0, lazy_sustain + sustain)
+        yield(0.0, lazy_sustain + sustain)
         lazy_sustain = 0
       else
-        yield(0, lazy_sustain) if 0 < lazy_sustain
-        yield(pitch, sustain)
+        yield(0.0, lazy_sustain) if 0 < lazy_sustain
+        yield(pitch.to_f, sustain)
       end
       lazy_sustain = release
     end
-    yield(0, lazy_sustain) if 0 < lazy_sustain
+    yield(0.0, lazy_sustain) if 0 < lazy_sustain
     return total_duration
   end
 end
