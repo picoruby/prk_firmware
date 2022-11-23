@@ -77,8 +77,11 @@ task :steep_check => ["src/ruby/app/models/buffer.rb", "src/ruby/sig/buffer.rbs"
   end
 end
 
-desc "you have to run this task once before build"
 task :setup do
+  sh "git submodule update"
+  FileUtils.cd "lib/picoruby" do
+    sh "rake"
+  end
   FileUtils.cd "src/ruby" do
     sh "bundle install"
   end
@@ -101,8 +104,8 @@ task :check_setup do
     FileUtils.cd "src/ruby" do
       sh "bundle exec steep -h > /dev/null 2>&1", verbose: false
       sh "bundle exec mrubyc-test -h > /dev/null 2>&1", verbose: false
+      sh "ls test/tmp/hal/ > /dev/null 2>&1", verbose: false
     end
-    sh "ls src/ruby/test/tmp/hal/ > /dev/null 2>&1", verbose: false
   rescue => e
     if 0 == count
       count += 1
