@@ -240,10 +240,9 @@ tud_hid_set_protocol_cb(uint8_t instance, uint8_t protocol) {
     (1<<REPORT_ID_KEYBOARD) | (1<<REPORT_ID_MOUSE) | \
     (1<<REPORT_ID_CONSUMER_CONTROL) | (1<<REPORT_ID_RAWHID) )
 
-static uint8_t prev_keyboard_keycodes[6] = {0, 0, 0, 0, 0, 0};
 static uint8_t input_updated_bitmap = 0;
 static uint8_t keyboard_modifier = 0;
-static uint8_t *keyboard_keycodes = NULL;
+static uint8_t keyboard_keycodes[6] = {0, 0, 0, 0, 0, 0};
 static uint16_t consumer_keycode = 0;
 static uint32_t joystick_buttons = 0;
 static uint8_t joystick_hat = 0;
@@ -266,8 +265,6 @@ send_hid_report()
 
   for(uint8_t i=1;i<6;i++) {
     if(input_updated_bitmap & (1<<i) ) {
-      input_updated_bitmap &= ~(1<<i);
-
       switch(i)
       {
         case REPORT_ID_KEYBOARD: {
@@ -306,6 +303,7 @@ tud_hid_report_complete_cb(uint8_t instance, uint8_t const* report, uint8_t len)
   (void) instance;
   (void) len;
   
+  input_updated_bitmap &= ~(1<<report[0]); // report[0] is report ID
   send_hid_report();
 }
 
@@ -402,16 +400,13 @@ c_report_raw_hid(mrb_vm *vm, mrb_value *v, int argc) {
 void
 c_Keyboard_hid_task(mrb_vm *vm, mrb_value *v, int argc)
 {
-  input_updated_bitmap = 0;
-
   if( keyboard_modifier!=GET_INT_ARG(1) ) {
     keyboard_modifier = (uint8_t)GET_INT_ARG(1);
     input_updated_bitmap |= 1<<REPORT_ID_KEYBOARD;
   }
 
-  if( memcmp(prev_keyboard_keycodes, GET_STRING_ARG(2), 6) ) {
-    keyboard_keycodes = GET_STRING_ARG(2);
-    memcpy(prev_keyboard_keycodes, GET_STRING_ARG(2), 6);
+  if( memcmp(keyboard_keycodes, GET_STRING_ARG(2), 6) ) {
+    memcpy(keyboard_keycodes, GET_STRING_ARG(2), 6);
     input_updated_bitmap |= 1<<REPORT_ID_KEYBOARD;
   }
 
