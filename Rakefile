@@ -80,7 +80,10 @@ end
 desc "you have to run this task once before build"
 task :setup do
   FileUtils.cd "src/ruby" do
-    sh "bundle exec steep -h || bundle install"
+    sh "bundle install"
+  end
+  FileUtils.cd "src/ruby/test/tmp" do
+    FileUtils.ln_sf "../../../../lib/picoruby/mrbgems/picoruby-mrubyc/repos/mrubyc/src/hal_posix", "hal"
   end
 end
 
@@ -93,6 +96,7 @@ end
 
 desc "check whether you need to setup"
 task :check_setup do
+  count = 0
   begin
     FileUtils.cd "src/ruby" do
       sh "bundle exec steep -h > /dev/null 2>&1", verbose: false
@@ -100,9 +104,15 @@ task :check_setup do
     end
     sh "ls src/ruby/test/tmp/hal/ > /dev/null 2>&1", verbose: false
   rescue => e
-    puts "You need to do `rake setup`!"
-    puts e.message
-    exit 1
+    if 0 == count
+      count += 1
+      puts "You may need `rake setup`, let me try once"
+      Rake::Task['setup'].invoke
+      retry
+    else
+      puts e.message
+      exit 1
+    end
   end
 end
 
