@@ -52,10 +52,8 @@ task :build_with_keymap, ['keyboard_name'] => :test_all do |_t, args|
   end
   dir = "keyboards/#{args.keyboard_name}"
   FileUtils.mkdir_p "#{dir}/build"
-  FileUtils.cd dir do
-    sh "cmake -DPRK_NO_MSC=1 -B build"
-    sh "cmake --build build"
-  end
+  sh "cmake -DPRK_NO_MSC=1 -B #{dir}/build"
+  sh "cmake --build #{dir}/build"
 end
 
 desc "clean built that includes keymap"
