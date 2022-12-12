@@ -1,6 +1,6 @@
 require "fileutils"
 
-MRUBY_CONFIG = "r2p2-cortex-m0plus"
+MRUBY_CONFIG = "prk_firmware"
 
 task :default => :all
 
@@ -70,9 +70,9 @@ task :test_all => %i(steep_check mrubyc_test)
 
 desc "run steep check for ruby program"
 task :steep_check => ["src/ruby/app/models/buffer.rb", "src/ruby/sig/buffer.rbs"] do
-  FileUtils.cd "src/ruby" do
-    sh "rake steep"
-  end
+#  FileUtils.cd "src/ruby" do
+#    sh "rake steep"
+#  end
 end
 
 task :setup do
@@ -90,9 +90,9 @@ end
 
 desc "run unit test for ruby program"
 task :mrubyc_test do
-  FileUtils.cd "src/ruby" do
-    sh "rake test"
-  end
+#  FileUtils.cd "src/ruby" do
+#    sh "rake test"
+#  end
 end
 
 desc "check whether you need to setup"

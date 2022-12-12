@@ -1,5 +1,6 @@
-/* PicoRuby compiler */
+/* PicoRuby */
 #include <picorbc.h>
+#include <picogem_init.c>
 
 /* Raspi SDK */
 #include <stdio.h>
@@ -19,25 +20,14 @@
 #include "rotary_encoder.h"
 #include "joystick.h"
 #include "sounder.h"
-#include <sandbox.h>
 
 /* ruby */
-/* models */
-#include "ruby/app/ext/object.c"
-#include "ruby/app/models/float_ext.c"
-#include "ruby/app/models/keyboard.c"
-#include "ruby/app/models/rotary_encoder.c"
-#include "ruby/app/models/rgb.c"
-#include "ruby/app/models/buffer.c"
-#include "ruby/app/models/via.c"
-#include "ruby/app/models/consumer_key.c"
-#include "ruby/app/models/debounce.c"
-#include "ruby/app/models/joystick.c"
-#include "ruby/app/models/sounder.c"
-#include "ruby/app/models/mml.c"
+/* ext */
+#include "../build/mrb/ext/object.c"
+#include "../build/mrb/ext/float_ext.c"
 /* tasks */
-#include "ruby/app/tasks/usb_task.c"
-#include "ruby/app/tasks/rgb_task.c"
+#include "../build/mrb/usb_task.c"
+#include "../build/mrb/rgb_task.c"
 #ifdef PRK_NO_MSC
 #include "ruby/app/keymap.c"
 #endif
@@ -329,14 +319,6 @@ mrbc_load_model(const uint8_t *mrb)
   return true;
 }
 
-typedef struct picogems {
-  const char *name;
-  void (*initializer)(void);
-  const uint8_t *mrb;
-  const uint8_t *task;
-  mrbc_tcb *tcb;
-} picogems;
-
 static void
 init_RotaryEncoder(void)
 {
@@ -361,72 +343,17 @@ init_Sounder(void)
   SOUNDER_INIT();
 }
 
-picogems gems[] = {
-  {"keyboard",       NULL,               keyboard,       NULL,     NULL},
-  {"debounce",       NULL,               debounce,       NULL,     NULL},
-  {"buffer",         NULL,               buffer,         NULL,     NULL},
-  {"rotary_encoder", init_RotaryEncoder, rotary_encoder, NULL,     NULL},
-  {"rgb",            init_RGB,           rgb,            rgb_task, NULL},
-  {"via",            NULL,               via,            NULL,     NULL},
-  {"consumer_key",   NULL,               consumer_key,   NULL,     NULL},
-  {"joystick",       init_Joystick,      joystick,       NULL,     NULL},
-  {"sounder",        init_Sounder,       sounder,        NULL,     NULL},
-  {"mml",            NULL,               mml,            NULL,     NULL},
-  {NULL,             NULL,               NULL,           NULL,     NULL}
-};
-
-int
-gem_index(const char *name)
-{
-  int i;
-  if (!name) return -1;
-  for (int i = 0; ; i++) {
-    if (gems[i].name == NULL) {
-      console_printf("cannot find such gem -- %s\n (LoadError)", name);
-      return -1;
-    } else if (strcmp(name, gems[i].name) == 0) {
-      return i;
-      break;
-    }
-  }
-}
-
-void
-c_resume_task(mrb_vm *vm, mrb_value *v, int argc)
-{
-  int i = gem_index(GET_STRING_ARG(1));
-  if (i < 0) {
-    SET_FALSE_RETURN();
-  } else {
-    mrbc_resume_task(gems[i].tcb);
-    SET_TRUE_RETURN();
-  }
-}
-
-void
-c__require(mrb_vm *vm, mrb_value *v, int argc)
-{
-  const char *name = GET_STRING_ARG(1);
-  int i = gem_index(name);
-  SET_FALSE_RETURN();
-  if (i < 0) return;
-  if (gems[i].initializer) gems[i].initializer();
-  if (mrbc_load_model(gems[i].mrb)) {
-    if (gems[i].task) {
-      gems[i].tcb = mrbc_create_task(gems[i].task, 0);
-      if (gems[i].tcb) {
-        mrbc_suspend_task(gems[i].tcb);
-      } else {
-        console_printf("[FATAL] failed to create task -- %s\n", name);
-        SET_FALSE_RETURN();
-        return;
-      }
-    }
-    SET_TRUE_RETURN();
-  } else {
-    SET_FALSE_RETURN();
-  }
-}
+//void
+//c_resume_task(mrb_vm *vm, mrb_value *v, int argc)
+//{
+//  int i = gem_index(GET_STRING_ARG(1));
+//  if (i < 0) {
+//    SET_FALSE_RETURN();
+//  } else {
+//    mrbc_resume_task(gems[i].tcb);
+//    SET_TRUE_RETURN();
+//  }
+//}
 
 int loglevel;
 
@@ -439,7 +366,7 @@ int main() {
   board_init();
   tusb_init();
   mrbc_init(memory_pool, MEMORY_SIZE);
-  mrbc_define_method(0, mrbc_class_object, "_require",     c__require);
+  mrbc_require_init();
   mrbc_define_method(0, mrbc_class_object, "board_millis", c_board_millis);
   mrbc_define_method(0, mrbc_class_object, "rand",         c_rand);
   mrbc_define_method(0, mrbc_class_object, "srand",        c_srand);
@@ -456,12 +383,10 @@ int main() {
   GPIO_INIT();
   USB_INIT();
   UART_INIT();
-  mrbc_sandbox_init();
   mrbc_load_model(object);
   mrbc_load_model(float_ext);
-  mrbc_load_model(buffer);
-  mrbc_load_model(keyboard);
   mrbc_create_task(usb_task, 0);
+  mrbc_create_task(rgb_task, 0);
   mrbc_define_method(0, mrbc_class_object, "autoreload_ready?", c_autoreload_ready_q);
 #ifdef PRK_NO_MSC
   mrbc_create_task(keymap, 0);
@@ -470,7 +395,7 @@ int main() {
   mrbc_define_method(0, mrbc_class_Keyboard, "reload_keymap",    c_Keyboard_reload_keymap);
   mrbc_define_method(0, mrbc_class_Keyboard, "suspend_keymap",   c_Keyboard_suspend_keymap);
   mrbc_define_method(0, mrbc_class_Keyboard, "resume_keymap",    c_Keyboard_resume_keymap);
-  mrbc_define_method(0, mrbc_class_object,   "resume_task",      c_resume_task);
+//  mrbc_define_method(0, mrbc_class_object,   "resume_task",      c_resume_task);
 #endif
   autoreload_state = AUTORELOAD_READY;
   mrbc_run();

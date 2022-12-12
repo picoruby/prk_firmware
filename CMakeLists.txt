@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.24)
 
 # initialize the SDK based on PICO_SDK_PATH
 # note: this must happen before project()
@@ -42,12 +42,16 @@ endif()
 file(GLOB SRCS src/*.c)
 add_executable(${PROJECT_NAME} ${SRCS})
 
+set(PICORBC ${CMAKE_SOURCE_DIR}/lib/picoruby/bin/picorbc)
+
 pico_generate_pio_header(${PROJECT_NAME} ${CMAKE_CURRENT_LIST_DIR}/src/uart_tx.pio)
 pico_generate_pio_header(${PROJECT_NAME} ${CMAKE_CURRENT_LIST_DIR}/src/ws2812.pio)
 pico_generate_pio_header(${PROJECT_NAME} ${CMAKE_CURRENT_LIST_DIR}/src/sounder.pio)
 
 set(RBC ${CMAKE_CURRENT_SOURCE_DIR}/lib/picoruby/bin/picorbc)
 #set(RBC RBENV_VERSION=mruby-3.1.0 mrbc) # In case of PicoRuby compiler enbugged 😵
+
+# Ruby
 
 if(PRK_NO_MSC)
   add_custom_target(keymap
@@ -59,50 +63,57 @@ else()
   add_custom_target(keymap)
 endif()
 
-add_custom_target(ext
-  COMMAND ${RBC} -Bobject         object.rb
-  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src/ruby/app/ext
-)
-add_custom_target(models
-  COMMAND ${RBC} -Bfloat_ext      float_ext.rb
-  COMMAND ${RBC} -Bkeyboard       keyboard.rb
-  COMMAND ${RBC} -Bvia            via.rb
-  COMMAND ${RBC} -Bconsumer_key   consumer_key.rb
-  COMMAND ${RBC} -Brgb            rgb.rb
-  COMMAND ${RBC} -Brotary_encoder rotary_encoder.rb
-  COMMAND ${RBC} -Bbuffer         buffer.rb
-  COMMAND ${RBC} -Bdebounce       debounce.rb
-  COMMAND ${RBC} -Bjoystick       joystick.rb
-  COMMAND ${RBC} -Bsounder        sounder.rb
-  COMMAND ${RBC} -Bmml            mml.rb
-  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src/ruby/app/models
+add_custom_target(mrbdir ALL
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_SOURCE_DIR}/build/mrb/ext
 )
 
-add_custom_target(tasks
-  COMMAND ${RBC} -Busb_task       usb_task.rb
-  COMMAND ${RBC} -Brgb_task       rgb_task.rb
-  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src/ruby/app/tasks
+set(RUBY_TASK_FILES
+  rgb_task
+  usb_task
 )
+foreach(rb ${RUBY_TASK_FILES})
+  add_custom_target(${rb}
+    COMMAND ${PICORBC} -B${rb}
+      -o${CMAKE_SOURCE_DIR}/build/mrb/${rb}.c
+      ${CMAKE_SOURCE_DIR}/mrblib/${rb}.rb
+  )
+endforeach(rb)
 
-add_custom_target(ruby
+set(RUBY_EXT_FILES
+  object
+  float_ext
 )
+foreach(rb ${RUBY_EXT_FILES})
+  add_custom_target(${rb}
+    COMMAND ${PICORBC} -B${rb}
+      -o${CMAKE_SOURCE_DIR}/build/mrb/ext/${rb}.c
+      ${CMAKE_SOURCE_DIR}/mrblib/ext/${rb}.rb
+  )
+endforeach(rb)
 
-add_dependencies(ruby
-  ext
-  models
-  tasks
-)
 add_dependencies(${PROJECT_NAME}
-  ruby
+  mrbdir
+  ${RUBY_TASK_FILES}
+  ${RUBY_EXT_FILES}
 )
+
 if(PRK_NO_MSC)
   add_dependencies(${PROJECT_NAME}
     keymap
   )
 endif()
 
+target_include_directories(${PROJECT_NAME} PRIVATE
+  ${CMAKE_SOURCE_DIR}/include
+  ${CMAKE_SOURCE_DIR}/lib/picoruby/include/hal_no_impl
+  ${CMAKE_SOURCE_DIR}/lib/picoruby/mrbgems/picoruby-mrubyc/repos/mrubyc/src
+  ${CMAKE_SOURCE_DIR}/lib/picoruby/mrbgems/picoruby-filesystem-fat/lib/ff14b/source
+  ${CMAKE_SOURCE_DIR}/lib/picoruby/build/prk_firmware/mrbgems
+  ${CMAKE_SOURCE_DIR}/lib/picoruby/build/repos/prk_firmware/mruby-pico-compiler/include
+)
+
 target_link_directories(${PROJECT_NAME} PRIVATE
-  ${CMAKE_SOURCE_DIR}/lib/picoruby/build/r2p2-cortex-m0plus/lib
+  ${CMAKE_SOURCE_DIR}/lib/picoruby/build/prk_firmware/lib
 )
 
 target_link_libraries(${PROJECT_NAME}
@@ -119,14 +130,6 @@ target_link_libraries(${PROJECT_NAME}
   hardware_sync
   hardware_irq
   mruby
-)
-
-include_directories(${PROJECT_NAME} PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}
-  ${CMAKE_CURRENT_LIST_DIR}/include
-  ${CMAKE_CURRENT_LIST_DIR}/lib/picoruby/build/repos/host/mruby-pico-compiler/include
-  ${CMAKE_CURRENT_LIST_DIR}/lib/picoruby/mrbgems/picoruby-mrubyc/repos/mrubyc/src
-  ${CMAKE_CURRENT_LIST_DIR}/lib/picoruby/mrbgems/picoruby-sandbox/src
 )
 
 # create map/bin/hex/uf2 file in addition to ELF.
