@@ -31,7 +31,7 @@ execute_process (COMMAND git describe --tags --abbrev=0 OUTPUT_VARIABLE CMAKE_VE
 set (PRK_VERSION   ${CMAKE_VERSION_NUMBER})
 set (PRK_BUILDDATE ${CMAKE_BUILDDATE})
 set (PRK_REVISION  ${CMAKE_REVISION})
-configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/src/version.h.in" "${CMAKE_CURRENT_SOURCE_DIR}/src/version.h")
+configure_file ("${CMAKE_SOURCE_DIR}/include/version.h.in" "${CMAKE_SOURCE_DIR}/include/version.h")
 
 if(PRK_NO_MSC)
   project("prk_firmware-${PRK_VERSION}-${PRK_BUILDDATE}-no_msc")
