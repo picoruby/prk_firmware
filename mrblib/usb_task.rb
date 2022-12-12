@@ -1,3 +1,5 @@
+require "keyboard"
+
 200.times do
   tud_task
   sleep_ms 2

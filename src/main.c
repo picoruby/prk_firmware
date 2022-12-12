@@ -195,8 +195,6 @@ int autoreload_state; /* from msc_disk.h */
 #define NODE_BOX_SIZE 50
 #endif
 
-static mrbc_tcb *tcb_keymap;
-
 #define KEYMAP_PREFIX        "begin\n"
 #define KEYMAP_PREFIX_SIZE   (sizeof(KEYMAP_PREFIX) - 1)
 #define KEYMAP_POSTFIX       "\nrescue => e\nputs e.class, e.message, 'Task stopped!'\nend"
@@ -204,7 +202,7 @@ static mrbc_tcb *tcb_keymap;
 #define SUSPEND_TASK         "suspend_task"
 #define MAX_KEYMAP_SIZE      (1024 * 10)
 
-void
+mrbc_tcb*
 create_keymap_task(mrbc_tcb *tcb)
 {
   hal_disable_irq();
@@ -263,25 +261,7 @@ create_keymap_task(mrbc_tcb *tcb)
   StreamInterface_free(si);
   autoreload_state = AUTORELOAD_WAIT;
   hal_enable_irq();
-  tcb_keymap = tcb;
-}
-
-void
-c_Keyboard_resume_keymap(mrb_vm *vm, mrb_value *v, int argc)
-{
-  mrbc_resume_task(tcb_keymap);
-}
-
-void
-c_Keyboard_suspend_keymap(mrb_vm *vm, mrb_value *v, int argc)
-{
-  mrbc_suspend_task(tcb_keymap);
-}
-
-void
-c_Keyboard_reload_keymap(mrb_vm *vm, mrb_value *v, int argc)
-{
-  create_keymap_task(tcb_keymap);
+  return tcb;
 }
 
 #endif /* PRK_NO_MSC */
@@ -376,7 +356,6 @@ int main() {
   mrbc_class *mrbc_class_PicoRubyVM = mrbc_define_class(0, "PicoRubyVM", mrbc_class_object);
   mrbc_define_method(0, mrbc_class_PicoRubyVM, "alloc_stats",       c_alloc_stats);
   mrbc_define_method(0, mrbc_class_PicoRubyVM, "print_alloc_stats", c_print_alloc_stats);
-  mrbc_class *mrbc_class_Keyboard = mrbc_define_class(0, "Keyboard", mrbc_class_object);
 #ifndef PRK_NO_MSC
   msc_init();
 #endif
@@ -392,9 +371,6 @@ int main() {
   mrbc_create_task(keymap, 0);
 #else
   mrbc_define_method(0, mrbc_class_object,   "_prk_description", c__prk_description);
-  mrbc_define_method(0, mrbc_class_Keyboard, "reload_keymap",    c_Keyboard_reload_keymap);
-  mrbc_define_method(0, mrbc_class_Keyboard, "suspend_keymap",   c_Keyboard_suspend_keymap);
-  mrbc_define_method(0, mrbc_class_Keyboard, "resume_keymap",    c_Keyboard_resume_keymap);
 //  mrbc_define_method(0, mrbc_class_object,   "resume_task",      c_resume_task);
 #endif
   autoreload_state = AUTORELOAD_READY;

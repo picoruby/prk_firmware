@@ -45,6 +45,7 @@ void c_Keyboard_output_report(mrb_vm *vm, mrb_value *v, int argc);
 #define USB_INIT() do { \
   mrbc_define_method(0, mrbc_class_object, "tud_task",     c_tud_task);      \
   mrbc_define_method(0, mrbc_class_object, "tud_mounted?", c_tud_mounted_q); \
+  mrbc_class *mrbc_class_Keyboard = mrbc_define_class(0, "Keyboard", mrbc_class_object); \
   mrbc_define_method(0, mrbc_class_Keyboard, "hid_task",          \
                                    c_Keyboard_hid_task);    \
   mrbc_define_method(0, mrbc_class_Keyboard, "stop_observing_output_report", \
