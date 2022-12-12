@@ -323,17 +323,14 @@ init_Sounder(void)
   SOUNDER_INIT();
 }
 
-//void
-//c_resume_task(mrb_vm *vm, mrb_value *v, int argc)
-//{
-//  int i = gem_index(GET_STRING_ARG(1));
-//  if (i < 0) {
-//    SET_FALSE_RETURN();
-//  } else {
-//    mrbc_resume_task(gems[i].tcb);
-//    SET_TRUE_RETURN();
-//  }
-//}
+static mrbc_tcb *tcb_rgb;
+
+void
+c_resume_rgb_task(mrb_vm *vm, mrb_value *v, int argc)
+{
+  mrbc_resume_task(tcb_rgb);
+  SET_TRUE_RETURN();
+}
 
 int loglevel;
 
@@ -365,13 +362,13 @@ int main() {
   mrbc_load_model(object);
   mrbc_load_model(float_ext);
   mrbc_create_task(usb_task, 0);
-  mrbc_create_task(rgb_task, 0);
+  tcb_rgb = mrbc_create_task(rgb_task, 0);
   mrbc_define_method(0, mrbc_class_object, "autoreload_ready?", c_autoreload_ready_q);
 #ifdef PRK_NO_MSC
   mrbc_create_task(keymap, 0);
 #else
   mrbc_define_method(0, mrbc_class_object,   "_prk_description", c__prk_description);
-//  mrbc_define_method(0, mrbc_class_object,   "resume_task",      c_resume_task);
+  mrbc_define_method(0, mrbc_class_object,   "resume_rgb_task",  c_resume_rgb_task);
 #endif
   autoreload_state = AUTORELOAD_READY;
   mrbc_run();
