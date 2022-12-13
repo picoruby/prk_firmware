@@ -33,18 +33,6 @@ task :build do
   sh "cmake --build build"
 end
 
-file "src/ruby/app/models/buffer.rb" do
-  FileUtils.cd "src/ruby/app/models" do
-    FileUtils.ln_sf "../../../../lib/picoruby/mrbgems/picoruby-terminal/mrblib/buffer.rb", "buffer.rb"
-  end
-end
-
-file "src/ruby/sig/buffer.rbs" do
-  FileUtils.cd "src/ruby/sig" do
-    FileUtils.ln_sf "../../../lib/picoruby/mrbgems/picoruby-terminal/sig/buffer.rbs", "buffer.rbs"
-  end
-end
-
 desc "build PRK Firmware inclusive of keymap.rb (without mass storage)"
 task :build_with_keymap, ['keyboard_name'] => :test_all do |_t, args|
   unless args.keyboard_name
@@ -69,7 +57,7 @@ desc "run :steep_check and :mrubyc_test"
 task :test_all => %i(steep_check mrubyc_test)
 
 desc "run steep check for ruby program"
-task :steep_check => ["src/ruby/app/models/buffer.rb", "src/ruby/sig/buffer.rbs"] do
+task :steep_check do
 #  FileUtils.cd "src/ruby" do
 #    sh "rake steep"
 #  end
