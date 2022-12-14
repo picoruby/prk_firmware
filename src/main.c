@@ -29,7 +29,7 @@
 #include "../build/mrb/usb_task.c"
 #include "../build/mrb/rgb_task.c"
 #ifdef PRK_NO_MSC
-#include "ruby/app/keymap.c"
+#include <keymap.c>
 #endif
 
 //--------------------------------------------------------------------+
@@ -358,13 +358,14 @@ int main() {
   mrbc_create_task(usb_task, 0);
   tcb_rgb = mrbc_create_task(rgb_task, 0);
   mrbc_define_method(0, mrbc_class_object, "autoreload_ready?", c_autoreload_ready_q);
+  mrbc_define_method(0, mrbc_class_object,   "_prk_description", c__prk_description);
 #ifdef PRK_NO_MSC
   mrbc_create_task(keymap, 0);
+  autoreload_state = AUTORELOAD_NONE;
 #else
-  mrbc_define_method(0, mrbc_class_object,   "_prk_description", c__prk_description);
   mrbc_define_method(0, mrbc_class_object,   "resume_rgb_task",  c_resume_rgb_task);
-#endif
   autoreload_state = AUTORELOAD_READY;
+#endif
   mrbc_run();
   return 0;
 }

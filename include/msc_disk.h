@@ -28,7 +28,8 @@ typedef struct dir_ent {
 enum
 {
   AUTORELOAD_WAIT = 0,
-  AUTORELOAD_READY
+  AUTORELOAD_READY,
+  AUTORELOAD_NONE
 };
 
 extern int autoreload_state;

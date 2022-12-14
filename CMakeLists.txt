@@ -55,12 +55,12 @@ set(RBC ${CMAKE_CURRENT_SOURCE_DIR}/lib/picoruby/bin/picorbc)
 
 if(PRK_NO_MSC)
   add_custom_target(keymap
-    COMMAND ${RBC} -Bkeymap         ${PROJECT_BINARY_DIR}/../keymap.rb
-    COMMAND mv ${PROJECT_BINARY_DIR}/../keymap.c ./
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src/ruby/app/
+    COMMAND ${RBC} -Bkeymap -o ./keymap.c ../keymap.rb
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
   )
-else()
-  add_custom_target(keymap)
+  target_include_directories(${PROJECT_NAME} PRIVATE
+    ${PROJECT_BINARY_DIR}
+  )
 endif()
 
 add_custom_target(mrbdir ALL

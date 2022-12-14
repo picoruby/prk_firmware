@@ -14,6 +14,12 @@ file "lib/picoruby" do
   sh "git submodule update --init --recursive"
 end
 
+task :libmruby_no_msc => "lib/picoruby" do
+  FileUtils.cd "lib/picoruby" do
+    sh "CFLAGS='-DPRK_NO_MSC=1' MRUBY_CONFIG=#{MRUBY_CONFIG} rake"
+  end
+end
+
 task :libmruby => "lib/picoruby" do
   FileUtils.cd "lib/picoruby" do
     sh "MRUBY_CONFIG=#{MRUBY_CONFIG} rake"
@@ -34,12 +40,13 @@ task :build do
 end
 
 desc "build PRK Firmware inclusive of keymap.rb (without mass storage)"
-task :build_with_keymap, ['keyboard_name'] => :test_all do |_t, args|
+task :build_with_keymap, ['keyboard_name'] => [:check_setup, :libmruby_no_msc, :test_all] do |_t, args|
   unless args.keyboard_name
     raise "Argument `keyboard_name` missing.\nUsage: rake build_with_keymap[prk_meishi2]"
   end
   dir = "keyboards/#{args.keyboard_name}"
   FileUtils.mkdir_p "#{dir}/build"
+  #sh "cmake -DPRK_NO_MSC=1 -DCMAKE_BUILD_TYPE=Debug -B #{dir}/build"
   sh "cmake -DPRK_NO_MSC=1 -B #{dir}/build"
   sh "cmake --build #{dir}/build"
 end
