@@ -3,92 +3,39 @@
 #include "hardware/gpio.h"
 #include "hardware/adc.h"
 #include "usb_descriptors.h"
-#include "joystick.h"
 
-#define MAX_ADC_COUNT  4
-
-#define AXIS_INDEX_X   0
-#define AXIS_INDEX_Y   1
-#define AXIS_INDEX_Z   2
-#define AXIS_INDEX_RZ  3
-#define AXIS_INDEX_RX  4
-#define AXIS_INDEX_RY  5
-static int8_t axes[MAX_ADC_COUNT] = {-1,-1,-1,-1};
-static uint8_t adc_offset[MAX_ADC_COUNT] = {0,0,0,0};
-
-#define MAGNIFY_BASE 1.0
-static float sensitivity[MAX_ADC_COUNT] = {-1.0,-1.0,-1.0,-1.0};
-
-static int8_t drift_suppression = 5;
-static int8_t drift_suppression_minus = -5;
+#include "../include/joystick.h"
+#include "picoruby-prk-joystick/include/prk-joystick.h"
 
 static hid_gamepad_report_t zero_report;
 
 void
-c_Joystick_drift_suppression_eq(mrb_vm *vm, mrb_value *v, int argc)
+Joystick_adc_gpio_init(uint32_t gpio)
 {
-  int value = GET_INT_ARG(1);
-  if (value < 0 || 100 < value) {
-    console_printf("Invalid argument for drift_suppression=\n");
-    SET_FALSE_RETURN();
-    return;
-  } else {
-    drift_suppression = value;
-    drift_suppression_minus = value * (-1);
-    SET_TRUE_RETURN();
+  static bool init = false;
+  if (!init) {
+    adc_init();
+    init = true;
   }
+  adc_gpio_init(gpio);
 }
 
 void
-c_Joystick_reset_axes(mrb_vm *vm, mrb_value *v, int argc)
+Joystick_adc_select_input(uint32_t input)
+{
+  adc_select_input(input);
+}
+
+uint16_t
+Joystick_adc_read(void)
+{
+  return adc_read();
+}
+
+void
+Joystick_reset_zero_report(void)
 {
   memset(&zero_report, 0, sizeof(zero_report));
-  for (int i = 0; i < MAX_ADC_COUNT; i++) {
-    axes[i] = -1;
-    adc_offset[i] = 0;
-  }
-  SET_NIL_RETURN();
-}
-
-void
-c_Joystick_init_sensitivity(mrb_vm *vm, mrb_value *v, int argc)
-{
-  int8_t adc_ch = GET_INT_ARG(1);
-  float val = GET_FLOAT_ARG(2);
-  sensitivity[adc_ch] = val * MAGNIFY_BASE;
-}
-
-void
-c_Joystick_init_axis_offset(mrb_vm *vm, mrb_value *v, int argc)
-{
-  char *axis = GET_STRING_ARG(1);
-  int8_t adc_ch = GET_INT_ARG(2);
-  adc_gpio_init(adc_ch);
-  adc_select_input(adc_ch);
-  uint16_t offset_sum = 0;
-  for (int i = 0; i < 3; i++) {
-    sleep_ms(20);
-    offset_sum += adc_read();
-  }
-  adc_offset[adc_ch] = (uint8_t)((offset_sum / 3) >> 4);
-  if (strcmp(axis, "x") == 0) {
-    axes[adc_ch] = AXIS_INDEX_X;
-  } else if (strcmp(axis, "y") == 0) {
-    axes[adc_ch] = AXIS_INDEX_Y;
-  } else if (strcmp(axis, "z") == 0) {
-    axes[adc_ch] = AXIS_INDEX_Z;
-  } else if (strcmp(axis, "rz") == 0) {
-    axes[adc_ch] = AXIS_INDEX_RZ;
-  } else if (strcmp(axis, "rx") == 0) {
-    axes[adc_ch] = AXIS_INDEX_RX;
-  } else if (strcmp(axis, "ry") == 0) {
-    axes[adc_ch] = AXIS_INDEX_RY;
-  } else {
-    console_printf("Invalid axis: %s\n", axis);
-    SET_FALSE_RETURN();
-    return;
-  }
-  SET_TRUE_RETURN();
 }
 
 void

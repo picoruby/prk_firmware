@@ -312,12 +312,6 @@ init_RGB(void)
 }
 
 static void
-init_Joystick(void)
-{
-  JOYSTICK_INIT();
-}
-
-static void
 init_Sounder(void)
 {
   SOUNDER_INIT();

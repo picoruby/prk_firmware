@@ -110,6 +110,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
   ${CMAKE_SOURCE_DIR}/lib/picoruby/mrbgems/picoruby-filesystem-fat/lib/ff14b/source
   ${CMAKE_SOURCE_DIR}/lib/picoruby/build/prk_firmware/mrbgems
   ${CMAKE_SOURCE_DIR}/lib/picoruby/build/repos/prk_firmware/mruby-pico-compiler/include
+  ${CMAKE_SOURCE_DIR}/lib/picoruby/mrbgems
 )
 
 target_link_directories(${PROJECT_NAME} PRIVATE
