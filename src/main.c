@@ -11,15 +11,15 @@
 #include "hardware/clocks.h"
 
 /* mrbc_class */
-#include "usb_cdc.h"
-#include "msc_disk.h"
-#include "gpio.h"
-#include "usb_descriptors.h"
-#include "uart.h"
-#include "ws2812.h"
-#include "rotary_encoder.h"
-#include "joystick.h"
-#include "sounder.h"
+#include "../include/usb_cdc.h"
+#include "../include/msc_disk.h"
+#include "../include/gpio.h"
+#include "../include/usb_descriptors.h"
+#include "../include/uart.h"
+#include "../include/ws2812.h"
+#include "../include/rotary_encoder.h"
+#include "../include/joystick.h"
+#include "../include/sounder.h"
 
 /* ruby */
 /* ext */
@@ -300,12 +300,6 @@ mrbc_load_model(const uint8_t *mrb)
 }
 
 static void
-init_RotaryEncoder(void)
-{
-  ROTARY_ENCODER_INIT();
-}
-
-static void
 init_RGB(void)
 {
   WS2812_INIT();
@@ -353,6 +347,7 @@ int main() {
   GPIO_INIT();
   USB_INIT();
   UART_INIT();
+  /* FIXME */ init_RGB();
   mrbc_load_model(object);
   mrbc_load_model(float_ext);
   mrbc_create_task(usb_task, 0);

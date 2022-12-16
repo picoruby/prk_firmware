@@ -1,13 +1,15 @@
-/* mruby/c VM */
-#include <mrubyc.h>
+#ifndef ROTARY_ENCODER_DEFINED_H_
+#define ROTARY_ENCODER_DEFINED_H_
 
-void c_init_encoder(mrb_vm *vm, mrb_value *v, int argc);
-void c_consume_encoder(mrb_vm *vm, mrb_value *v, int argc);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 void RotaryEncoder_reset(void);
 
-#define ROTARY_ENCODER_INIT() do { \
-  mrbc_class *mrbc_class_RotaryEncoder = mrbc_define_class(0, "RotaryEncoder", mrbc_class_object); \
-  mrbc_define_method(0, mrbc_class_RotaryEncoder, "init_encoder",    c_init_encoder);   \
-  mrbc_define_method(0, mrbc_class_RotaryEncoder, "consume_encoder", c_consume_encoder);\
-} while (0)
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* ROTARY_ENCODER_DEFINED_H_ */
+
