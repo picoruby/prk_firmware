@@ -104,6 +104,7 @@ task :check_setup do
       count += 1
       puts "You may need `rake setup`, let me try once"
       Rake::Task['setup'].invoke
+      Rake::Task['symlinks'].invoke
       retry
     else
       puts e.message
@@ -134,6 +135,13 @@ task :deep_clean do
   end
   FileUtils.cd "build" do
     FileUtils.rm_rf Dir.glob("*")
+  end
+end
+
+desc "create symlinks for develop-convenience"
+task :symlinks do
+  Dir.glob("lib/picoruby/mrbgems/picoruby-prk-*").each do |src|
+    FileUtils.ln_sf File.join("..", src), "symlinks/#{File.basename(src)}"
   end
 end
 
