@@ -299,12 +299,6 @@ mrbc_load_model(const uint8_t *mrb)
   return true;
 }
 
-static void
-init_RGB(void)
-{
-  WS2812_INIT();
-}
-
 static mrbc_tcb *tcb_rgb;
 
 void
@@ -341,7 +335,6 @@ int main() {
   GPIO_INIT();
   USB_INIT();
   UART_INIT();
-  /* FIXME */ init_RGB();
   mrbc_load_model(object);
   mrbc_load_model(float_ext);
   mrbc_create_task(usb_task, 0);
