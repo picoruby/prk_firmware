@@ -53,16 +53,16 @@ joystick_report_hid(uint32_t buttons, uint8_t hat)
   /* analog axes */
   int16_t value;
   for (uint ch = 0; ch < MAX_ADC_COUNT; ch++) {
-    if (axes[ch] > -1) {
+    if (Joystick_axes[ch] > -1) {
       adc_select_input(ch);
-      value = (int16_t)(((adc_read() >> 4) - adc_offset[ch]) * sensitivity[ch]);
-      if ((value < drift_suppression_minus) || (drift_suppression < value)) {
+      value = (int16_t)(((adc_read() >> 4) - Joystick_adc_offset[ch]) * Joystick_sensitivity[ch]);
+      if ((value < Joystick_drift_suppression_minus) || (Joystick_drift_suppression < value)) {
         if (value < -128) {
           value = -128;
         } else if (127 < value) {
           value = 127;
         }
-        switch (axes[ch]) {
+        switch (Joystick_axes[ch]) {
           case AXIS_INDEX_X:  report.x  = (int8_t)value; break;
           case AXIS_INDEX_Y:  report.y  = (int8_t)value; break;
           case AXIS_INDEX_Z:  report.z  = (int8_t)value; break;
