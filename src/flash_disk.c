@@ -4,7 +4,7 @@
 #include <hardware/flash.h>
 #include <hardware/sync.h>
 
-#include "flash_disk.h"
+#include "../include/flash_disk.h"
 
 /* Disk Status Bits (DSTATUS) */
 #define STA_NOINIT		0x01	/* Drive not initialized */

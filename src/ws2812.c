@@ -1,4 +1,4 @@
-#include "ws2812.h"
+#include "../include/ws2812.h"
 
 #include <stdlib.h>
 #include "hardware/pio.h"

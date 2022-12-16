@@ -29,13 +29,13 @@
 
 #include "tusb.h"
 
-#include "msc_disk.h"
+#include "../include/msc_disk.h"
 #include <mrubyc.h>
 
 // whether host does safe-eject
 static bool ejected = false;
 
-#include "version.h"
+#include "../include/version.h"
 
 /* PRK_DESCRIPTION should be located at the beginning of README. see msc_init() */
 #define README_CONTENTS \

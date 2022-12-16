@@ -2,8 +2,8 @@
 #include "pico/stdlib.h"
 #include "hardware/gpio.h"
 #include "hardware/adc.h"
-#include "usb_descriptors.h"
 
+#include "../include/usb_descriptors.h"
 #include "../include/joystick.h"
 #include "picoruby-prk-joystick/include/prk-joystick.h"
 

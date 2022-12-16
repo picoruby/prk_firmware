@@ -1,9 +1,9 @@
 #include "tusb.h"
 #include "hardware/structs/scb.h"
 
-#include "usb_descriptors.h"
-#include "raw_hid.h"
-#include "joystick.h"
+#include "../include/usb_descriptors.h"
+#include "../include/raw_hid.h"
+#include "../include/joystick.h"
 
 // Invoked when received GET DEVICE DESCRIPTOR
 // Application return pointer to descriptor

@@ -104,7 +104,7 @@ if(PRK_NO_MSC)
 endif()
 
 target_include_directories(${PROJECT_NAME} PRIVATE
-  ${CMAKE_SOURCE_DIR}/include
+  ${CMAKE_SOURCE_DIR}/tinyusb
   ${CMAKE_SOURCE_DIR}/lib/picoruby/include/hal_no_impl
   ${CMAKE_SOURCE_DIR}/lib/picoruby/mrbgems/picoruby-mrubyc/repos/mrubyc/src
   ${CMAKE_SOURCE_DIR}/lib/picoruby/mrbgems/picoruby-filesystem-fat/lib/ff14b/source

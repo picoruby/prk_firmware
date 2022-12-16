@@ -1,4 +1,4 @@
-#include "uart.h"
+#include "../include/uart.h"
 
 #include "pico/stdlib.h"
 #include "hardware/uart.h"
