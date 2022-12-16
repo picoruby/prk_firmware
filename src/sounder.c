@@ -2,13 +2,12 @@
 #include "hardware/clocks.h"
 #include "hardware/irq.h"
 #include "ws2812.pio.h"
-#include "uart_tx.pio.h"
 #include "sounder.pio.h"
 
 #include "../include/sounder.h"
 #include "picoruby-prk-sounder/include/prk-sounder.h"
 
-#define PIO_SOUNDER_INST_HEAD ( uart_tx_program.length + ws2812_program.length )
+#define PIO_SOUNDER_INST_HEAD (ws2812_program.length)
 #define SOUNDER_PIO_FINISH_IRQ_ID PIO1_IRQ_1
 
 static PIO pio = pio1;

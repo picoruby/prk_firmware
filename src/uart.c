@@ -1,18 +1,8 @@
-#include "../include/uart.h"
-
+#include <mrubyc.h>
 #include "pico/stdlib.h"
-#include "hardware/uart.h"
-#include "hardware/irq.h"
-#include "hardware/pio.h"
-#include "uart_tx.pio.h"
-#include "pico/multicore.h"
+#include "picoruby-prk-keyboard/include/prk-keyboard.h"
 
-#define UART_ID uart0
-#define BAUD_RATE 115200
-#define DATA_BITS 8
-#define STOP_BITS 1
-#define PARITY    UART_PARITY_NONE
-
+#define DATA_BITS          8
 #define SAMPLING_INTERVAL 10
 #define SAMPLING_COUNT     8
 /* (eg) 1-bit interval of 9600 bps is about 104 microseconds (usec) */
@@ -20,105 +10,29 @@
 #define LONG_STOP_BITS     8
 #define SHORT_STOP_BITS    2
 #define IDLE_BITS          8
-#define NIL         0xFFFFFF
-
-#define PIO_UART_INST_HEAD 0
 
 static int uart_pin;
-static bool mutual = false;
 
-/*
- * Mutual UART on a single line may break your microcontroller.
- */
 void
-c_mutual_uart_eq(mrb_vm *vm, mrb_value *v, int argc)
+Keyboard_uart_anchor_init(uint32_t pin)
 {
-  if (GET_ARG(1).tt == MRBC_TT_TRUE) {
-    mutual = true;
-  } else {
-    mutual = false;
-  }
+  uart_pin = pin;
+  gpio_init(uart_pin);
+  gpio_set_dir(uart_pin, GPIO_OUT);
+  gpio_put(uart_pin, 0);
 }
 
 void
-c_uart_anchor_init(mrb_vm *vm, mrb_value *v, int argc)
+Keyboard_uart_partner_init(uint32_t pin)
 {
-  if (mutual) {
-    uart_pin = GET_INT_ARG(1);
-    gpio_init(uart_pin);
-    gpio_set_dir(uart_pin, GPIO_OUT);
-    gpio_put(uart_pin, 0);
-  } else {
-    uart_init(UART_ID, 2400);
-    gpio_set_function(GET_INT_ARG(1), GPIO_FUNC_UART); // Set the RX pin
-    uart_set_baudrate(UART_ID, BAUD_RATE);
-    uart_set_hw_flow(UART_ID, false, false); // Turn UART flow control off
-    uart_set_format(UART_ID, DATA_BITS, STOP_BITS, PARITY); // Set data format
-    uart_set_fifo_enabled(UART_ID, true); // Turn on FIFO
-  }
+  uart_pin = pin;
+  gpio_init(uart_pin);
+  gpio_set_dir(uart_pin, GPIO_IN);
+  gpio_pull_up(uart_pin);
 }
-
-/*
- * It seems RX pin can't be inverted to TX on Raspi Pico.
- * That's why using PIO instead.
- */
-static PIO pio = pio1;
-static uint sm = 1;
-void
-c_uart_partner_init(mrb_vm *vm, mrb_value *v, int argc)
-{
-  if (mutual) {
-    uart_pin = GET_INT_ARG(1);
-    gpio_init(uart_pin);
-    gpio_set_dir(uart_pin, GPIO_IN);
-    gpio_pull_up(uart_pin);
-  } else {
-    if( pio_can_add_program_at_offset(pio, &uart_tx_program, PIO_UART_INST_HEAD) ) {
-      pio_add_program_at_offset(pio, &uart_tx_program, PIO_UART_INST_HEAD);
-      uart_tx_program_init(pio, sm, PIO_UART_INST_HEAD, GET_INT_ARG(1), BAUD_RATE);
-    }
-  }
-}
-
-/*
- * mutual == false
- */
-uint32_t
-oneway_anchor_get24(void)
-{
-  uint32_t data24 = 0;
-  for (int i = 0; i < 24; i += 8) {
-    if (uart_is_readable(UART_ID) == 0) {
-      data24 |= 0xFF << i;
-    } else {
-      data24 |= uart_getc(UART_ID) << i;
-    }
-  }
-  /* Getting rid of surpluses */
-  while (uart_is_readable(UART_ID)) uart_getc(UART_ID);
-  return data24;
-}
-
-void
-oneway_partner_put24(uint32_t data24)
-{
-  uint8_t data1 = data24 & 0xFF;;
-  uint8_t data2 = (data24 >> 8) & 0xFF;
-  uint8_t data3 = data24 >> 16;
-  if (data1 != 0xFF)
-    pio_sm_put_blocking(pio, sm, data1);
-  if (data1 != data2)
-    pio_sm_put_blocking(pio, sm, data2);
-  if (data2 != data3 && data1 != data3)
-    pio_sm_put_blocking(pio, sm, data3);
-}
-
-/*
- * mutual == true
- */
 
 uint32_t
-__not_in_flash_func(mutual_anchor_put8_get24_nonblocking)(uint8_t data)
+__not_in_flash_func(Keyboard_mutual_anchor_put8_get24_nonblocking)(uint8_t data)
 {
   uint8_t i;
   { /* TX */
@@ -233,7 +147,7 @@ __not_in_flash_func(mutual_anchor_put8_get24_nonblocking)(uint8_t data)
  *   Idling   : 0        Until invoked
  */
 uint8_t
-__not_in_flash_func(mutual_partner_get8_put24_blocking)(uint32_t data24)
+__not_in_flash_func(Keyboard_mutual_partner_get8_put24_blocking)(uint32_t data24)
 {
   uint8_t data, i;
   for (;;) {
@@ -297,49 +211,5 @@ __not_in_flash_func(mutual_partner_get8_put24_blocking)(uint32_t data24)
   gpio_set_dir(uart_pin, GPIO_IN);
   gpio_pull_up(uart_pin);
   return data;
-}
-
-void
-c_uart_anchor(mrb_vm *vm, mrb_value *v, int argc)
-{
-  uint32_t data;
-  if (mutual) {
-    data = mutual_anchor_put8_get24_nonblocking(GET_INT_ARG(1));
-  } else {
-    data = oneway_anchor_get24();
-  }
-  SET_INT_RETURN(data);
-}
-
-static uint32_t buffer = 0;
-static int      buffer_index = 0;
-
-void
-c_uart_partner_push8(mrb_vm *vm, mrb_value *v, int argc)
-{
-  int keycode = GET_INT_ARG(1);
-  if (buffer_index > 2) return;
-  buffer |= keycode << (buffer_index * 8);
-  buffer_index++;
-}
-
-void
-c_uart_partner(mrb_vm *vm, mrb_value *v, int argc)
-{
-  switch (buffer_index) {
-    case 0: buffer  = NIL; break;
-    case 1: buffer |= 0xFFFF00; break;
-    case 2: buffer |= 0xFF0000; break;
-  }
-  uint8_t data;
-  if (mutual) {
-    data = mutual_partner_get8_put24_blocking(buffer);
-  } else {
-    oneway_partner_put24(buffer);
-    data = 0;
-  }
-  SET_INT_RETURN(data);
-  buffer = 0;
-  buffer_index = 0;
 }
 
