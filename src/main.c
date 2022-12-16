@@ -305,12 +305,6 @@ init_RGB(void)
   WS2812_INIT();
 }
 
-static void
-init_Sounder(void)
-{
-  SOUNDER_INIT();
-}
-
 static mrbc_tcb *tcb_rgb;
 
 void
