@@ -9,6 +9,10 @@
 
 static hid_gamepad_report_t zero_report;
 
+/*
+ * TODO: Reconsuruct these functions with picoruby-adc gem
+ */
+
 void
 Joystick_adc_gpio_init(uint32_t gpio)
 {
@@ -17,13 +21,13 @@ Joystick_adc_gpio_init(uint32_t gpio)
     adc_init();
     init = true;
   }
-  adc_gpio_init(gpio);
+  adc_gpio_init((uint)gpio);
 }
 
 void
 Joystick_adc_select_input(uint32_t input)
 {
-  adc_select_input(input);
+  adc_select_input((uint)input);
 }
 
 uint16_t
@@ -48,7 +52,7 @@ joystick_report_hid(uint32_t buttons, uint8_t hat)
   report.buttons = buttons;
   /* analog axes */
   int16_t value;
-  for (int ch = 0; ch < MAX_ADC_COUNT; ch++) {
+  for (uint ch = 0; ch < MAX_ADC_COUNT; ch++) {
     if (axes[ch] > -1) {
       adc_select_input(ch);
       value = (int16_t)(((adc_read() >> 4) - adc_offset[ch]) * sensitivity[ch]);
