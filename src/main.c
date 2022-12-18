@@ -15,7 +15,6 @@
 #include "../include/msc_disk.h"
 #include "../include/gpio.h"
 #include "../include/usb_descriptors.h"
-#include "../include/uart.h"
 #include "../include/ws2812.h"
 #include "../include/rotary_encoder.h"
 #include "../include/joystick.h"
@@ -299,18 +298,6 @@ mrbc_load_model(const uint8_t *mrb)
   return true;
 }
 
-static void
-init_RGB(void)
-{
-  WS2812_INIT();
-}
-
-static void
-init_Sounder(void)
-{
-  SOUNDER_INIT();
-}
-
 static mrbc_tcb *tcb_rgb;
 
 void
@@ -346,19 +333,17 @@ int main() {
 #endif
   GPIO_INIT();
   USB_INIT();
-  UART_INIT();
-  /* FIXME */ init_RGB();
   mrbc_load_model(object);
   mrbc_load_model(float_ext);
   mrbc_create_task(usb_task, 0);
   tcb_rgb = mrbc_create_task(rgb_task, 0);
   mrbc_define_method(0, mrbc_class_object, "autoreload_ready?", c_autoreload_ready_q);
-  mrbc_define_method(0, mrbc_class_object,   "_prk_description", c__prk_description);
+  mrbc_define_method(0, mrbc_class_object, "_prk_description", c__prk_description);
 #ifdef PRK_NO_MSC
   mrbc_create_task(keymap, 0);
   autoreload_state = AUTORELOAD_NONE;
 #else
-  mrbc_define_method(0, mrbc_class_object,   "resume_rgb_task",  c_resume_rgb_task);
+  mrbc_define_method(0, mrbc_class_object, "resume_rgb_task", c_resume_rgb_task);
   autoreload_state = AUTORELOAD_READY;
 #endif
   mrbc_run();
