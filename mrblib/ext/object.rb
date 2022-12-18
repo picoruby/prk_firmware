@@ -7,6 +7,7 @@ class Object
   alias _puts puts
   def puts(*args)
     tud_task
+    args << "" if args.empty?
     args.each do |arg|
       _puts arg
       tud_task
@@ -17,6 +18,7 @@ class Object
   alias _print print
   def print(*args)
     tud_task
+    args << "" if args.empty?
     args.each do |arg|
       _print arg
       tud_task

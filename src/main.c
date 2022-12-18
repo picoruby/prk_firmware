@@ -130,6 +130,7 @@ quick_print_alloc_stats()
   struct MRBC_ALLOC_STATISTICS mem;
   mrbc_alloc_statistics(&mem);
   console_printf("\nSTATS %d/%d\n", mem.used, mem.total);
+  tud_task();
 }
 
 void
@@ -138,10 +139,15 @@ c_print_alloc_stats(mrb_vm *vm, mrb_value *v, int argc)
   struct MRBC_ALLOC_STATISTICS mem;
   mrbc_alloc_statistics(&mem);
   console_printf("ALLOC STATS\n");
+  tud_task();
   console_printf(" TOTAL %6d\n", mem.total);
+  tud_task();
   console_printf(" USED  %6d\n", mem.used);
+  tud_task();
   console_printf(" FREE  %6d\n", mem.free);
+  tud_task();
   console_printf(" FRAG  %6d\n\n", mem.fragmentation);
+  tud_task();
   SET_NIL_RETURN();
 }
 
@@ -201,6 +207,20 @@ int autoreload_state; /* from msc_disk.h */
 #define SUSPEND_TASK         "suspend_task"
 #define MAX_KEYMAP_SIZE      (1024 * 10)
 
+static void
+reset_vm(mrbc_vm *vm)
+{
+  vm->cur_irep        = vm->top_irep;
+  vm->inst            = vm->cur_irep->inst;
+  vm->cur_regs        = vm->regs;
+  vm->target_class    = mrbc_class_object;
+  vm->callinfo_tail   = NULL;
+  vm->ret_blk         = NULL;
+  vm->exception       = mrbc_nil_value();
+  vm->flag_preemption = 0;
+  vm->flag_stop       = 0;
+}
+
 mrbc_tcb*
 create_keymap_task(mrbc_tcb *tcb)
 {
@@ -209,27 +229,36 @@ create_keymap_task(mrbc_tcb *tcb)
   StreamInterface *si;
   ParserState *p = Compiler_parseInitState(NULL, NODE_BOX_SIZE);
   msc_findDirEnt("KEYMAP  RB ", &entry);
-  uint8_t *keymap_rb = NULL;
+  static uint8_t *keymap_rb = NULL;
+  if (keymap_rb) picorbc_free(keymap_rb);
   if (entry.Name[0] != '\0') {
     RotaryEncoder_reset();
     uint32_t fileSize = entry.FileSize;
     console_printf("keymap.rb size: %u\n", fileSize);
+    tud_task();
     if (fileSize < MAX_KEYMAP_SIZE) {
-      keymap_rb = malloc(KEYMAP_PREFIX_SIZE + fileSize + KEYMAP_POSTFIX_SIZE);
+      keymap_rb = picorbc_alloc(KEYMAP_PREFIX_SIZE + fileSize + KEYMAP_POSTFIX_SIZE);
       memcpy(keymap_rb, KEYMAP_PREFIX, KEYMAP_PREFIX_SIZE);
       msc_loadFile(keymap_rb + KEYMAP_PREFIX_SIZE, &entry);
       memcpy(keymap_rb + KEYMAP_PREFIX_SIZE + fileSize, KEYMAP_POSTFIX, KEYMAP_POSTFIX_SIZE);
       si = StreamInterface_new(NULL, (char *)keymap_rb, STREAM_TYPE_MEMORY);
     } else {
       console_printf("Must be less than %d bytes!\n", MAX_KEYMAP_SIZE);
+      tud_task();
       si = StreamInterface_new(NULL, SUSPEND_TASK, STREAM_TYPE_MEMORY);
     }
   } else {
     console_printf("No keymap.rb found!\n");
+    tud_task();
     si = StreamInterface_new(NULL, SUSPEND_TASK, STREAM_TYPE_MEMORY);
   }
-  if (!Compiler_compile(p, si, NULL)) {
+  uint8_t *vm_code = NULL;
+  if (Compiler_compile(p, si, NULL)) {
+    vm_code = p->scope->vm_code;
+    p->scope->vm_code = NULL;
+  } else {
     console_printf("Compiling keymap.rb failed!\n");
+    tud_task();
     Compiler_parserStateFree(p);
     StreamInterface_free(si);
     p = Compiler_parseInitState(NULL, NODE_BOX_SIZE);
@@ -237,27 +266,20 @@ create_keymap_task(mrbc_tcb *tcb)
     Compiler_compile(p, si, NULL);
   }
   quick_print_alloc_stats();
-  if (keymap_rb) free(keymap_rb);
-  mrbc_vm *vm;
-  if (tcb == NULL) {
-    tcb = mrbc_create_task(p->scope->vm_code, 0);
-    vm = (mrbc_vm *)(&tcb->vm);
-  } else {
-    vm = (mrbc_vm *)(&tcb->vm);
-    uint8_t vm_id = vm->vm_id;
-    uint16_t regs_size = vm->regs_size;
-    mrbc_vm_end(vm);
-    memset(vm, 0, sizeof(mrbc_vm));
-    mrbc_load_mrb(vm, p->scope->vm_code);
-    vm->vm_id = vm_id;
-    vm->regs_size = regs_size;
-    mrbc_vm_begin(vm);
-  }
-  console_printf("vm_id %d\n", vm->vm_id);
-  console_printf("nregs %d\n", vm->regs_size);
-  p->scope->vm_code = NULL;
   Compiler_parserStateFree(p);
   StreamInterface_free(si);
+  if (tcb == NULL) {
+    tcb = mrbc_create_task(vm_code, 0);
+  } else {
+    mrbc_suspend_task(tcb);
+    if(mrbc_load_mrb(&tcb->vm, vm_code) != 0) {
+      console_printf("Loading keymap.mrb failed!\n");
+      tud_task();
+    } else {
+      reset_vm(&tcb->vm);
+      mrbc_resume_task(tcb);
+    }
+  }
   autoreload_state = AUTORELOAD_WAIT;
   hal_enable_irq();
   return tcb;
