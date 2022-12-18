@@ -31,9 +31,10 @@ Keyboard_uart_partner_init(uint32_t pin)
   gpio_pull_up(uart_pin);
 }
 
-uint32_t
-__not_in_flash_func(Keyboard_mutual_anchor_put8_get24_nonblocking)(uint8_t data)
+void
+__not_in_flash_func(c_Keyboard_uart_anchor)(mrb_vm *vm, mrb_value *v, int argc)
 {
+  uint8_t data = (uint8_t)GET_INT_ARG(1);
   uint8_t i;
   { /* TX */
     { /* Stop-bit (length: LONG_STOP_BITS) */
@@ -111,8 +112,10 @@ __not_in_flash_func(Keyboard_mutual_anchor_put8_get24_nonblocking)(uint8_t data)
   }
   gpio_set_dir(uart_pin, GPIO_OUT);
   gpio_put(uart_pin, 0); // Idling
-  if (error || data24 == 0) return NIL;
-  return data24;
+  //if (error || data24 == 0) return NIL;
+  if (error || data24 == 0) SET_INT_RETURN(NIL);
+  //return data24;
+  SET_INT_RETURN(data24);
 }
 /*
  * Data sent from anchor to partner
@@ -213,3 +216,8 @@ __not_in_flash_func(Keyboard_mutual_partner_get8_put24_blocking)(uint32_t data24
   return data;
 }
 
+void
+Keyboard_init_sub(mrbc_class *mrbc_class_Keyboard)
+{
+  mrbc_define_method(0, mrbc_class_Keyboard, "uart_anchor", c_Keyboard_uart_anchor);
+}
