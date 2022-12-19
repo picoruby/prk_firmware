@@ -80,7 +80,6 @@ endforeach(rb)
 
 set(RUBY_EXT_FILES
   object
-  float_ext
 )
 foreach(rb ${RUBY_EXT_FILES})
   add_custom_target(${rb}

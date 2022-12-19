@@ -23,7 +23,6 @@
 /* ruby */
 /* ext */
 #include "../build/mrb/ext/object.c"
-#include "../build/mrb/ext/float_ext.c"
 /* tasks */
 #include "../build/mrb/usb_task.c"
 #include "../build/mrb/rgb_task.c"
@@ -356,7 +355,6 @@ int main() {
   GPIO_INIT();
   USB_INIT();
   mrbc_load_model(object);
-  mrbc_load_model(float_ext);
   mrbc_create_task(usb_task, 0);
   tcb_rgb = mrbc_create_task(rgb_task, 0);
   mrbc_define_method(0, mrbc_class_object, "autoreload_ready?", c_autoreload_ready_q);
