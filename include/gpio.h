@@ -1,17 +1,15 @@
-/* mruby/c VM */
-#include <mrubyc.h>
+#ifndef GPIO_DEFINED_H_
+#define GPIO_DEFINED_H_
 
-void c_gpio_get(mrb_vm *vm, mrb_value *v, int argc);
-void c_gpio_init(mrb_vm *vm, mrb_value *v, int argc);
-void c_gpio_set_dir(mrb_vm *vm, mrb_value *v, int argc);
-void c_gpio_pull_up(mrb_vm *vm, mrb_value *v, int argc);
-void c_gpio_put(mrb_vm *vm, mrb_value *v, int argc);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#define GPIO_INIT() do { \
-  mrbc_define_method(0, mrbc_class_object, "gpio_init",    c_gpio_init);    \
-  mrbc_define_method(0, mrbc_class_object, "gpio_set_dir", c_gpio_set_dir); \
-  mrbc_define_method(0, mrbc_class_object, "gpio_pull_up", c_gpio_pull_up); \
-  mrbc_define_method(0, mrbc_class_object, "gpio_put",     c_gpio_put);     \
-  mrbc_define_method(0, mrbc_class_object, "gpio_get",     c_gpio_get);     \
-} while (0)
+void prk_init_gpio(void);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* GPIO_DEFINED_H_ */
 

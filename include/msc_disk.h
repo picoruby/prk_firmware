@@ -34,11 +34,9 @@ enum
 
 extern int autoreload_state;
 
-void msc_init(void);
+void prk_msc_init(void);
 
 void msc_findDirEnt(const char *filename, DirEnt *entry);
-
-void c_write_file_internal(mrb_vm *vm, mrb_value *v, int argc);
 
 void msc_loadFile(uint8_t *file, DirEnt *entry);
 

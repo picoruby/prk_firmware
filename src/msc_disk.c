@@ -37,7 +37,7 @@ static bool ejected = false;
 
 #include "../include/version.h"
 
-/* PRK_DESCRIPTION should be located at the beginning of README. see msc_init() */
+/* PRK_DESCRIPTION should be located at the beginning of README. see prk_msc_init() */
 #define README_CONTENTS \
 PRK_DESCRIPTION "\n\nWelcome to PRK Firmware!\n\n\
 Usage:\n\
@@ -51,9 +51,10 @@ https://github.com/picoruby/prk_firmware\n"
 #define README_LENGTH (sizeof(README_CONTENTS) - 1)
 #define FAT_START ( (uint8_t*)FLASH_MMAP_ADDR+FLASH_SECTOR_SIZE*1 )
 
-void msc_write_file(const char *filename, const uint8_t *data, uint16_t length);
-void c_find_file(mrb_vm *vm, mrb_value *v, int argc);
-void c_read_file(mrb_vm *vm, mrb_value *v, int argc);
+static void msc_write_file(const char *filename, const uint8_t *data, uint16_t length);
+static void c_write_file_internal(mrb_vm *vm, mrb_value *v, int argc);
+static void c_find_file(mrb_vm *vm, mrb_value *v, int argc);
+static void c_read_file(mrb_vm *vm, mrb_value *v, int argc);
 
 uint8_t msc_disk[4][SECTOR_SIZE] =
 {
@@ -298,7 +299,7 @@ tud_msc_scsi_cb (uint8_t lun, uint8_t const scsi_cmd[16], void* buffer, uint16_t
 }
 
 void
-msc_init(void)
+prk_msc_init(void)
 {
 #ifndef FORCE_FORMAT_FLASH
   if (
@@ -353,7 +354,9 @@ msc_findDirEnt(const char *filename, DirEnt *entry)
   }
 }
 
-void c_find_file(mrb_vm *vm, mrb_value *v, int argc) {
+static void
+c_find_file(mrb_vm *vm, mrb_value *v, int argc)
+{
   uint8_t *rb_filename = GET_STRING_ARG(1);
   DirEnt entry;
   mrbc_value return_val = mrbc_array_new(vm, 2);
@@ -371,13 +374,13 @@ void c_find_file(mrb_vm *vm, mrb_value *v, int argc) {
   }
 }
 
-uint8_t*
+static inline uint8_t*
 msc_read_sector(uint16_t sector)
 {
   return (uint8_t*)(FLASH_MMAP_ADDR + (SECTOR_SIZE * (1+sector)));
 }
 
-void
+static void
 c_read_file(mrb_vm *vm, mrb_value *v, int argc) {
   uint16_t sector = GET_INT_ARG(1);
   uint16_t length = GET_INT_ARG(2);
@@ -388,7 +391,7 @@ c_read_file(mrb_vm *vm, mrb_value *v, int argc) {
   SET_RETURN(rb_val_str);
 }
 
-void
+static void
 msc_write_file(const char *filename, const uint8_t *data, uint16_t length)
 {
   DirEnt entry;
@@ -497,7 +500,9 @@ msc_write_file(const char *filename, const uint8_t *data, uint16_t length)
   }
 }
 
-void c_write_file_internal(mrb_vm *vm, mrb_value *v, int argc) {
+static void
+c_write_file_internal(mrb_vm *vm, mrb_value *v, int argc)
+{
   uint16_t limit;
   uint8_t *rb_filename = GET_STRING_ARG(1);
   uint8_t *c_data;
