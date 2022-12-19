@@ -63,7 +63,7 @@ if(PRK_NO_MSC)
 endif()
 
 add_custom_target(mrbdir ALL
-  COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_SOURCE_DIR}/build/mrb/ext
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_SOURCE_DIR}/build/mrb
 )
 
 set(RUBY_TASK_FILES
@@ -77,21 +77,16 @@ foreach(rb ${RUBY_TASK_FILES})
   )
 endforeach(rb)
 
-set(RUBY_EXT_FILES
-  object
+add_custom_target(object-ext
+  COMMAND ${PICORBC} -Bobject_ext
+    -o${CMAKE_SOURCE_DIR}/build/mrb/object-ext.c
+    ${CMAKE_SOURCE_DIR}/mrblib/object-ext.rb
 )
-foreach(rb ${RUBY_EXT_FILES})
-  add_custom_target(${rb}
-    COMMAND ${PICORBC} -B${rb}
-      -o${CMAKE_SOURCE_DIR}/build/mrb/ext/${rb}.c
-      ${CMAKE_SOURCE_DIR}/mrblib/ext/${rb}.rb
-  )
-endforeach(rb)
 
 add_dependencies(${PROJECT_NAME}
+  object-ext
   mrbdir
   ${RUBY_TASK_FILES}
-  ${RUBY_EXT_FILES}
 )
 
 if(PRK_NO_MSC)

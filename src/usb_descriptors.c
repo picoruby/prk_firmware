@@ -247,6 +247,7 @@ static uint16_t consumer_keycode = 0;
 static uint32_t joystick_buttons = 0;
 static uint8_t joystick_hat = 0;
 static bool via_active = false;
+
 static void
 send_hid_report()
 {
@@ -311,93 +312,22 @@ tud_hid_report_complete_cb(uint8_t instance, uint8_t const* report, uint8_t len)
 // Ruby methods
 //--------------------------------------------------------------------+
 
-void
+static void
 c_Keyboard_start_observing_output_report(mrb_vm *vm, mrb_value *v, int argc) {
   observing_output_report = true;
 }
 
-void
+static void
 c_Keyboard_stop_observing_output_report(mrb_vm *vm, mrb_value *v, int argc) {
   observing_output_report = false;
 }
 
-void
+static void
 c_Keyboard_output_report(mrb_vm *vm, mrb_value *v, int argc) {
   SET_INT_RETURN(keyboard_output_report);
 }
 
-void
-c_raw_hid_report_received_q(mrb_vm *vm, mrb_value *v, int argc) {
-  if(raw_hid_report_received) {
-    SET_TRUE_RETURN();
-  } else {
-    SET_FALSE_RETURN();
-  }
-}
-
-void
-c_get_last_received_raw_hid_report(mrb_vm *vm, mrb_value *v, int argc) {
-  mrbc_value rb_val_array = mrbc_array_new(vm, REPORT_RAW_MAX_LEN);
-  mrbc_array *rb_array = rb_val_array.array;
-
-  rb_array->n_stored = raw_hid_last_received_report_length;
-  for(uint8_t i=0; i<raw_hid_last_received_report_length && i<REPORT_RAW_MAX_LEN; i++) {
-    mrbc_set_integer( (rb_array->data)+i, raw_hid_last_received_report[i] );
-  }
-  raw_hid_report_received = false;
-
-  SET_RETURN(rb_val_array);
-}
-
-void
-c_tud_task(mrb_vm *vm, mrb_value *v, int argc)
-{
-  tud_task();
-}
-
-bool
-report_raw_hid(uint8_t* data, uint8_t len)
-{
-  bool ret;
-  // Remote wakeup
-  if (tud_suspended()) {
-    // Wake up host if we are in suspend mode
-    // and REMOTE_WAKEUP feature is enabled by host
-    tud_remote_wakeup();
-  }
-  /*------------- RAW HID -------------*/
-  if (tud_hid_n_ready(0)) {
-    via_active = true;
-    return tud_hid_n_report(0, REPORT_ID_RAWHID, data, len);
-  } else {
-    return false;
-  }
-}
-
-void
-c_report_raw_hid(mrb_vm *vm, mrb_value *v, int argc) {
-  mrbc_array rb_ary = *( GET_ARY_ARG(1).array );
-  uint8_t c_data[REPORT_RAW_MAX_LEN];
-  uint8_t len = REPORT_RAW_MAX_LEN;
-
-  memset(c_data, 0, REPORT_RAW_MAX_LEN);
-  if(GET_ARY_ARG(1).tt == MRBC_TT_ARRAY) {
-    if(rb_ary.n_stored<len) {
-      len = rb_ary.n_stored;
-    }
-    for(uint8_t i=0; i<len; i++) {
-      c_data[i] = mrbc_integer(rb_ary.data[i]);
-    }
-  }
-
-  if( report_raw_hid(c_data, len) ) {
-    SET_TRUE_RETURN();
-  } else {
-    SET_FALSE_RETURN();
-  }
-}
-
-void
+static void
 c_Keyboard_hid_task(mrb_vm *vm, mrb_value *v, int argc)
 {
   if( keyboard_modifier!=GET_INT_ARG(1) ) {
@@ -435,7 +365,78 @@ c_Keyboard_hid_task(mrb_vm *vm, mrb_value *v, int argc)
   send_hid_report();
 }
 
-void
+static void
+c_raw_hid_report_received_q(mrb_vm *vm, mrb_value *v, int argc) {
+  if(raw_hid_report_received) {
+    SET_TRUE_RETURN();
+  } else {
+    SET_FALSE_RETURN();
+  }
+}
+
+static void
+c_get_last_received_raw_hid_report(mrb_vm *vm, mrb_value *v, int argc) {
+  mrbc_value rb_val_array = mrbc_array_new(vm, REPORT_RAW_MAX_LEN);
+  mrbc_array *rb_array = rb_val_array.array;
+
+  rb_array->n_stored = raw_hid_last_received_report_length;
+  for(uint8_t i=0; i<raw_hid_last_received_report_length && i<REPORT_RAW_MAX_LEN; i++) {
+    mrbc_set_integer( (rb_array->data)+i, raw_hid_last_received_report[i] );
+  }
+  raw_hid_report_received = false;
+
+  SET_RETURN(rb_val_array);
+}
+
+static void
+c_tud_task(mrb_vm *vm, mrb_value *v, int argc)
+{
+  tud_task();
+}
+
+static bool
+report_raw_hid(uint8_t* data, uint8_t len)
+{
+  bool ret;
+  // Remote wakeup
+  if (tud_suspended()) {
+    // Wake up host if we are in suspend mode
+    // and REMOTE_WAKEUP feature is enabled by host
+    tud_remote_wakeup();
+  }
+  /*------------- RAW HID -------------*/
+  if (tud_hid_n_ready(0)) {
+    via_active = true;
+    return tud_hid_n_report(0, REPORT_ID_RAWHID, data, len);
+  } else {
+    return false;
+  }
+}
+
+static void
+c_report_raw_hid(mrb_vm *vm, mrb_value *v, int argc) {
+  mrbc_array rb_ary = *( GET_ARY_ARG(1).array );
+  uint8_t c_data[REPORT_RAW_MAX_LEN];
+  uint8_t len = REPORT_RAW_MAX_LEN;
+
+  memset(c_data, 0, REPORT_RAW_MAX_LEN);
+  if(GET_ARY_ARG(1).tt == MRBC_TT_ARRAY) {
+    if(rb_ary.n_stored<len) {
+      len = rb_ary.n_stored;
+    }
+    for(uint8_t i=0; i<len; i++) {
+      c_data[i] = mrbc_integer(rb_ary.data[i]);
+    }
+  }
+
+  if( report_raw_hid(c_data, len) ) {
+    SET_TRUE_RETURN();
+  } else {
+    SET_FALSE_RETURN();
+  }
+}
+
+static void
 c_tud_mounted_q(mrb_vm *vm, mrb_value *v, int argc)
 {
   if (tud_mounted()) {
@@ -443,4 +444,21 @@ c_tud_mounted_q(mrb_vm *vm, mrb_value *v, int argc)
   } else {
     SET_FALSE_RETURN();
   }
+}
+
+void
+usb_init(void)
+{
+  mrbc_define_method(0, mrbc_class_object, "tud_task",     c_tud_task);
+  mrbc_define_method(0, mrbc_class_object, "tud_mounted?", c_tud_mounted_q);
+
+  mrbc_class *mrbc_class_Keyboard = mrbc_define_class(0, "Keyboard", mrbc_class_object);
+  mrbc_define_method(0, mrbc_class_Keyboard, "hid_task", c_Keyboard_hid_task);
+  mrbc_define_method(0, mrbc_class_Keyboard, "stop_observing_output_report", c_Keyboard_stop_observing_output_report);
+  mrbc_define_method(0, mrbc_class_Keyboard, "start_observing_output_report", c_Keyboard_start_observing_output_report);
+  mrbc_define_method(0, mrbc_class_Keyboard, "output_report", c_Keyboard_output_report);
+
+  mrbc_define_method(0, mrbc_class_object, "report_raw_hid", c_report_raw_hid);
+  mrbc_define_method(0, mrbc_class_object, "raw_hid_report_received?", c_raw_hid_report_received_q);
+  mrbc_define_method(0, mrbc_class_object, "get_last_received_raw_hid_report", c_get_last_received_raw_hid_report);
 }

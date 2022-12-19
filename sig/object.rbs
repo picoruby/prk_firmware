@@ -7,13 +7,11 @@ class Object
   def sandbox_result : () -> untyped
   def sandbox_picorbc: (String) -> bool
   def sandbox_resume: () -> bool
-  def autoreload_ready?: () -> bool
   def resume_task: (String) -> bool
   def raw_hid_report_received?: -> bool
   def get_last_received_raw_hid_report: -> Array[Integer]
 
   # Raspi
-  def board_millis : -> Integer
   def tud_task : -> void
   def tud_mounted? : () -> bool
   def gpio_init : (Integer) -> void
@@ -26,6 +24,5 @@ class Object
   def read_file : (Integer, Integer) -> String
 
   # PRK
-  def self._prk_description : () -> String
   def required? : (String) -> bool
 end

@@ -2,6 +2,9 @@
 #include "pico/stdlib.h"
 #include "picoruby-prk-keyboard/include/prk-keyboard.h"
 
+#include "../include/usb_descriptors.h"
+#include "../include/msc_disk.h"
+
 #define DATA_BITS          8
 #define SAMPLING_INTERVAL 10
 #define SAMPLING_COUNT     8
@@ -31,7 +34,7 @@ Keyboard_uart_partner_init(uint32_t pin)
   gpio_pull_up(uart_pin);
 }
 
-void
+static void
 __not_in_flash_func(c_Keyboard_uart_anchor)(mrb_vm *vm, mrb_value *v, int argc)
 {
   uint8_t data = (uint8_t)GET_INT_ARG(1);
@@ -216,8 +219,23 @@ __not_in_flash_func(Keyboard_mutual_partner_get8_put24_blocking)(uint32_t data24
   return data;
 }
 
+static void c_autoreload_ready_q(mrb_vm *vm, mrb_value *v, int argc)
+{
+  if (autoreload_state == AUTORELOAD_READY) {
+    SET_TRUE_RETURN();
+  } else {
+    SET_FALSE_RETURN();
+  }
+}
+
 void
 Keyboard_init_sub(mrbc_class *mrbc_class_Keyboard)
 {
   mrbc_define_method(0, mrbc_class_Keyboard, "uart_anchor", c_Keyboard_uart_anchor);
+  mrbc_define_method(0, mrbc_class_Keyboard, "autoreload_ready?", c_autoreload_ready_q);
+#ifdef PRK_NO_MSC
+  autoreload_state = AUTORELOAD_NONE;
+#else
+  autoreload_state = AUTORELOAD_READY;
+#endif
 }

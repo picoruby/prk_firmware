@@ -11,7 +11,6 @@
 #include "hardware/clocks.h"
 
 /* mrbc_class */
-#include "../include/usb_cdc.h"
 #include "../include/msc_disk.h"
 #include "../include/gpio.h"
 #include "../include/usb_descriptors.h"
@@ -22,7 +21,7 @@
 
 /* ruby */
 /* ext */
-#include "../build/mrb/ext/object.c"
+#include "../build/mrb/object-ext.c"
 /* tasks */
 #include "../build/mrb/usb_task.c"
 #include "picoruby-prk-rgb/include/prk-rgb.h"
@@ -112,13 +111,6 @@ configure_prk(void)
 }
 
 void
-c__prk_description(mrb_vm *vm, mrb_value *v, int argc)
-{
-  mrbc_value desc = mrbc_string_new(vm, PRK_DESCRIPTION, sizeof(PRK_DESCRIPTION));
-  SET_RETURN(desc);
-}
-
-void
 c_reset_usb_boot(mrb_vm *vm, mrb_value *v, int argc)
 {
   reset_usb_boot(0, 0);
@@ -166,12 +158,6 @@ c_alloc_stats(mrb_vm *vm, mrb_value *v, int argc)
   mrbc_hash_set(&ret, &mrbc_symbol_value(mrbc_str_to_symid("FRAGMENTATION")),
                 &mrbc_integer_value(mem.fragmentation));
   SET_RETURN(ret);
-}
-
-void
-c_picorbc_ptr_size(mrb_vm *vm, mrb_value *v, int argc)
-{
-  SET_INT_RETURN(PICORBC_PTR_SIZE);
 }
 
 void
@@ -287,43 +273,41 @@ create_keymap_task(mrbc_tcb *tcb)
 
 #endif /* PRK_NO_MSC */
 
-void
-c_autoreload_ready_q(mrb_vm *vm, mrb_value *v, int argc)
-{
-  if (autoreload_state == AUTORELOAD_READY) {
-    SET_TRUE_RETURN();
-  } else {
-    SET_FALSE_RETURN();
-  }
-}
-
 
 #define MEMORY_SIZE (1024*200)
 
 static uint8_t memory_pool[MEMORY_SIZE];
 
-bool
-mrbc_load_model(const uint8_t *mrb)
+static void
+prk_init_global(void)
 {
+  /* CONST */
+  mrbc_sym sym_id = mrbc_str_to_symid("SIZEOF_POINTER");
+  mrbc_set_const(sym_id, &mrbc_integer_value(PICORBC_PTR_SIZE));
   mrbc_vm *vm = mrbc_vm_open(NULL);
-  if( vm == 0 ) {
-    console_printf("Error: Can't open VM.\n");
-    return false;
-  }
-  if( mrbc_load_mrb(vm, mrb) != 0 ) {
-    console_printf("Error: Illegal bytecode.\n");
-    return false;
-  }
-  mrbc_vm_begin(vm);
-  mrbc_vm_run(vm);
+  sym_id = mrbc_str_to_symid("PRK_DESCRIPTION");
+  mrbc_value prk_desc = mrbc_string_new_cstr(vm, PRK_DESCRIPTION);
+  mrbc_set_const(sym_id, &prk_desc);
   mrbc_raw_free(vm);
-  return true;
+  /* class Object */
+  picoruby_load_model(object_ext);
+  /* class Machine */
+  mrbc_class *mrbc_class_Machine = mrbc_define_class(0, "Machine", mrbc_class_object);
+  mrbc_define_method(0, mrbc_class_Machine, "reset_usb_boot", c_reset_usb_boot);
+  mrbc_define_method(0, mrbc_class_Machine, "board_millis",   c_board_millis);
+  mrbc_define_method(0, mrbc_class_Machine, "rand",           c_rand);
+  mrbc_define_method(0, mrbc_class_Machine, "srand",          c_srand);
+  /* class PicoRubyVM */
+  mrbc_class *mrbc_class_PicoRubyVM = mrbc_define_class(0, "PicoRubyVM", mrbc_class_object);
+  mrbc_define_method(0, mrbc_class_PicoRubyVM, "alloc_stats",       c_alloc_stats);
+  mrbc_define_method(0, mrbc_class_PicoRubyVM, "print_alloc_stats", c_print_alloc_stats);
 }
 
 int loglevel;
 
 int
-main() {
+main(void)
+{
   loglevel = LOGLEVEL_WARN;
 
   configure_prk();
@@ -333,30 +317,15 @@ main() {
   tusb_init();
   mrbc_init(memory_pool, MEMORY_SIZE);
   mrbc_require_init();
-  mrbc_define_method(0, mrbc_class_object, "board_millis", c_board_millis);
-  mrbc_define_method(0, mrbc_class_object, "rand",         c_rand);
-  mrbc_define_method(0, mrbc_class_object, "srand",        c_srand);
-  mrbc_define_method(0, mrbc_class_object, "picorbc_ptr_size", c_picorbc_ptr_size);
-  mrbc_class *mrbc_class_Microcontroller = mrbc_define_class(0, "Microcontroller", mrbc_class_object);
-  mrbc_define_method(0, mrbc_class_Microcontroller, "reset_usb_boot",  c_reset_usb_boot);
-  mrbc_class *mrbc_class_PicoRubyVM = mrbc_define_class(0, "PicoRubyVM", mrbc_class_object);
-  mrbc_define_method(0, mrbc_class_PicoRubyVM, "alloc_stats",       c_alloc_stats);
-  mrbc_define_method(0, mrbc_class_PicoRubyVM, "print_alloc_stats", c_print_alloc_stats);
-#ifndef PRK_NO_MSC
-  msc_init();
-#endif
+  prk_init_global();
   GPIO_INIT();
-  USB_INIT();
-  mrbc_load_model(object);
+  usb_init();
   mrbc_create_task(usb_task, 0);
   tcb_rgb = mrbc_create_task(rgb_task, 0);
-  mrbc_define_method(0, mrbc_class_object, "autoreload_ready?", c_autoreload_ready_q);
-  mrbc_define_method(0, mrbc_class_object, "_prk_description", c__prk_description);
 #ifdef PRK_NO_MSC
   mrbc_create_task(keymap, 0);
-  autoreload_state = AUTORELOAD_NONE;
 #else
-  autoreload_state = AUTORELOAD_READY;
+  msc_init();
 #endif
   mrbc_run();
   return 0;
