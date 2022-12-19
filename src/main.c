@@ -25,7 +25,8 @@
 #include "../build/mrb/ext/object.c"
 /* tasks */
 #include "../build/mrb/usb_task.c"
-#include "../build/mrb/rgb_task.c"
+#include "picoruby-prk-rgb/include/prk-rgb.h"
+#include "picoruby-prk-rgb/task/rgb_task.c"
 #ifdef PRK_NO_MSC
 #include <keymap.c>
 #endif
@@ -319,18 +320,10 @@ mrbc_load_model(const uint8_t *mrb)
   return true;
 }
 
-static mrbc_tcb *tcb_rgb;
-
-void
-c_resume_rgb_task(mrb_vm *vm, mrb_value *v, int argc)
-{
-  mrbc_resume_task(tcb_rgb);
-  SET_TRUE_RETURN();
-}
-
 int loglevel;
 
-int main() {
+int
+main() {
   loglevel = LOGLEVEL_WARN;
 
   configure_prk();
@@ -363,7 +356,6 @@ int main() {
   mrbc_create_task(keymap, 0);
   autoreload_state = AUTORELOAD_NONE;
 #else
-  mrbc_define_method(0, mrbc_class_object, "resume_rgb_task", c_resume_rgb_task);
   autoreload_state = AUTORELOAD_READY;
 #endif
   mrbc_run();

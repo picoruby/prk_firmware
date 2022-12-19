@@ -67,7 +67,6 @@ add_custom_target(mrbdir ALL
 )
 
 set(RUBY_TASK_FILES
-  rgb_task
   usb_task
 )
 foreach(rb ${RUBY_TASK_FILES})
