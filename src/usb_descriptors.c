@@ -313,22 +313,22 @@ tud_hid_report_complete_cb(uint8_t instance, uint8_t const* report, uint8_t len)
 //--------------------------------------------------------------------+
 
 static void
-c_Keyboard_start_observing_output_report(mrb_vm *vm, mrb_value *v, int argc) {
+c_start_observing_output_report(mrb_vm *vm, mrb_value *v, int argc) {
   observing_output_report = true;
 }
 
 static void
-c_Keyboard_stop_observing_output_report(mrb_vm *vm, mrb_value *v, int argc) {
+c_stop_observing_output_report(mrb_vm *vm, mrb_value *v, int argc) {
   observing_output_report = false;
 }
 
 static void
-c_Keyboard_output_report(mrb_vm *vm, mrb_value *v, int argc) {
+c_output_report(mrb_vm *vm, mrb_value *v, int argc) {
   SET_INT_RETURN(keyboard_output_report);
 }
 
 static void
-c_Keyboard_hid_task(mrb_vm *vm, mrb_value *v, int argc)
+c_hid_task(mrb_vm *vm, mrb_value *v, int argc)
 {
   if( keyboard_modifier!=GET_INT_ARG(1) ) {
     keyboard_modifier = (uint8_t)GET_INT_ARG(1);
@@ -447,18 +447,21 @@ c_tud_mounted_q(mrb_vm *vm, mrb_value *v, int argc)
 }
 
 void
-usb_init(void)
+prk_init_usb(void)
 {
-  mrbc_define_method(0, mrbc_class_object, "tud_task",     c_tud_task);
-  mrbc_define_method(0, mrbc_class_object, "tud_mounted?", c_tud_mounted_q);
+  mrbc_class *mrbc_class_USB = mrbc_define_class(0, "USB", mrbc_class_object);
 
-  mrbc_class *mrbc_class_Keyboard = mrbc_define_class(0, "Keyboard", mrbc_class_object);
-  mrbc_define_method(0, mrbc_class_Keyboard, "hid_task", c_Keyboard_hid_task);
-  mrbc_define_method(0, mrbc_class_Keyboard, "stop_observing_output_report", c_Keyboard_stop_observing_output_report);
-  mrbc_define_method(0, mrbc_class_Keyboard, "start_observing_output_report", c_Keyboard_start_observing_output_report);
-  mrbc_define_method(0, mrbc_class_Keyboard, "output_report", c_Keyboard_output_report);
+  mrbc_define_method(0, mrbc_class_USB, "tud_task", c_tud_task);
+  mrbc_define_method(0, mrbc_class_USB, "tud_mounted?", c_tud_mounted_q);
+  mrbc_define_method(0, mrbc_class_USB, "hid_task", c_hid_task);
 
-  mrbc_define_method(0, mrbc_class_object, "report_raw_hid", c_report_raw_hid);
-  mrbc_define_method(0, mrbc_class_object, "raw_hid_report_received?", c_raw_hid_report_received_q);
-  mrbc_define_method(0, mrbc_class_object, "get_last_received_raw_hid_report", c_get_last_received_raw_hid_report);
+  /* for Caps lock etc. */
+  mrbc_define_method(0, mrbc_class_USB, "stop_observing_output_report", c_stop_observing_output_report);
+  mrbc_define_method(0, mrbc_class_USB, "start_observing_output_report", c_start_observing_output_report);
+  mrbc_define_method(0, mrbc_class_USB, "output_report", c_output_report);
+
+  /* for VIA */
+  mrbc_define_method(0, mrbc_class_USB, "report_raw_hid", c_report_raw_hid);
+  mrbc_define_method(0, mrbc_class_USB, "raw_hid_report_received?", c_raw_hid_report_received_q);
+  mrbc_define_method(0, mrbc_class_USB, "get_last_received_raw_hid_report", c_get_last_received_raw_hid_report);
 }

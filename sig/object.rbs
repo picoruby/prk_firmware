@@ -8,12 +8,8 @@ class Object
   def sandbox_picorbc: (String) -> bool
   def sandbox_resume: () -> bool
   def resume_task: (String) -> bool
-  def raw_hid_report_received?: -> bool
-  def get_last_received_raw_hid_report: -> Array[Integer]
 
   # Raspi
-  def tud_task : -> void
-  def tud_mounted? : () -> bool
   def gpio_init : (Integer) -> void
   def gpio_set_dir : (Integer, Integer) -> void
   def gpio_pull_up : (Integer) -> void

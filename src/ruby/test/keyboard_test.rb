@@ -31,7 +31,7 @@ class KeyboardTest < MrubycTestCase
   description "normal matrix of partner"
   def init_partner_matrix_case
     kbd = Keyboard.new
-    stub(kbd).tud_mounted? { false }
+    stub(USB).tud_mounted? { false }
     mock(kbd).uart_partner_init(1)
     kbd.split = true
     kbd.init_pins([1,2], [3,4])
@@ -45,7 +45,7 @@ class KeyboardTest < MrubycTestCase
   description "duplex matrix of partner"
   def init_duplex_partner_matrix_case
     kbd = Keyboard.new
-    stub(kbd).tud_mounted? { false }
+    stub(USB).tud_mounted? { false }
     mock(kbd).uart_partner_init(1)
     kbd.split = true
     kbd.init_matrix_pins(
@@ -117,7 +117,7 @@ class KeyboardTest < MrubycTestCase
     kbd.split = true
     kbd.split_style = :right_side_flipped_split
     # To test partner side
-    stub(kbd).tud_mounted? { false }
+    stub(USB).tud_mounted? { false }
     mock(kbd).uart_partner_init(1)
     kbd.init_matrix_pins(
     # col 7       6       5       4           row

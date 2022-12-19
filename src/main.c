@@ -319,7 +319,7 @@ main(void)
   mrbc_require_init();
   prk_init_global();
   GPIO_INIT();
-  usb_init();
+  prk_init_usb();
   mrbc_create_task(usb_task, 0);
   tcb_rgb = mrbc_create_task(rgb_task, 0);
 #ifdef PRK_NO_MSC

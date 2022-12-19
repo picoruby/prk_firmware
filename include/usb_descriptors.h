@@ -22,7 +22,7 @@ enum {
   REPORT_ID_COUNT
 };
 
-void usb_init(void);
+void prk_init_usb(void);
 
 #endif /* USB_DESCRIPTORS_H_ */
 
