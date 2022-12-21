@@ -4,7 +4,7 @@ jobs:
   check:
     runs-on: ubuntu-latest
     env:
-      BUNDLE_GEMFILE: ./src/ruby/Gemfile
+      BUNDLE_GEMFILE: ./Gemfile
     steps:
     - uses: actions/checkout@v2
       with:
@@ -20,12 +20,10 @@ jobs:
       working-directory: lib/picoruby
     - name: steep check
       run: |
-        cp ../../lib/picoruby/mrbgems/picoruby-terminal/mrblib/buffer.rb app/models/buffer.rb
-        cp ../../lib/picoruby/mrbgems/picoruby-terminal/sig/buffer.rbs sig/buffer.rbs
         BUNDLE_GEMFILE=Gemfile bundle exec steep check
-      working-directory: src/ruby
-    - name: mrubyc-test
-      run: |
-        cp -rT ../../lib/picoruby/mrbgems/picoruby-mrubyc/repos/mrubyc/src/hal_posix test/tmp/hal
-        RUBYLIB=./app/models BUNDLE_GEMFILE=Gemfile CFLAGS=-DMAX_SYMBOLS_COUNT=1000 bundle exec mrubyc-test
-      working-directory: src/ruby
+      working-directory: .
+        #- name: mrubyc-test
+        #  run: |
+        #    cp -rT ../../lib/picoruby/mrbgems/picoruby-mrubyc/repos/mrubyc/src/hal_posix test/tmp/hal
+        #    RUBYLIB=./app/models BUNDLE_GEMFILE=Gemfile CFLAGS=-DMAX_SYMBOLS_COUNT=1000 bundle exec mrubyc-test
+        #  working-directory: src/ruby

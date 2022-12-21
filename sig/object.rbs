@@ -1,4 +1,6 @@
 class Object
+  PRK_DESCRIPTION: String
+
   # mrbc
   def relinquish : -> bool
   def sleep_ms : (Integer) -> void
@@ -7,7 +9,6 @@ class Object
   def sandbox_result : () -> untyped
   def sandbox_picorbc: (String) -> bool
   def sandbox_resume: () -> bool
-  def resume_task: (String) -> bool
 
   # Raspi
   def gpio_init : (Integer) -> void

@@ -65,9 +65,7 @@ task :test_all => %i(steep_check mrubyc_test)
 
 desc "run steep check for ruby program"
 task :steep_check do
-#  FileUtils.cd "src/ruby" do
-#    sh "rake steep"
-#  end
+  sh "bundle exec steep check"
 end
 
 task :setup do
@@ -143,6 +141,11 @@ task :symlinks do
   Dir.glob("lib/picoruby/mrbgems/picoruby-prk-*").each do |src|
     FileUtils.ln_sf File.join("..", src), "symlinks/#{File.basename(src)}"
   end
+end
+
+desc "run guard-process"
+task :guard do
+  sh "bundle exec guard start -i"
 end
 
 # Add a new tag then push it
