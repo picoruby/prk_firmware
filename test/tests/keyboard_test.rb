@@ -207,12 +207,12 @@ class KeyboardTest < MrubycTestCase
     assert_equal :raise, @kbd.instance_variable_get("@locked_layer")
   end
 
-  description "@ruby_mode should switch"
-  def ruby_mode
-    assert_not_equal true, @kbd.instance_variable_get("@ruby_mode")
-    @kbd.ruby
-    assert_equal true, @kbd.instance_variable_get("@ruby_mode")
-  end
+#  description "@ruby_mode should switch"
+#  def ruby_mode
+#    assert_not_equal true, @kbd.instance_variable_get("@ruby_mode")
+#    @kbd.ruby
+#    assert_equal true, @kbd.instance_variable_get("@ruby_mode")
+#  end
 
   description "raise an error"
   def raise_error_case

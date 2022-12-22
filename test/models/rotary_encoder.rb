@@ -1,0 +1,1 @@
+../../lib/picoruby/mrbgems/picoruby-prk-rotary_encoder/mrblib/rotary_encoder.rb
