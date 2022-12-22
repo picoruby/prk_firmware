@@ -1,6 +1,5 @@
-#include "gpio.h"
-
 #include "hardware/gpio.h"
+#include <mrubyc.h>
 
 //      GPIO_IN          0b000 (defined in the SDK)
 #define GPIO_IN_PULLUP   0b010
@@ -9,7 +8,7 @@
 #define GPIO_OUT_LO      0b011
 #define GPIO_OUT_HI      0b101
 
-void
+static void
 c_gpio_get(mrb_vm *vm, mrb_value *v, int argc)
 {
   int gpio = GET_INT_ARG(1);
@@ -20,13 +19,13 @@ c_gpio_get(mrb_vm *vm, mrb_value *v, int argc)
   }
 }
 
-void
+static void
 c_gpio_init(mrb_vm *vm, mrb_value *v, int argc)
 {
   gpio_init(GET_INT_ARG(1));
 }
 
-void
+static void
 c_gpio_set_dir(mrb_vm *vm, mrb_value *v, int argc)
 {
   if (GET_INT_ARG(2)&1 == GPIO_OUT) {
@@ -46,17 +45,27 @@ c_gpio_set_dir(mrb_vm *vm, mrb_value *v, int argc)
   }
 }
 
-void
+static void
 c_gpio_pull_up(mrb_vm *vm, mrb_value *v, int argc)
 {
   gpio_pull_up(GET_INT_ARG(1));
 }
 
-void
+static void
 c_gpio_put(mrb_vm *vm, mrb_value *v, int argc)
 {
   int gpio = GET_INT_ARG(1);
   int value = GET_INT_ARG(2);
   gpio_put(gpio, value);
+}
+
+void
+prk_init_gpio(void)
+{
+  mrbc_define_method(0, mrbc_class_object, "gpio_init",    c_gpio_init);
+  mrbc_define_method(0, mrbc_class_object, "gpio_set_dir", c_gpio_set_dir);
+  mrbc_define_method(0, mrbc_class_object, "gpio_pull_up", c_gpio_pull_up);
+  mrbc_define_method(0, mrbc_class_object, "gpio_put",     c_gpio_put);
+  mrbc_define_method(0, mrbc_class_object, "gpio_get",     c_gpio_get);
 }
 

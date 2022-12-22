@@ -1,8 +1,7 @@
-#include "tusb_config.h"
+#include "../tinyusb/tusb_config.h"
 #include "tusb.h"
 
 #include <mrubyc.h>
-#include "usb_cdc.h"
 
 #ifndef CFG_TUSB_MCU
   #error CFG_TUSB_MCU must be defined

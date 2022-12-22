@@ -1,5 +1,6 @@
-/* PicoRuby compiler */
+/* PicoRuby */
 #include <picorbc.h>
+#include <picogem_init.c>
 
 /* Raspi SDK */
 #include <stdio.h>
@@ -10,37 +11,32 @@
 #include "hardware/clocks.h"
 
 /* mrbc_class */
-#include "usb_cdc.h"
-#include "msc_disk.h"
-#include "gpio.h"
-#include "usb_descriptors.h"
-#include "uart.h"
-#include "ws2812.h"
-#include "rotary_encoder.h"
-#include "joystick.h"
-#include "sounder.h"
-#include <sandbox.h>
+#include "../include/msc_disk.h"
+#include "../include/gpio.h"
+#include "../include/usb_descriptors.h"
+#include "../include/ws2812.h"
+#include "../include/rotary_encoder.h"
+#include "../include/joystick.h"
+#include "../include/sounder.h"
 
 /* ruby */
-/* models */
-#include "ruby/app/ext/object.c"
-#include "ruby/app/models/float_ext.c"
-#include "ruby/app/models/keyboard.c"
-#include "ruby/app/models/rotary_encoder.c"
-#include "ruby/app/models/rgb.c"
-#include "ruby/app/models/buffer.c"
-#include "ruby/app/models/via.c"
-#include "ruby/app/models/consumer_key.c"
-#include "ruby/app/models/debounce.c"
-#include "ruby/app/models/joystick.c"
-#include "ruby/app/models/sounder.c"
-#include "ruby/app/models/mml.c"
+/* ext */
+#include "../build/mrb/object-ext.c"
 /* tasks */
-#include "ruby/app/tasks/usb_task.c"
-#include "ruby/app/tasks/rgb_task.c"
+#include "../build/mrb/usb_task.c"
+#include "picoruby-prk-rgb/include/prk-rgb.h"
+#include "picoruby-prk-rgb/task/rgb_task.c"
 #ifdef PRK_NO_MSC
-#include "ruby/app/keymap.c"
+#include <keymap.c>
 #endif
+
+
+#define MEMORY_SIZE (1024*200)
+
+static uint8_t memory_pool[MEMORY_SIZE];
+
+/* extern in mruby-pico-compiler/include/debug.h */
+int loglevel = LOGLEVEL_WARN;
 
 //--------------------------------------------------------------------+
 // Device Descriptors
@@ -72,7 +68,7 @@ tusb_desc_device_t desc_device =
 //--------------------------------------------------------------------+
 // String Descriptors
 //--------------------------------------------------------------------+
-#include "version.h"
+#include "../include/version.h"
 char const *string_desc_arr[STRING_DESC_ARR_SIZE] =
 {
   (const char[]) { 0x09, 0x04 }, // 0: is supported language is English (0x0409)
@@ -122,18 +118,7 @@ configure_prk(void)
   }
 }
 
-void
-c__prk_description(mrb_vm *vm, mrb_value *v, int argc)
-{
-  mrbc_value desc = mrbc_string_new(vm, PRK_DESCRIPTION, sizeof(PRK_DESCRIPTION));
-  SET_RETURN(desc);
-}
-
-void
-c_reset_usb_boot(mrb_vm *vm, mrb_value *v, int argc)
-{
-  reset_usb_boot(0, 0);
-}
+/* class PicoRubyVM */
 
 static void
 quick_print_alloc_stats()
@@ -141,27 +126,15 @@ quick_print_alloc_stats()
   struct MRBC_ALLOC_STATISTICS mem;
   mrbc_alloc_statistics(&mem);
   console_printf("\nSTATS %d/%d\n", mem.used, mem.total);
+  tud_task();
 }
 
-void
-c_print_alloc_stats(mrb_vm *vm, mrb_value *v, int argc)
-{
-  struct MRBC_ALLOC_STATISTICS mem;
-  mrbc_alloc_statistics(&mem);
-  console_printf("ALLOC STATS\n");
-  console_printf(" TOTAL %6d\n", mem.total);
-  console_printf(" USED  %6d\n", mem.used);
-  console_printf(" FREE  %6d\n", mem.free);
-  console_printf(" FRAG  %6d\n\n", mem.fragmentation);
-  SET_NIL_RETURN();
-}
-
-void
+static void
 c_alloc_stats(mrb_vm *vm, mrb_value *v, int argc)
 {
   struct MRBC_ALLOC_STATISTICS mem;
-  mrbc_alloc_statistics(&mem);
   mrbc_value ret = mrbc_hash_new(vm, 4);
+  mrbc_alloc_statistics(&mem);
   mrbc_hash_set(&ret, &mrbc_symbol_value(mrbc_str_to_symid("TOTAL")),
                 &mrbc_integer_value(mem.total));
   mrbc_hash_set(&ret, &mrbc_symbol_value(mrbc_str_to_symid("USED")),
@@ -173,25 +146,27 @@ c_alloc_stats(mrb_vm *vm, mrb_value *v, int argc)
   SET_RETURN(ret);
 }
 
-void
-c_picorbc_ptr_size(mrb_vm *vm, mrb_value *v, int argc)
+/* class Machine */
+
+static void
+c_reset_usb_boot(mrb_vm *vm, mrb_value *v, int argc)
 {
-  SET_INT_RETURN(PICORBC_PTR_SIZE);
+  reset_usb_boot(0, 0);
 }
 
-void
+static void
 c_board_millis(mrb_vm *vm, mrb_value *v, int argc)
 {
   SET_INT_RETURN(board_millis());
 }
 
-void
+static void
 c_srand(mrb_vm *vm, mrb_value *v, int argc)
 {
   srand(GET_INT_ARG(1));
 }
 
-void
+static void
 c_rand(mrb_vm *vm, mrb_value *v, int argc)
 {
   SET_INT_RETURN(rand());
@@ -205,8 +180,6 @@ int autoreload_state; /* from msc_disk.h */
 #define NODE_BOX_SIZE 50
 #endif
 
-static mrbc_tcb *tcb_keymap;
-
 #define KEYMAP_PREFIX        "begin\n"
 #define KEYMAP_PREFIX_SIZE   (sizeof(KEYMAP_PREFIX) - 1)
 #define KEYMAP_POSTFIX       "\nrescue => e\nputs e.class, e.message, 'Task stopped!'\nend"
@@ -214,7 +187,21 @@ static mrbc_tcb *tcb_keymap;
 #define SUSPEND_TASK         "suspend_task"
 #define MAX_KEYMAP_SIZE      (1024 * 10)
 
-void
+static void
+reset_vm(mrbc_vm *vm)
+{
+  vm->cur_irep        = vm->top_irep;
+  vm->inst            = vm->cur_irep->inst;
+  vm->cur_regs        = vm->regs;
+  vm->target_class    = mrbc_class_object;
+  vm->callinfo_tail   = NULL;
+  vm->ret_blk         = NULL;
+  vm->exception       = mrbc_nil_value();
+  vm->flag_preemption = 0;
+  vm->flag_stop       = 0;
+}
+
+mrbc_tcb*
 create_keymap_task(mrbc_tcb *tcb)
 {
   hal_disable_irq();
@@ -222,27 +209,36 @@ create_keymap_task(mrbc_tcb *tcb)
   StreamInterface *si;
   ParserState *p = Compiler_parseInitState(NULL, NODE_BOX_SIZE);
   msc_findDirEnt("KEYMAP  RB ", &entry);
-  uint8_t *keymap_rb = NULL;
+  static uint8_t *keymap_rb = NULL;
+  if (keymap_rb) picorbc_free(keymap_rb);
   if (entry.Name[0] != '\0') {
     RotaryEncoder_reset();
     uint32_t fileSize = entry.FileSize;
     console_printf("keymap.rb size: %u\n", fileSize);
+    tud_task();
     if (fileSize < MAX_KEYMAP_SIZE) {
-      keymap_rb = malloc(KEYMAP_PREFIX_SIZE + fileSize + KEYMAP_POSTFIX_SIZE);
+      keymap_rb = picorbc_alloc(KEYMAP_PREFIX_SIZE + fileSize + KEYMAP_POSTFIX_SIZE);
       memcpy(keymap_rb, KEYMAP_PREFIX, KEYMAP_PREFIX_SIZE);
       msc_loadFile(keymap_rb + KEYMAP_PREFIX_SIZE, &entry);
       memcpy(keymap_rb + KEYMAP_PREFIX_SIZE + fileSize, KEYMAP_POSTFIX, KEYMAP_POSTFIX_SIZE);
       si = StreamInterface_new(NULL, (char *)keymap_rb, STREAM_TYPE_MEMORY);
     } else {
       console_printf("Must be less than %d bytes!\n", MAX_KEYMAP_SIZE);
+      tud_task();
       si = StreamInterface_new(NULL, SUSPEND_TASK, STREAM_TYPE_MEMORY);
     }
   } else {
     console_printf("No keymap.rb found!\n");
+    tud_task();
     si = StreamInterface_new(NULL, SUSPEND_TASK, STREAM_TYPE_MEMORY);
   }
-  if (!Compiler_compile(p, si, NULL)) {
+  uint8_t *vm_code = NULL;
+  if (Compiler_compile(p, si, NULL)) {
+    vm_code = p->scope->vm_code;
+    p->scope->vm_code = NULL;
+  } else {
     console_printf("Compiling keymap.rb failed!\n");
+    tud_task();
     Compiler_parserStateFree(p);
     StreamInterface_free(si);
     p = Compiler_parseInitState(NULL, NODE_BOX_SIZE);
@@ -250,229 +246,75 @@ create_keymap_task(mrbc_tcb *tcb)
     Compiler_compile(p, si, NULL);
   }
   quick_print_alloc_stats();
-  if (keymap_rb) free(keymap_rb);
-  mrbc_vm *vm;
-  if (tcb == NULL) {
-    tcb = mrbc_create_task(p->scope->vm_code, 0);
-    vm = (mrbc_vm *)(&tcb->vm);
-  } else {
-    vm = (mrbc_vm *)(&tcb->vm);
-    uint8_t vm_id = vm->vm_id;
-    uint16_t regs_size = vm->regs_size;
-    mrbc_vm_end(vm);
-    memset(vm, 0, sizeof(mrbc_vm));
-    mrbc_load_mrb(vm, p->scope->vm_code);
-    vm->vm_id = vm_id;
-    vm->regs_size = regs_size;
-    mrbc_vm_begin(vm);
-  }
-  console_printf("vm_id %d\n", vm->vm_id);
-  console_printf("nregs %d\n", vm->regs_size);
-  p->scope->vm_code = NULL;
   Compiler_parserStateFree(p);
   StreamInterface_free(si);
+  if (tcb == NULL) {
+    tcb = mrbc_create_task(vm_code, 0);
+  } else {
+    mrbc_suspend_task(tcb);
+    if(mrbc_load_mrb(&tcb->vm, vm_code) != 0) {
+      console_printf("Loading keymap.mrb failed!\n");
+      tud_task();
+    } else {
+      reset_vm(&tcb->vm);
+      mrbc_resume_task(tcb);
+    }
+  }
   autoreload_state = AUTORELOAD_WAIT;
   hal_enable_irq();
-  tcb_keymap = tcb;
-}
-
-void
-c_Keyboard_resume_keymap(mrb_vm *vm, mrb_value *v, int argc)
-{
-  mrbc_resume_task(tcb_keymap);
-}
-
-void
-c_Keyboard_suspend_keymap(mrb_vm *vm, mrb_value *v, int argc)
-{
-  mrbc_suspend_task(tcb_keymap);
-}
-
-void
-c_Keyboard_reload_keymap(mrb_vm *vm, mrb_value *v, int argc)
-{
-  create_keymap_task(tcb_keymap);
+  return tcb;
 }
 
 #endif /* PRK_NO_MSC */
 
-void
-c_autoreload_ready_q(mrb_vm *vm, mrb_value *v, int argc)
+static void
+prk_init_picoruby(void)
 {
-  if (autoreload_state == AUTORELOAD_READY) {
-    SET_TRUE_RETURN();
-  } else {
-    SET_FALSE_RETURN();
-  }
-}
-
-
-#define MEMORY_SIZE (1024*200)
-
-static uint8_t memory_pool[MEMORY_SIZE];
-
-bool
-mrbc_load_model(const uint8_t *mrb)
-{
+  /* CONST */
+  mrbc_sym sym_id = mrbc_str_to_symid("SIZEOF_POINTER");
+  mrbc_set_const(sym_id, &mrbc_integer_value(PICORBC_PTR_SIZE));
   mrbc_vm *vm = mrbc_vm_open(NULL);
-  if( vm == 0 ) {
-    console_printf("Error: Can't open VM.\n");
-    return false;
-  }
-  if( mrbc_load_mrb(vm, mrb) != 0 ) {
-    console_printf("Error: Illegal bytecode.\n");
-    return false;
-  }
-  mrbc_vm_begin(vm);
-  mrbc_vm_run(vm);
+  sym_id = mrbc_str_to_symid("PRK_DESCRIPTION");
+  mrbc_value prk_desc = mrbc_string_new_cstr(vm, PRK_DESCRIPTION);
+  mrbc_set_const(sym_id, &prk_desc);
   mrbc_raw_free(vm);
-  return true;
+  /* class Object */
+  picoruby_load_model(object_ext);
+  picoruby_init_require();
+  /* class Machine */
+  mrbc_class *mrbc_class_Machine = mrbc_define_class(0, "Machine", mrbc_class_object);
+  mrbc_define_method(0, mrbc_class_Machine, "reset_usb_boot", c_reset_usb_boot);
+  mrbc_define_method(0, mrbc_class_Machine, "board_millis", c_board_millis);
+  mrbc_define_method(0, mrbc_class_Machine, "srand", c_srand);
+  mrbc_define_method(0, mrbc_class_Machine, "rand", c_rand);
+  /* class PicoRubyVM */
+  mrbc_class *mrbc_class_PicoRubyVM = mrbc_define_class(0, "PicoRubyVM", mrbc_class_object);
+  mrbc_define_method(0, mrbc_class_PicoRubyVM, "alloc_stats", c_alloc_stats);
+  /* GPIO */
+  prk_init_gpio();
+  /* class USB */
+  prk_init_usb();
 }
-
-typedef struct picogems {
-  const char *name;
-  void (*initializer)(void);
-  const uint8_t *mrb;
-  const uint8_t *task;
-  mrbc_tcb *tcb;
-} picogems;
-
-static void
-init_RotaryEncoder(void)
-{
-  ROTARY_ENCODER_INIT();
-}
-
-static void
-init_RGB(void)
-{
-  WS2812_INIT();
-}
-
-static void
-init_Joystick(void)
-{
-  JOYSTICK_INIT();
-}
-
-static void
-init_Sounder(void)
-{
-  SOUNDER_INIT();
-}
-
-picogems gems[] = {
-  {"keyboard",       NULL,               keyboard,       NULL,     NULL},
-  {"debounce",       NULL,               debounce,       NULL,     NULL},
-  {"buffer",         NULL,               buffer,         NULL,     NULL},
-  {"rotary_encoder", init_RotaryEncoder, rotary_encoder, NULL,     NULL},
-  {"rgb",            init_RGB,           rgb,            rgb_task, NULL},
-  {"via",            NULL,               via,            NULL,     NULL},
-  {"consumer_key",   NULL,               consumer_key,   NULL,     NULL},
-  {"joystick",       init_Joystick,      joystick,       NULL,     NULL},
-  {"sounder",        init_Sounder,       sounder,        NULL,     NULL},
-  {"mml",            NULL,               mml,            NULL,     NULL},
-  {NULL,             NULL,               NULL,           NULL,     NULL}
-};
 
 int
-gem_index(const char *name)
+main(void)
 {
-  int i;
-  if (!name) return -1;
-  for (int i = 0; ; i++) {
-    if (gems[i].name == NULL) {
-      console_printf("cannot find such gem -- %s\n (LoadError)", name);
-      return -1;
-    } else if (strcmp(name, gems[i].name) == 0) {
-      return i;
-      break;
-    }
-  }
-}
-
-void
-c_resume_task(mrb_vm *vm, mrb_value *v, int argc)
-{
-  int i = gem_index(GET_STRING_ARG(1));
-  if (i < 0) {
-    SET_FALSE_RETURN();
-  } else {
-    mrbc_resume_task(gems[i].tcb);
-    SET_TRUE_RETURN();
-  }
-}
-
-void
-c__require(mrb_vm *vm, mrb_value *v, int argc)
-{
-  const char *name = GET_STRING_ARG(1);
-  int i = gem_index(name);
-  SET_FALSE_RETURN();
-  if (i < 0) return;
-  if (gems[i].initializer) gems[i].initializer();
-  if (mrbc_load_model(gems[i].mrb)) {
-    if (gems[i].task) {
-      gems[i].tcb = mrbc_create_task(gems[i].task, 0);
-      if (gems[i].tcb) {
-        mrbc_suspend_task(gems[i].tcb);
-      } else {
-        console_printf("[FATAL] failed to create task -- %s\n", name);
-        SET_FALSE_RETURN();
-        return;
-      }
-    }
-    SET_TRUE_RETURN();
-  } else {
-    SET_FALSE_RETURN();
-  }
-}
-
-int loglevel;
-
-int main() {
-  loglevel = LOGLEVEL_WARN;
-
   configure_prk();
-
+  /* RP2 */
   stdio_init_all();
   board_init();
   tusb_init();
+  /* PicoRuby */
   mrbc_init(memory_pool, MEMORY_SIZE);
-  mrbc_define_method(0, mrbc_class_object, "_require",     c__require);
-  mrbc_define_method(0, mrbc_class_object, "board_millis", c_board_millis);
-  mrbc_define_method(0, mrbc_class_object, "rand",         c_rand);
-  mrbc_define_method(0, mrbc_class_object, "srand",        c_srand);
-  mrbc_define_method(0, mrbc_class_object, "picorbc_ptr_size", c_picorbc_ptr_size);
-  mrbc_class *mrbc_class_Microcontroller = mrbc_define_class(0, "Microcontroller", mrbc_class_object);
-  mrbc_define_method(0, mrbc_class_Microcontroller, "reset_usb_boot",  c_reset_usb_boot);
-  mrbc_class *mrbc_class_PicoRubyVM = mrbc_define_class(0, "PicoRubyVM", mrbc_class_object);
-  mrbc_define_method(0, mrbc_class_PicoRubyVM, "alloc_stats",       c_alloc_stats);
-  mrbc_define_method(0, mrbc_class_PicoRubyVM, "print_alloc_stats", c_print_alloc_stats);
-  mrbc_class *mrbc_class_Keyboard = mrbc_define_class(0, "Keyboard", mrbc_class_object);
-#ifndef PRK_NO_MSC
-  msc_init();
-#endif
-  GPIO_INIT();
-  USB_INIT();
-  UART_INIT();
-  mrbc_sandbox_init();
-  mrbc_load_model(object);
-  mrbc_load_model(float_ext);
-  mrbc_load_model(buffer);
-  mrbc_load_model(keyboard);
+  prk_init_picoruby();
+  /* Tasks */
   mrbc_create_task(usb_task, 0);
-  mrbc_define_method(0, mrbc_class_object, "autoreload_ready?", c_autoreload_ready_q);
+  tcb_rgb = mrbc_create_task(rgb_task, 0);
 #ifdef PRK_NO_MSC
   mrbc_create_task(keymap, 0);
 #else
-  mrbc_define_method(0, mrbc_class_object,   "_prk_description", c__prk_description);
-  mrbc_define_method(0, mrbc_class_Keyboard, "reload_keymap",    c_Keyboard_reload_keymap);
-  mrbc_define_method(0, mrbc_class_Keyboard, "suspend_keymap",   c_Keyboard_suspend_keymap);
-  mrbc_define_method(0, mrbc_class_Keyboard, "resume_keymap",    c_Keyboard_resume_keymap);
-  mrbc_define_method(0, mrbc_class_object,   "resume_task",      c_resume_task);
+  prk_msc_init();
 #endif
-  autoreload_state = AUTORELOAD_READY;
   mrbc_run();
   return 0;
 }

@@ -4,28 +4,21 @@ jobs:
   check:
     runs-on: ubuntu-latest
     env:
-      BUNDLE_GEMFILE: ./src/ruby/Gemfile
+      BUNDLE_GEMFILE: ./Gemfile
     steps:
     - uses: actions/checkout@v2
       with:
         submodules: recursive
     - uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.1.2
+        ruby-version: 3.1.3
         bundler-cache: true # runs 'bundle install' and caches installed gems automatically
-      #- name: Setup tmate session
-      #  uses: mxschmitt/action-tmate@v3
-    - name: build picoruby
-      run: rake
+    - name: setup picoruby
+      run: bundle install && rake
       working-directory: lib/picoruby
-    - name: steep check
-      run: |
-        cp ../../lib/picoruby/mrbgems/picoruby-terminal/mrblib/buffer.rb app/models/buffer.rb
-        cp ../../lib/picoruby/mrbgems/picoruby-terminal/sig/buffer.rbs sig/buffer.rbs
-        BUNDLE_GEMFILE=Gemfile bundle exec steep check
-      working-directory: src/ruby
+    #- name: Setup tmate session
+    #  uses: mxschmitt/action-tmate@v3
     - name: mrubyc-test
-      run: |
-        cp -rT ../../lib/picoruby/mrbgems/picoruby-mrubyc/repos/mrubyc/src/hal_posix test/tmp/hal
-        RUBYLIB=./app/models BUNDLE_GEMFILE=Gemfile CFLAGS=-DMAX_SYMBOLS_COUNT=1000 bundle exec mrubyc-test
-      working-directory: src/ruby
+      run: CFLAGS=-DMAX_SYMBOLS_COUNT=1000 MRUBYCFILE=test/Mrubycfile bundle exec mrubyc-test
+      working-directory: .
+

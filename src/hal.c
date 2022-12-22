@@ -8,7 +8,7 @@
 #include <hardware/sync.h>
 #include <tusb.h>
 
-#include "../lib/picoruby/mrbgems/picoruby-io/src/hal/hal.h"
+#include "../lib/picoruby/mrbgems/picoruby-io-console/src/hal/hal.h"
 
 /* mruby/c */
 #include <rrt0.h>

@@ -1,3 +1,0 @@
-class Float
-  def ceil_to_i: () -> Integer
-end
