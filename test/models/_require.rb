@@ -1,0 +1,2 @@
+def require(name)
+end

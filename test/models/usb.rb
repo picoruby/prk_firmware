@@ -1,0 +1,2 @@
+class USB
+end
