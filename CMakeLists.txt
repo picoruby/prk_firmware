@@ -19,9 +19,6 @@ if(PRK_NO_MSC)
   add_definitions(-DPRK_NO_MSC)
 endif()
 
-# initialize the Raspberry Pi Pico SDK
-pico_sdk_init()
-
 #####################################################
 # project specific configuration from here
 
@@ -38,6 +35,9 @@ if(PRK_NO_MSC)
 else()
   project("prk_firmware-${PRK_VERSION}-${PRK_BUILDDATE}-${PRK_REVISION}")
 endif()
+
+# Initializing the Raspberry Pi Pico SDK should happen after project created
+pico_sdk_init()
 
 file(GLOB SRCS src/*.c)
 add_executable(${PROJECT_NAME} ${SRCS})
@@ -100,13 +100,13 @@ target_include_directories(${PROJECT_NAME} PRIVATE
   ${CMAKE_SOURCE_DIR}/lib/picoruby/include/hal_no_impl
   ${CMAKE_SOURCE_DIR}/lib/picoruby/mrbgems/picoruby-mrubyc/repos/mrubyc/src
   ${CMAKE_SOURCE_DIR}/lib/picoruby/mrbgems/picoruby-filesystem-fat/lib/ff14b/source
-  ${CMAKE_SOURCE_DIR}/lib/picoruby/build/prk_firmware/mrbgems
-  ${CMAKE_SOURCE_DIR}/lib/picoruby/build/repos/prk_firmware/mruby-pico-compiler/include
+  ${CMAKE_SOURCE_DIR}/lib/picoruby/build/$ENV{MRUBY_CONFIG}/mrbgems
+  ${CMAKE_SOURCE_DIR}/lib/picoruby/build/repos/$ENV{MRUBY_CONFIG}/mruby-pico-compiler/include
   ${CMAKE_SOURCE_DIR}/lib/picoruby/mrbgems
 )
 
 target_link_directories(${PROJECT_NAME} PRIVATE
-  ${CMAKE_SOURCE_DIR}/lib/picoruby/build/prk_firmware/lib
+  ${CMAKE_SOURCE_DIR}/lib/picoruby/build/$ENV{MRUBY_CONFIG}/lib
 )
 
 target_link_libraries(${PROJECT_NAME}

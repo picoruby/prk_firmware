@@ -28,12 +28,16 @@ task :libmruby => "lib/picoruby" do
   end
 end
 
+def mruby_config
+  "MRUBY_CONFIG=#{MRUBY_CONFIG}"
+end
+
 task :cmake_debug do
-  sh "cmake -DCMAKE_BUILD_TYPE=Debug -B build"
+  sh "#{mruby_config} cmake -DCMAKE_BUILD_TYPE=Debug -B build"
 end
 
 task :cmake_production do
-  sh "cmake -B build"
+  sh "#{mruby_config} cmake -B build"
 end
 
 desc "build without cmake preparation"
@@ -49,7 +53,7 @@ task :build_with_keymap, ['keyboard_name'] => [:libmruby_no_msc, :test] do |_t, 
   dir = "keyboards/#{args.keyboard_name}"
   FileUtils.mkdir_p "#{dir}/build"
   #sh "cmake -DPRK_NO_MSC=1 -DCMAKE_BUILD_TYPE=Debug -B #{dir}/build"
-  sh "cmake -DPRK_NO_MSC=1 -B #{dir}/build"
+  sh "#{mruby_config} cmake -DPRK_NO_MSC=1 -B #{dir}/build"
   sh "cmake --build #{dir}/build"
 end
 
