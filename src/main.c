@@ -184,7 +184,7 @@ int autoreload_state; /* from msc_disk.h */
 #define KEYMAP_PREFIX_SIZE   (sizeof(KEYMAP_PREFIX) - 1)
 #define KEYMAP_POSTFIX       "\nrescue => e\nputs e.class, e.message, 'Task stopped!'\nend"
 #define KEYMAP_POSTFIX_SIZE  (sizeof(KEYMAP_POSTFIX))
-#define SUSPEND_TASK         "suspend_task"
+#define SUSPEND_TASK         "while true;sleep 5;puts 'Please move keymap.rb into PRKFirmware drive';end;"
 #define MAX_KEYMAP_SIZE      (1024 * 10)
 
 static void
