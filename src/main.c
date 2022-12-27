@@ -273,6 +273,12 @@ prk_init_picoruby(void)
   /* CONST */
   mrbc_sym sym_id = mrbc_str_to_symid("SIZEOF_POINTER");
   mrbc_set_const(sym_id, &mrbc_integer_value(PICORBC_PTR_SIZE));
+  sym_id = mrbc_str_to_symid("PRK_NO_MSC");
+#ifdef PRK_NO_MSC
+  mrbc_set_const(sym_id, &mrbc_false_value());
+#else
+  mrbc_set_const(sym_id, &mrbc_true_value());
+#endif
   mrbc_vm *vm = mrbc_vm_open(NULL);
   sym_id = mrbc_str_to_symid("PRK_DESCRIPTION");
   mrbc_value prk_desc = mrbc_string_new_cstr(vm, PRK_DESCRIPTION);
