@@ -4,6 +4,14 @@ MRUBY_CONFIG = "prk_firmware-cortex-m0plus"
 
 task :default => :all
 
+task :setup do
+  sh "bundle install"
+  sh "git submodule update --init"
+  FileUtils.cd "lib/picoruby" do
+    sh "bundle install"
+  end
+end
+
 desc "build production"
 task :all => [:libmruby, :test, :cmake_production, :build]
 
