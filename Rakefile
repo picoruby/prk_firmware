@@ -170,5 +170,5 @@ task :release => :test do
   sh "git tag #{new_version}"
   sh "git push origin #{new_version}"
   Rake::Task['clean'].invoke
-  Rake::Task['skip_test'].invoke
+  Rake::Task['all'].invoke
 end
