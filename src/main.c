@@ -318,8 +318,6 @@ main(void)
   tcb_rgb = mrbc_create_task(rgb_task, 0);
 #ifdef PRK_NO_MSC
   mrbc_create_task(keymap, 0);
-#else
-  prk_msc_init();
 #endif
   mrbc_run();
   return 0;
