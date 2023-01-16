@@ -1,15 +1,54 @@
-#include "tusb.h"
+#include <mrubyc.h>
 #include "hardware/structs/scb.h"
 
 #include "../include/usb_descriptors.h"
 #include "../include/raw_hid.h"
 #include "../include/joystick.h"
+#include "../include/version.h"
+
+//--------------------------------------------------------------------+
+// Device Descriptors
+//--------------------------------------------------------------------+
+tusb_desc_device_t desc_device =
+{
+  .bLength            = sizeof(tusb_desc_device_t),
+  .bDescriptorType    = TUSB_DESC_DEVICE,
+  .bcdUSB             = 0x0200,
+  // Use Interface Association Descriptor (IAD) for CDC
+  // As required by USB Specs IAD's subclass must be common class (2) and protocol must be IAD (1)
+  .bDeviceClass       = TUSB_CLASS_MISC,
+  .bDeviceSubClass    = MISC_SUBCLASS_COMMON,
+  .bDeviceProtocol    = MISC_PROTOCOL_IAD,
+  .bMaxPacketSize0    = CFG_TUD_ENDPOINT0_SIZE,
+  /*
+   * VID and PID from USB-IDs-for-free.txt
+   * https://github.com/obdev/v-usb/blob/releases/20121206/usbdrv/USB-IDs-for-free.txt#L128
+   */
+  .idVendor           = 0x16c0,
+  .idProduct          = 0x27db,
+  .bcdDevice          = 0x0100,
+  .iManufacturer      = 0x01,
+  .iProduct           = 0x02,
+  .iSerialNumber      = 0x03,
+  .bNumConfigurations = 0x01
+};
+
+#define STRING_DESC_ARR_SIZE 6
+
+static char const *string_desc_arr[STRING_DESC_ARR_SIZE] =
+{
+  (const char[]) { 0x09, 0x04 }, // 0: is supported language is English (0x0409)
+  "PRK Firmware developers",     // 1: Manufacturer
+  "Default VID/PID",             // 2: Product
+  PRK_SERIAL,                    // 3: Serial
+  "PRK CDC",                     // 4: CDC Interface
+  "PRK MSC",                     // 5: MSC Interface
+};
 
 // Invoked when received GET DEVICE DESCRIPTOR
-// Application return pointer to descriptor
-uint8_t const * tud_descriptor_device_cb(void)
+uint8_t const *
+tud_descriptor_device_cb(void)
 {
-  /* desc_device is defined in main.c */
   return (uint8_t const *)&desc_device;
 }
 
@@ -121,11 +160,8 @@ uint8_t const*
 tud_descriptor_configuration_cb(uint8_t index)
 {
   (void) index; // for multiple configurations
-
   return desc_fs_configuration;
 }
-
-static uint16_t _desc_str[32];
 
 // Invoked when received GET STRING DESCRIPTOR request
 // Application return pointer to descriptor, whose contents must exist long enough for transfer to complete
@@ -133,43 +169,28 @@ uint16_t const*
 tud_descriptor_string_cb(uint8_t index, uint16_t langid)
 {
   (void) langid;
-
+  static uint16_t _desc_str[32];
   uint8_t chr_count;
-
-  if ( index == 0)
-  {
+  if (index == 0) {
     memcpy(&_desc_str[1], string_desc_arr[0], 2);
     chr_count = 1;
-  }else
-  {
+  } else {
     // Note: the 0xEE index string is a Microsoft OS 1.0 Descriptors.
     // https://docs.microsoft.com/en-us/windows-hardware/drivers/usbcon/microsoft-defined-usb-descriptors
-
-    if ( !(index < STRING_DESC_ARR_SIZE) ) return NULL;
-
+    if (!(index < STRING_DESC_ARR_SIZE)) return NULL;
     const char* str = string_desc_arr[index];
-
     // Cap at max char
     chr_count = strlen(str);
-    if ( chr_count > 31 ) chr_count = 31;
-
+    if (chr_count > 31) chr_count = 31;
     // Convert ASCII string into UTF-16
-    for(uint8_t i=0; i<chr_count; i++)
-    {
-      _desc_str[1+i] = str[i];
+    for (uint8_t i = 0; i < chr_count; i++) {
+      _desc_str[1 + i] = str[i];
     }
   }
-
   // first byte is length (including header), second byte is string type
   _desc_str[0] = (TUSB_DESC_STRING << 8 ) | (2*chr_count + 2);
-
   return _desc_str;
 }
-
-const uint16_t string_desc_product[] = { // Index: 1
-  16 | (3 << 8),
-  'P', 'R', 'K', 'f', 'i', 'r', 'm'
-};
 
 uint8_t raw_hid_last_received_report[REPORT_RAW_MAX_LEN];
 uint8_t raw_hid_last_received_report_length;
@@ -184,7 +205,7 @@ tud_hid_descriptor_report_cb(uint8_t instance) {
       return desc_hid_report;
     }
     break;
-    
+
     case 1: {
       return desc_joystick_report;
     }
@@ -446,11 +467,77 @@ c_tud_mounted_q(mrb_vm *vm, mrb_value *v, int argc)
   }
 }
 
+//--------------------------------------------------------------------+
+// String Descriptors
+// Note: Tentative and dirty implementation until getting rid of VIA
+//--------------------------------------------------------------------+
+#include "../include/flash_disk.h"
+static void
+c_save_prk_conf(mrb_vm *vm, mrb_value *v, int argc)
+{
+  uint8_t buff[SECTOR_SIZE] = {0};
+  memcpy(buff, (const uint8_t *)GET_STRING_ARG(1), strlen((const uint8_t *)GET_STRING_ARG(1)) + 1);
+  uint32_t ints = save_and_disable_interrupts();
+  flash_range_erase(
+    (uint32_t)(FLASH_TARGET_OFFSET - SECTOR_SIZE),
+    (size_t)(SECTOR_SIZE)
+  );
+  flash_range_program(
+    (uint32_t)(FLASH_TARGET_OFFSET - SECTOR_SIZE),
+    (const uint8_t *)buff,
+    (size_t)(SECTOR_SIZE)
+  );
+  restore_interrupts(ints);
+  SET_INT_RETURN(0);
+}
+
+static void
+load_prk_conf(char *prk_conf)
+{
+  memcpy(
+    prk_conf,
+    (uint8_t*)(FLASH_MMAP_ADDR - SECTOR_SIZE),
+    32
+  );
+}
+
+static void
+c_prk_conf(mrb_vm *vm, mrb_value *v, int argc)
+{
+  char prk_conf[32];
+  load_prk_conf(prk_conf);
+  mrbc_value value = mrbc_string_new_cstr(vm, prk_conf);
+  SET_RETURN(value);
+}
+
+#include <stdlib.h>
 void
 prk_init_usb(void)
 {
+  char prk_conf[32];
+  load_prk_conf(prk_conf);
+  char *tok = strtok(prk_conf, ":");
+  for (int i = 0; i < 3; i++) {
+    if (tok == NULL) break;
+    switch (i) {
+      case 0:
+        desc_device.idVendor  = (uint16_t)strtol(tok, NULL, 16);
+        tok = strtok(NULL, ":");
+        break;
+      case 1:
+        desc_device.idProduct = (uint16_t)strtol(tok, NULL, 16);
+        tok = strtok(NULL, ": \t\n\r");
+        break;
+      case 2:
+        string_desc_arr[2] = (const char *)tok;
+        break;
+    }
+  }
+
   mrbc_class *mrbc_class_USB = mrbc_define_class(0, "USB", mrbc_class_object);
 
+  mrbc_define_method(0, mrbc_class_USB, "save_prk_conf", c_save_prk_conf);
+  mrbc_define_method(0, mrbc_class_USB, "prk_conf", c_prk_conf);
   mrbc_define_method(0, mrbc_class_USB, "tud_task", c_tud_task);
   mrbc_define_method(0, mrbc_class_USB, "tud_mounted?", c_tud_mounted_q);
   mrbc_define_method(0, mrbc_class_USB, "hid_task", c_hid_task);

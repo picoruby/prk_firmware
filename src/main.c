@@ -10,6 +10,8 @@
 #include "bsp/board.h"
 #include "hardware/clocks.h"
 
+#include "../include/version.h"
+
 /* mrbc_class */
 #include "../include/keyboard.h"
 #include "../include/gpio.h"
@@ -37,86 +39,6 @@ static uint8_t memory_pool[MEMORY_SIZE];
 
 /* extern in mruby-pico-compiler/include/debug.h */
 int loglevel = LOGLEVEL_WARN;
-
-//--------------------------------------------------------------------+
-// Device Descriptors
-//--------------------------------------------------------------------+
-tusb_desc_device_t desc_device =
-{
-  .bLength            = sizeof(tusb_desc_device_t),
-  .bDescriptorType    = TUSB_DESC_DEVICE,
-  .bcdUSB             = 0x0200,
-  // Use Interface Association Descriptor (IAD) for CDC
-  // As required by USB Specs IAD's subclass must be common class (2) and protocol must be IAD (1)
-  .bDeviceClass       = TUSB_CLASS_MISC,
-  .bDeviceSubClass    = MISC_SUBCLASS_COMMON,
-  .bDeviceProtocol    = MISC_PROTOCOL_IAD,
-  .bMaxPacketSize0    = CFG_TUD_ENDPOINT0_SIZE,
-  /*
-   * VID and PID from USB-IDs-for-free.txt
-   * https://github.com/obdev/v-usb/blob/releases/20121206/usbdrv/USB-IDs-for-free.txt#L128
-   */
-  .idVendor           = 0x16c0,
-  .idProduct          = 0x27db,
-  .bcdDevice          = 0x0100,
-  .iManufacturer      = 0x01,
-  .iProduct           = 0x02,
-  .iSerialNumber      = 0x03,
-  .bNumConfigurations = 0x01
-};
-
-//--------------------------------------------------------------------+
-// String Descriptors
-//--------------------------------------------------------------------+
-#include "../include/version.h"
-char const *string_desc_arr[STRING_DESC_ARR_SIZE] =
-{
-  (const char[]) { 0x09, 0x04 }, // 0: is supported language is English (0x0409)
-  "PRK Firmware developers",     // 1: Manufacturer
-  "Default VID/PID",             // 2: Product
-  PRK_SERIAL,                    // 3: Serial
-  "PRK CDC",                     // 4: CDC Interface
-  "PRK MSC",                     // 5: MSC Interface
-};
-/*
- * If you want users to use the VIA feature, provide the `prk-conf.txt`
- * file in order to VIA/Remap can determine the layout of the keyboard.
- * Format of the content `prk-conf.txt` (at the very top of the file):
- *   0x1234:0xABCD:productName
- *   ^^^^^^ ^^^^^^ ^^^^^^^^^^^
- *    VID    PID      Name
- *   - Length of productName should be less than or equal 32 bytes
- * and any other letter must not be included in the file.
- */
-#define PRK_CONF_MAX_LENGTH (7 + 7 + 33 + 2)
-static void
-configure_prk(void)
-{
-//  static char prk_conf[PRK_CONF_MAX_LENGTH] = {0};
-//  DirEnt entry;
-//  msc_findDirEnt("PRK-CONFTXT", &entry);
-//  if (entry.Name[0] != '\0') {
-//    if (entry.FileSize > PRK_CONF_MAX_LENGTH) return;
-//    msc_loadFile(prk_conf, &entry);
-//    char *tok = strtok(prk_conf, ":");
-//    for (int i = 0; i < 3; i++) {
-//      if (tok == NULL) break;
-//      switch (i) {
-//        case 0:
-//          desc_device.idVendor  = (uint16_t)strtol(tok, NULL, 16);
-//          tok = strtok(NULL, ":");
-//          break;
-//        case 1:
-//          desc_device.idProduct = (uint16_t)strtol(tok, NULL, 16);
-//          tok = strtok(NULL, ": \t\n\r");
-//          break;
-//        case 2:
-//          string_desc_arr[2] = (const char *)tok;
-//          break;
-//      }
-//    }
-//  }
-}
 
 /* class PicoRubyVM */
 
@@ -220,14 +142,14 @@ prk_init_picoruby(void)
 int
 main(void)
 {
-  configure_prk();
   /* RP2 */
   stdio_init_all();
   board_init();
-  tusb_init();
   /* PicoRuby */
   mrbc_init(memory_pool, MEMORY_SIZE);
   prk_init_picoruby();
+  /* TinyUSB */
+  tusb_init();
   /* Tasks */
   mrbc_create_task(usb_task, 0);
   tcb_rgb = mrbc_create_task(rgb_task, 0);
