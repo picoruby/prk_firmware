@@ -3,7 +3,7 @@
 #include "picoruby-prk-keyboard/include/prk-keyboard.h"
 
 #include "../include/usb_descriptors.h"
-#include "../include/msc_disk.h"
+#include "../include/keyboard.h"
 
 #define DATA_BITS          8
 #define SAMPLING_INTERVAL 10
