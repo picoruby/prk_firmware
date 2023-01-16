@@ -219,7 +219,8 @@ __not_in_flash_func(Keyboard_mutual_partner_get8_put24_blocking)(uint32_t data24
   return data;
 }
 
-static void c_autoreload_ready_q(mrb_vm *vm, mrb_value *v, int argc)
+static void
+c_autoreload_ready_q(mrb_vm *vm, mrb_value *v, int argc)
 {
   if (autoreload_state == AUTORELOAD_READY) {
     SET_TRUE_RETURN();
@@ -228,11 +229,18 @@ static void c_autoreload_ready_q(mrb_vm *vm, mrb_value *v, int argc)
   }
 }
 
+static void
+c_autoreload_off(mrb_vm *vm, mrb_value *v, int argc)
+{
+  autoreload_state = AUTORELOAD_WAIT;
+}
+
 void
 Keyboard_init_sub(mrbc_class *mrbc_class_Keyboard)
 {
   mrbc_define_method(0, mrbc_class_Keyboard, "uart_anchor", c_Keyboard_uart_anchor);
   mrbc_define_method(0, mrbc_class_Keyboard, "autoreload_ready?", c_autoreload_ready_q);
+  mrbc_define_method(0, mrbc_class_Keyboard, "autoreload_off", c_autoreload_off);
 #ifdef PRK_NO_MSC
   autoreload_state = AUTORELOAD_NONE;
 #else

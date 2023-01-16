@@ -275,9 +275,9 @@ prk_init_picoruby(void)
   mrbc_set_const(sym_id, &mrbc_integer_value(PICORBC_PTR_SIZE));
   sym_id = mrbc_str_to_symid("PRK_NO_MSC");
 #ifdef PRK_NO_MSC
-  mrbc_set_const(sym_id, &mrbc_false_value());
-#else
   mrbc_set_const(sym_id, &mrbc_true_value());
+#else
+  mrbc_set_const(sym_id, &mrbc_false_value());
 #endif
   mrbc_vm *vm = mrbc_vm_open(NULL);
   sym_id = mrbc_str_to_symid("PRK_DESCRIPTION");

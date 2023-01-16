@@ -1,10 +1,10 @@
 /* mruby/c VM */
 #include <mrubyc.h>
 
-#define FLASH_TARGET_OFFSET  0x00180000                       /* 1.5MB */
-#define FLASH_MMAP_ADDR      (XIP_BASE + FLASH_TARGET_OFFSET) /* 0x10180000 */
+#define FLASH_TARGET_OFFSET  0x00140000
+#define FLASH_MMAP_ADDR      (XIP_BASE + FLASH_TARGET_OFFSET)
 #define SECTOR_SIZE          4096
-#define SECTOR_COUNT         128   /* 4096 * 128 = 512KB */
+#define SECTOR_COUNT         192
 
 /*
  * Directory entry in FAT Volume
