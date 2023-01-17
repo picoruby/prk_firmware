@@ -26,8 +26,7 @@
 #include "../build/mrb/object-ext.c"
 /* tasks */
 #include "../build/mrb/usb_task.c"
-#include "picoruby-prk-rgb/include/prk-rgb.h"
-#include "picoruby-prk-rgb/task/rgb_task.c"
+
 #ifdef PRK_NO_MSC
 #include <keymap.c>
 #endif
@@ -43,12 +42,13 @@ int loglevel = LOGLEVEL_WARN;
 /* class PicoRubyVM */
 
 static void
-quick_print_alloc_stats()
+c_print_simple_alloc_stats(mrb_vm *vm, mrb_value *v, int argc)
 {
   struct MRBC_ALLOC_STATISTICS mem;
   mrbc_alloc_statistics(&mem);
   console_printf("\nSTATS %d/%d\n", mem.used, mem.total);
   tud_task();
+  SET_NIL_RETURN();
 }
 
 static void
@@ -133,6 +133,7 @@ prk_init_picoruby(void)
   /* class PicoRubyVM */
   mrbc_class *mrbc_class_PicoRubyVM = mrbc_define_class(0, "PicoRubyVM", mrbc_class_object);
   mrbc_define_method(0, mrbc_class_PicoRubyVM, "alloc_stats", c_alloc_stats);
+  mrbc_define_method(0, mrbc_class_PicoRubyVM, "print_simple_alloc_stats", c_print_simple_alloc_stats);
   /* GPIO */
   prk_init_gpio();
   /* class USB */
@@ -152,7 +153,6 @@ main(void)
   tusb_init();
   /* Tasks */
   mrbc_create_task(usb_task, 0);
-  tcb_rgb = mrbc_create_task(rgb_task, 0);
 #ifdef PRK_NO_MSC
   mrbc_create_task(keymap, 0);
 #endif
