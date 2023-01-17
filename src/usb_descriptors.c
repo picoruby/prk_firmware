@@ -35,11 +35,15 @@ tusb_desc_device_t desc_device =
 
 #define STRING_DESC_ARR_SIZE 6
 
+#define PRK_CONF_SIZE 64
+
+static char prk_conf_name[PRK_CONF_SIZE - 14]; // len("0x1111:0x1111:") == 14
+
 static char const *string_desc_arr[STRING_DESC_ARR_SIZE] =
 {
   (const char[]) { 0x09, 0x04 }, // 0: is supported language is English (0x0409)
   "PRK Firmware developers",     // 1: Manufacturer
-  "Default VID/PID",             // 2: Product
+  prk_conf_name,                 // 2: Product
   PRK_SERIAL,                    // 3: Serial
   "PRK CDC",                     // 4: CDC Interface
   "PRK MSC",                     // 5: MSC Interface
@@ -476,7 +480,7 @@ static void
 c_save_prk_conf(mrb_vm *vm, mrb_value *v, int argc)
 {
   uint8_t buff[SECTOR_SIZE] = {0};
-  memcpy(buff, (const uint8_t *)GET_STRING_ARG(1), strlen((const uint8_t *)GET_STRING_ARG(1)) + 1);
+  memcpy(buff, (const uint8_t *)GET_STRING_ARG(1), strlen((const uint8_t *)GET_STRING_ARG(1)));
   uint32_t ints = save_and_disable_interrupts();
   flash_range_erase(
     (uint32_t)(FLASH_TARGET_OFFSET - SECTOR_SIZE),
@@ -494,17 +498,13 @@ c_save_prk_conf(mrb_vm *vm, mrb_value *v, int argc)
 static void
 load_prk_conf(char *prk_conf)
 {
-  memcpy(
-    prk_conf,
-    (uint8_t*)(FLASH_MMAP_ADDR - SECTOR_SIZE),
-    32
-  );
+  memcpy(prk_conf, (uint8_t *)(FLASH_MMAP_ADDR - SECTOR_SIZE), PRK_CONF_SIZE);
 }
 
 static void
 c_prk_conf(mrb_vm *vm, mrb_value *v, int argc)
 {
-  char prk_conf[32];
+  char prk_conf[PRK_CONF_SIZE];
   load_prk_conf(prk_conf);
   mrbc_value value = mrbc_string_new_cstr(vm, prk_conf);
   SET_RETURN(value);
@@ -514,24 +514,21 @@ c_prk_conf(mrb_vm *vm, mrb_value *v, int argc)
 void
 prk_init_usb(void)
 {
-  char prk_conf[32];
+  strcpy(prk_conf_name, "Default VID/PID");
+  char prk_conf[PRK_CONF_SIZE] = {0};
   load_prk_conf(prk_conf);
-  char *tok = strtok(prk_conf, ":");
-  for (int i = 0; i < 3; i++) {
-    if (tok == NULL) break;
-    switch (i) {
-      case 0:
-        desc_device.idVendor  = (uint16_t)strtol(tok, NULL, 16);
-        tok = strtok(NULL, ":");
-        break;
-      case 1:
-        desc_device.idProduct = (uint16_t)strtol(tok, NULL, 16);
-        tok = strtok(NULL, ": \t\n\r");
-        break;
-      case 2:
-        string_desc_arr[2] = (const char *)tok;
-        break;
-    }
+  while (0 < strlen(prk_conf)) {
+    char *tok;
+    tok = strtok(prk_conf, ":");
+    if (!tok) break;
+    desc_device.idVendor = (uint16_t)strtol(tok, NULL, 16);
+    tok = strtok(NULL, ":");
+    if (!tok) break;
+    desc_device.idProduct = (uint16_t)strtol(tok, NULL, 16);
+    tok = strtok(NULL, ":");
+    if (!tok) break;
+    strcpy(prk_conf_name, tok);
+    break;
   }
 
   mrbc_class *mrbc_class_USB = mrbc_define_class(0, "USB", mrbc_class_object);
