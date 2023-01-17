@@ -42,7 +42,7 @@ int loglevel = LOGLEVEL_WARN;
 /* class PicoRubyVM */
 
 static void
-c_print_simple_alloc_stats(mrb_vm *vm, mrb_value *v, int argc)
+c_print_alloc_stats(mrb_vm *vm, mrb_value *v, int argc)
 {
   struct MRBC_ALLOC_STATISTICS mem;
   mrbc_alloc_statistics(&mem);
@@ -133,7 +133,7 @@ prk_init_picoruby(void)
   /* class PicoRubyVM */
   mrbc_class *mrbc_class_PicoRubyVM = mrbc_define_class(0, "PicoRubyVM", mrbc_class_object);
   mrbc_define_method(0, mrbc_class_PicoRubyVM, "alloc_stats", c_alloc_stats);
-  mrbc_define_method(0, mrbc_class_PicoRubyVM, "print_simple_alloc_stats", c_print_simple_alloc_stats);
+  mrbc_define_method(0, mrbc_class_PicoRubyVM, "print_alloc_stats", c_print_alloc_stats);
   /* GPIO */
   prk_init_gpio();
   /* class USB */
