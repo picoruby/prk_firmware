@@ -481,6 +481,15 @@ c_save_prk_conf(mrb_vm *vm, mrb_value *v, int argc)
 {
   uint8_t buff[SECTOR_SIZE] = {0};
   memcpy(buff, (const uint8_t *)GET_STRING_ARG(1), strlen((const uint8_t *)GET_STRING_ARG(1)));
+  if (strncmp((const char *)buff,
+              (const char *)(FLASH_MMAP_ADDR - SECTOR_SIZE),
+              PRK_CONF_SIZE) == 0)
+  {
+    SET_FALSE_RETURN();
+    /* Do nothing if no need to change */
+    return;
+  }
+
   uint32_t ints = save_and_disable_interrupts();
   flash_range_erase(
     (uint32_t)(FLASH_TARGET_OFFSET - SECTOR_SIZE),
@@ -492,7 +501,7 @@ c_save_prk_conf(mrb_vm *vm, mrb_value *v, int argc)
     (size_t)(SECTOR_SIZE)
   );
   restore_interrupts(ints);
-  SET_INT_RETURN(0);
+  SET_TRUE_RETURN();
 }
 
 static void
