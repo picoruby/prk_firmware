@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <hardware/flash.h>
 #include <hardware/sync.h>
 
 #include "../include/flash_disk.h"
