@@ -4,6 +4,14 @@ MRUBY_CONFIG = "prk_firmware-cortex-m0plus"
 
 task :default => :all
 
+task :setup do
+  sh "bundle install"
+  sh "git submodule update --init"
+  FileUtils.cd "lib/picoruby" do
+    sh "bundle install"
+  end
+end
+
 desc "build production"
 task :all => [:libmruby, :test, :cmake_production, :build]
 
@@ -162,5 +170,5 @@ task :release => :test do
   sh "git tag #{new_version}"
   sh "git push origin #{new_version}"
   Rake::Task['clean'].invoke
-  Rake::Task['skip_test'].invoke
+  Rake::Task['all'].invoke
 end
