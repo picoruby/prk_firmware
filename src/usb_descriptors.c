@@ -273,6 +273,15 @@ static uint32_t joystick_buttons = 0;
 static uint8_t joystick_hat = 0;
 static bool via_active = false;
 
+typedef struct mouse_values {
+  uint8_t buttons;
+  int8_t x;
+  int8_t y;
+  int8_t vertical;
+  int8_t horizontal;
+} MouseValues;
+static MouseValues mouse;
+
 static void
 send_hid_report()
 {
@@ -299,8 +308,14 @@ send_hid_report()
         break;
 
         case REPORT_ID_MOUSE: {
-          int8_t const delta = 0;
-          tud_hid_n_mouse_report(0, REPORT_ID_MOUSE, 0x00, delta, delta, 0, 0);
+          tud_hid_n_mouse_report(0, REPORT_ID_MOUSE,
+            mouse.buttons,
+            mouse.x,
+            mouse.y,
+            mouse.vertical,
+            mouse.horizontal
+          );
+          memset(&mouse, 0, sizeof(MouseValues));
         }
         break;
 
@@ -376,7 +391,21 @@ c_hid_task(mrb_vm *vm, mrb_value *v, int argc)
     joystick_hat     = (uint8_t)GET_INT_ARG(5);
     input_updated_bitmap |= 1<<REPORT_ID_GAMEPAD;
   }
-  
+
+  static bool mouse_zero_report = false;
+  if (mouse.x != 0 ||
+      mouse.y != 0 ||
+      0 < mouse.buttons ||
+      mouse.vertical != 0 ||
+      mouse.horizontal != 0)
+  {
+    input_updated_bitmap |= 1<<REPORT_ID_MOUSE;
+    mouse_zero_report = false;
+  } else if (!mouse_zero_report) {
+    input_updated_bitmap |= 1<<REPORT_ID_MOUSE;
+    mouse_zero_report = true;
+  }
+
   if (consumer_keycode != 0) {
     via_active = false;
   }
@@ -471,6 +500,17 @@ c_tud_mounted_q(mrb_vm *vm, mrb_value *v, int argc)
   }
 }
 
+static void
+c_merge_mouse_report(mrb_vm *vm, mrb_value *v, int argc)
+{
+  mouse.buttons |= GET_INT_ARG(1);
+  mouse.x += GET_INT_ARG(2);
+  mouse.y += GET_INT_ARG(3);
+  mouse.horizontal += GET_INT_ARG(4);
+  mouse.vertical += GET_INT_ARG(5);
+  SET_NIL_RETURN();
+}
+
 //--------------------------------------------------------------------+
 // String Descriptors
 // Note: Tentative and dirty implementation until getting rid of VIA
@@ -547,6 +587,9 @@ prk_init_usb(void)
   mrbc_define_method(0, mrbc_class_USB, "tud_task", c_tud_task);
   mrbc_define_method(0, mrbc_class_USB, "tud_mounted?", c_tud_mounted_q);
   mrbc_define_method(0, mrbc_class_USB, "hid_task", c_hid_task);
+
+  memset(&mouse, 0, sizeof(MouseValues));
+  mrbc_define_method(0, mrbc_class_USB, "merge_mouse_report", c_merge_mouse_report);
 
   /* for Caps lock etc. */
   mrbc_define_method(0, mrbc_class_USB, "stop_observing_output_report", c_stop_observing_output_report);
