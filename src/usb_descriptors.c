@@ -370,14 +370,19 @@ c_output_report(mrb_vm *vm, mrb_value *v, int argc) {
 static void
 c_hid_task(mrb_vm *vm, mrb_value *v, int argc)
 {
-  if( keyboard_modifier!=GET_INT_ARG(1) ) {
+  if(keyboard_modifier != GET_INT_ARG(1)) {
     keyboard_modifier = (uint8_t)GET_INT_ARG(1);
     input_updated_bitmap |= 1<<REPORT_ID_KEYBOARD;
   }
 
-  if( memcmp(keyboard_keycodes, GET_STRING_ARG(2), 6) ) {
+  if(memcmp(keyboard_keycodes, GET_STRING_ARG(2), 6)) {
     memcpy(keyboard_keycodes, GET_STRING_ARG(2), 6);
     input_updated_bitmap |= 1<<REPORT_ID_KEYBOARD;
+  }
+
+  if(consumer_keycode != GET_INT_ARG(3)) {
+    consumer_keycode = (uint16_t)GET_INT_ARG(3);
+    input_updated_bitmap |= 1<<REPORT_ID_CONSUMER_CONTROL;
   }
 
   static bool mouse_zero_report = false;
@@ -392,10 +397,6 @@ c_hid_task(mrb_vm *vm, mrb_value *v, int argc)
   } else if (!mouse_zero_report) {
     input_updated_bitmap |= 1<<REPORT_ID_MOUSE;
     mouse_zero_report = true;
-  }
-
-  if (consumer_keycode != 0) {
-    via_active = false;
   }
 
   if (tud_suspended()) {
@@ -497,15 +498,6 @@ c_merge_joystick_report(mrb_vm *vm, mrb_value *v, int argc)
   SET_NIL_RETURN();
 }
 
-static void
-c_merge_consumer_report(mrb_vm *vm, mrb_value *v, int argc)
-{
-  if(consumer_keycode != GET_INT_ARG(3)) {
-    consumer_keycode = (uint16_t)GET_INT_ARG(3);
-    input_updated_bitmap |= 1<<REPORT_ID_CONSUMER_CONTROL;
-  }
-  SET_NIL_RETURN();
-}
 
 static void
 c_merge_mouse_report(mrb_vm *vm, mrb_value *v, int argc)
@@ -596,7 +588,6 @@ prk_init_usb(void)
   mrbc_define_method(0, mrbc_class_USB, "hid_task", c_hid_task);
 
   mrbc_define_method(0, mrbc_class_USB, "merge_joystick_report", c_merge_joystick_report);
-  mrbc_define_method(0, mrbc_class_USB, "merge_consumer_report", c_merge_consumer_report);
   memset(&mouse, 0, sizeof(MouseValues));
   mrbc_define_method(0, mrbc_class_USB, "merge_mouse_report", c_merge_mouse_report);
 
