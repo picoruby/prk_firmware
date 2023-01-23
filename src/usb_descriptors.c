@@ -298,7 +298,7 @@ send_hid_report()
     return;
   }
 
-  for(uint8_t i=1;i<6;i++) {
+  for(uint8_t i = 1; i < 6; i++) {
     if(input_updated_bitmap & (1<<i) ) {
       switch(i)
       {
@@ -320,7 +320,7 @@ send_hid_report()
         break;
 
         case REPORT_ID_CONSUMER_CONTROL: {
-          if(! via_active) {
+          if(!via_active) {
             tud_hid_n_report(0, REPORT_ID_CONSUMER_CONTROL, &consumer_keycode, 2);
           }
         }
@@ -378,13 +378,6 @@ c_hid_task(mrb_vm *vm, mrb_value *v, int argc)
   if( memcmp(keyboard_keycodes, GET_STRING_ARG(2), 6) ) {
     memcpy(keyboard_keycodes, GET_STRING_ARG(2), 6);
     input_updated_bitmap |= 1<<REPORT_ID_KEYBOARD;
-  }
-
-  if( 1 ) {
-    // always call joystick_report_hid() to read ADC
-    joystick_buttons = (uint32_t)GET_INT_ARG(3);
-    joystick_hat     = (uint8_t)GET_INT_ARG(4);
-    input_updated_bitmap |= 1<<REPORT_ID_GAMEPAD;
   }
 
   static bool mouse_zero_report = false;
@@ -496,6 +489,15 @@ c_tud_mounted_q(mrb_vm *vm, mrb_value *v, int argc)
 }
 
 static void
+c_merge_joystick_report(mrb_vm *vm, mrb_value *v, int argc)
+{
+  joystick_buttons = (uint32_t)GET_INT_ARG(1);
+  joystick_hat     = (uint8_t)GET_INT_ARG(2);
+  input_updated_bitmap |= 1<<REPORT_ID_GAMEPAD;
+  SET_NIL_RETURN();
+}
+
+static void
 c_merge_consumer_report(mrb_vm *vm, mrb_value *v, int argc)
 {
   if(consumer_keycode != GET_INT_ARG(3)) {
@@ -593,8 +595,9 @@ prk_init_usb(void)
   mrbc_define_method(0, mrbc_class_USB, "tud_mounted?", c_tud_mounted_q);
   mrbc_define_method(0, mrbc_class_USB, "hid_task", c_hid_task);
 
-  memset(&mouse, 0, sizeof(MouseValues));
+  mrbc_define_method(0, mrbc_class_USB, "merge_joystick_report", c_merge_joystick_report);
   mrbc_define_method(0, mrbc_class_USB, "merge_consumer_report", c_merge_consumer_report);
+  memset(&mouse, 0, sizeof(MouseValues));
   mrbc_define_method(0, mrbc_class_USB, "merge_mouse_report", c_merge_mouse_report);
 
   /* for Caps lock etc. */
