@@ -14,7 +14,6 @@
 
 /* mrbc_class */
 #include "../include/keyboard.h"
-#include "../include/gpio.h"
 #include "../include/usb_descriptors.h"
 #include "../include/ws2812.h"
 #include "../include/rotary_encoder.h"
@@ -134,8 +133,6 @@ prk_init_picoruby(void)
   mrbc_class *mrbc_class_PicoRubyVM = mrbc_define_class(0, "PicoRubyVM", mrbc_class_object);
   mrbc_define_method(0, mrbc_class_PicoRubyVM, "alloc_stats", c_alloc_stats);
   mrbc_define_method(0, mrbc_class_PicoRubyVM, "print_alloc_stats", c_print_alloc_stats);
-  /* GPIO */
-  prk_init_gpio();
   /* class USB */
   prk_init_usb();
 }
