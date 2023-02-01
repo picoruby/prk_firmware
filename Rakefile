@@ -89,6 +89,7 @@ task :setup_test do
         FileUtils.ln_sf model, File.basename(model)
       end
     end
+    FileUtils.ln_sf "../../lib/picoruby/mrbgems/picoruby-gpio/mrblib/gpio.rb", "gpio.rb"
     FileUtils.ln_sf "../../lib/picoruby/mrbgems/picoruby-float-ext/mrblib/float.rb", "float.rb"
     FileUtils.ln_sf "../../lib/picoruby/mrbgems/picoruby-music-macro-language/mrblib/mml.rb", "mml.rb"
   end
