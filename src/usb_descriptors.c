@@ -375,8 +375,17 @@ c_hid_task(mrb_vm *vm, mrb_value *v, int argc)
     input_updated_bitmap |= 1<<REPORT_ID_KEYBOARD;
   }
 
-  if(memcmp(keyboard_keycodes, GET_STRING_ARG(2), 6)) {
-    memcpy(keyboard_keycodes, GET_STRING_ARG(2), 6);
+  mrbc_array keycodes = *(GET_ARY_ARG(2).array);
+  char keycodes_join[6];
+  for (int i = 0; i < 6; i++) {
+    if (i < keycodes.n_stored) {
+      keycodes_join[i] = mrbc_integer(keycodes.data[i]);
+    } else {
+      keycodes_join[i] = 0;
+    }
+  }
+  if(memcmp(keyboard_keycodes, keycodes_join, 6)) {
+    memcpy(keyboard_keycodes, keycodes_join, 6);
     input_updated_bitmap |= 1<<REPORT_ID_KEYBOARD;
   }
 
@@ -397,6 +406,10 @@ c_hid_task(mrb_vm *vm, mrb_value *v, int argc)
   } else if (!mouse_zero_report) {
     input_updated_bitmap |= 1<<REPORT_ID_MOUSE;
     mouse_zero_report = true;
+  }
+
+  if (consumer_keycode != 0) {
+    via_active = false;
   }
 
   if (tud_suspended()) {
