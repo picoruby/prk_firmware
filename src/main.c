@@ -70,6 +70,12 @@ c_alloc_stats(mrb_vm *vm, mrb_value *v, int argc)
 /* class Machine */
 
 static void
+c_sleep_us(mrb_vm *vm, mrb_value *v, int argc)
+{
+  sleep_us(GET_INT_ARG(1));
+}
+
+static void
 c_reset_usb_boot(mrb_vm *vm, mrb_value *v, int argc)
 {
   reset_usb_boot(0, 0);
@@ -125,6 +131,7 @@ prk_init_picoruby(void)
   picoruby_init_require();
   /* class Machine */
   mrbc_class *mrbc_class_Machine = mrbc_define_class(0, "Machine", mrbc_class_object);
+  mrbc_define_method(0, mrbc_class_Machine, "sleep_us", c_sleep_us);
   mrbc_define_method(0, mrbc_class_Machine, "reset_usb_boot", c_reset_usb_boot);
   mrbc_define_method(0, mrbc_class_Machine, "board_millis", c_board_millis);
   mrbc_define_method(0, mrbc_class_Machine, "srand", c_srand);
