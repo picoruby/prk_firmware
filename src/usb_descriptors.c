@@ -353,22 +353,22 @@ tud_hid_report_complete_cb(uint8_t instance, uint8_t const* report, uint8_t len)
 //--------------------------------------------------------------------+
 
 static void
-c_start_observing_output_report(mrb_vm *vm, mrb_value *v, int argc) {
+c_start_observing_output_report(mrbc_vm *vm, mrbc_value *v, int argc) {
   observing_output_report = true;
 }
 
 static void
-c_stop_observing_output_report(mrb_vm *vm, mrb_value *v, int argc) {
+c_stop_observing_output_report(mrbc_vm *vm, mrbc_value *v, int argc) {
   observing_output_report = false;
 }
 
 static void
-c_output_report(mrb_vm *vm, mrb_value *v, int argc) {
+c_output_report(mrbc_vm *vm, mrbc_value *v, int argc) {
   SET_INT_RETURN(keyboard_output_report);
 }
 
 static void
-c_hid_task(mrb_vm *vm, mrb_value *v, int argc)
+c_hid_task(mrbc_vm *vm, mrbc_value *v, int argc)
 {
   if(keyboard_modifier != GET_INT_ARG(1)) {
     keyboard_modifier = (uint8_t)GET_INT_ARG(1);
@@ -422,7 +422,7 @@ c_hid_task(mrb_vm *vm, mrb_value *v, int argc)
 }
 
 static void
-c_raw_hid_report_received_q(mrb_vm *vm, mrb_value *v, int argc) {
+c_raw_hid_report_received_q(mrbc_vm *vm, mrbc_value *v, int argc) {
   if(raw_hid_report_received) {
     SET_TRUE_RETURN();
   } else {
@@ -431,7 +431,7 @@ c_raw_hid_report_received_q(mrb_vm *vm, mrb_value *v, int argc) {
 }
 
 static void
-c_get_last_received_raw_hid_report(mrb_vm *vm, mrb_value *v, int argc) {
+c_get_last_received_raw_hid_report(mrbc_vm *vm, mrbc_value *v, int argc) {
   mrbc_value rb_val_array = mrbc_array_new(vm, REPORT_RAW_MAX_LEN);
   mrbc_array *rb_array = rb_val_array.array;
 
@@ -445,7 +445,7 @@ c_get_last_received_raw_hid_report(mrb_vm *vm, mrb_value *v, int argc) {
 }
 
 static void
-c_tud_task(mrb_vm *vm, mrb_value *v, int argc)
+c_tud_task(mrbc_vm *vm, mrbc_value *v, int argc)
 {
   tud_task();
 }
@@ -470,7 +470,7 @@ report_raw_hid(uint8_t* data, uint8_t len)
 }
 
 static void
-c_report_raw_hid(mrb_vm *vm, mrb_value *v, int argc) {
+c_report_raw_hid(mrbc_vm *vm, mrbc_value *v, int argc) {
   mrbc_array rb_ary = *( GET_ARY_ARG(1).array );
   uint8_t c_data[REPORT_RAW_MAX_LEN];
   uint8_t len = REPORT_RAW_MAX_LEN;
@@ -493,7 +493,7 @@ c_report_raw_hid(mrb_vm *vm, mrb_value *v, int argc) {
 }
 
 static void
-c_tud_mounted_q(mrb_vm *vm, mrb_value *v, int argc)
+c_tud_mounted_q(mrbc_vm *vm, mrbc_value *v, int argc)
 {
   if (tud_mounted()) {
     SET_TRUE_RETURN();
@@ -503,7 +503,7 @@ c_tud_mounted_q(mrb_vm *vm, mrb_value *v, int argc)
 }
 
 static void
-c_merge_joystick_report(mrb_vm *vm, mrb_value *v, int argc)
+c_merge_joystick_report(mrbc_vm *vm, mrbc_value *v, int argc)
 {
   joystick_buttons = (uint32_t)GET_INT_ARG(1);
   joystick_hat     = (uint8_t)GET_INT_ARG(2);
@@ -513,7 +513,7 @@ c_merge_joystick_report(mrb_vm *vm, mrb_value *v, int argc)
 
 
 static void
-c_merge_mouse_report(mrb_vm *vm, mrb_value *v, int argc)
+c_merge_mouse_report(mrbc_vm *vm, mrbc_value *v, int argc)
 {
   mouse.buttons |= GET_INT_ARG(1);
   mouse.x += GET_INT_ARG(2);
@@ -529,7 +529,7 @@ c_merge_mouse_report(mrb_vm *vm, mrb_value *v, int argc)
 //--------------------------------------------------------------------+
 #include "../include/flash_disk.h"
 static void
-c_save_prk_conf(mrb_vm *vm, mrb_value *v, int argc)
+c_save_prk_conf(mrbc_vm *vm, mrbc_value *v, int argc)
 {
   uint8_t buff[SECTOR_SIZE] = {0};
   memcpy(buff, (const uint8_t *)GET_STRING_ARG(1), strlen((const uint8_t *)GET_STRING_ARG(1)));
@@ -563,7 +563,7 @@ load_prk_conf(char *prk_conf)
 }
 
 static void
-c_prk_conf(mrb_vm *vm, mrb_value *v, int argc)
+c_prk_conf(mrbc_vm *vm, mrbc_value *v, int argc)
 {
   char prk_conf[PRK_CONF_SIZE];
   load_prk_conf(prk_conf);
@@ -573,7 +573,7 @@ c_prk_conf(mrb_vm *vm, mrb_value *v, int argc)
 
 #include <stdlib.h>
 void
-prk_init_usb(void)
+prk_init_USB(void)
 {
   strcpy(prk_conf_name, "Default VID/PID");
   char prk_conf[PRK_CONF_SIZE] = {0};
