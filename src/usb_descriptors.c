@@ -515,11 +515,11 @@ c_merge_joystick_report(mrbc_vm *vm, mrbc_value *v, int argc)
 static void
 c_merge_mouse_report(mrbc_vm *vm, mrbc_value *v, int argc)
 {
-  mouse.buttons |= GET_INT_ARG(1);
-  mouse.x += GET_INT_ARG(2);
-  mouse.y += GET_INT_ARG(3);
+  mouse.buttons    |= GET_INT_ARG(1);
+  mouse.x          += GET_INT_ARG(2);
+  mouse.y          += GET_INT_ARG(3);
   mouse.horizontal += GET_INT_ARG(4);
-  mouse.vertical += GET_INT_ARG(5);
+  mouse.vertical   += GET_INT_ARG(5);
   SET_NIL_RETURN();
 }
 
