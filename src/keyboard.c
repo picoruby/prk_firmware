@@ -35,7 +35,7 @@ Keyboard_uart_partner_init(uint32_t pin)
 }
 
 static void
-__not_in_flash_func(c_Keyboard_uart_anchor)(mrb_vm *vm, mrb_value *v, int argc)
+__not_in_flash_func(c_Keyboard_uart_anchor)(mrbc_vm *vm, mrbc_value *v, int argc)
 {
   uint8_t data = (uint8_t)GET_INT_ARG(1);
   uint8_t i;
@@ -220,7 +220,7 @@ __not_in_flash_func(Keyboard_mutual_partner_get8_put24_blocking)(uint32_t data24
 }
 
 static void
-c_autoreload_ready_q(mrb_vm *vm, mrb_value *v, int argc)
+c_autoreload_ready_q(mrbc_vm *vm, mrbc_value *v, int argc)
 {
   if (autoreload_state == AUTORELOAD_READY) {
     SET_TRUE_RETURN();
@@ -230,7 +230,7 @@ c_autoreload_ready_q(mrb_vm *vm, mrb_value *v, int argc)
 }
 
 static void
-c_autoreload_off(mrb_vm *vm, mrb_value *v, int argc)
+c_autoreload_off(mrbc_vm *vm, mrbc_value *v, int argc)
 {
   autoreload_state = AUTORELOAD_WAIT;
 }

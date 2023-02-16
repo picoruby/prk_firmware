@@ -273,6 +273,15 @@ static uint32_t joystick_buttons = 0;
 static uint8_t joystick_hat = 0;
 static bool via_active = false;
 
+typedef struct mouse_values {
+  uint8_t buttons;
+  int8_t x;
+  int8_t y;
+  int8_t vertical;
+  int8_t horizontal;
+} MouseValues;
+static MouseValues mouse;
+
 static void
 send_hid_report()
 {
@@ -289,7 +298,7 @@ send_hid_report()
     return;
   }
 
-  for(uint8_t i=1;i<6;i++) {
+  for(uint8_t i = 1; i < 6; i++) {
     if(input_updated_bitmap & (1<<i) ) {
       switch(i)
       {
@@ -299,13 +308,19 @@ send_hid_report()
         break;
 
         case REPORT_ID_MOUSE: {
-          int8_t const delta = 0;
-          tud_hid_n_mouse_report(0, REPORT_ID_MOUSE, 0x00, delta, delta, 0, 0);
+          tud_hid_n_mouse_report(0, REPORT_ID_MOUSE,
+            mouse.buttons,
+            mouse.x,
+            mouse.y,
+            mouse.vertical,
+            mouse.horizontal
+          );
+          memset(&mouse, 0, sizeof(MouseValues));
         }
         break;
 
         case REPORT_ID_CONSUMER_CONTROL: {
-          if(! via_active) {
+          if(!via_active) {
             tud_hid_n_report(0, REPORT_ID_CONSUMER_CONTROL, &consumer_keycode, 2);
           }
         }
@@ -338,45 +353,61 @@ tud_hid_report_complete_cb(uint8_t instance, uint8_t const* report, uint8_t len)
 //--------------------------------------------------------------------+
 
 static void
-c_start_observing_output_report(mrb_vm *vm, mrb_value *v, int argc) {
+c_start_observing_output_report(mrbc_vm *vm, mrbc_value *v, int argc) {
   observing_output_report = true;
 }
 
 static void
-c_stop_observing_output_report(mrb_vm *vm, mrb_value *v, int argc) {
+c_stop_observing_output_report(mrbc_vm *vm, mrbc_value *v, int argc) {
   observing_output_report = false;
 }
 
 static void
-c_output_report(mrb_vm *vm, mrb_value *v, int argc) {
+c_output_report(mrbc_vm *vm, mrbc_value *v, int argc) {
   SET_INT_RETURN(keyboard_output_report);
 }
 
 static void
-c_hid_task(mrb_vm *vm, mrb_value *v, int argc)
+c_hid_task(mrbc_vm *vm, mrbc_value *v, int argc)
 {
-  if( keyboard_modifier!=GET_INT_ARG(1) ) {
+  if(keyboard_modifier != GET_INT_ARG(1)) {
     keyboard_modifier = (uint8_t)GET_INT_ARG(1);
     input_updated_bitmap |= 1<<REPORT_ID_KEYBOARD;
   }
 
-  if( memcmp(keyboard_keycodes, GET_STRING_ARG(2), 6) ) {
-    memcpy(keyboard_keycodes, GET_STRING_ARG(2), 6);
+  mrbc_array keycodes = *(GET_ARY_ARG(2).array);
+  char keycodes_join[6];
+  for (int i = 0; i < 6; i++) {
+    if (i < keycodes.n_stored) {
+      keycodes_join[i] = mrbc_integer(keycodes.data[i]);
+    } else {
+      keycodes_join[i] = 0;
+    }
+  }
+  if(memcmp(keyboard_keycodes, keycodes_join, 6)) {
+    memcpy(keyboard_keycodes, keycodes_join, 6);
     input_updated_bitmap |= 1<<REPORT_ID_KEYBOARD;
   }
 
-  if( consumer_keycode!=GET_INT_ARG(3) ) {
+  if(consumer_keycode != GET_INT_ARG(3)) {
     consumer_keycode = (uint16_t)GET_INT_ARG(3);
     input_updated_bitmap |= 1<<REPORT_ID_CONSUMER_CONTROL;
   }
 
-  if( 1 ) {
-    // always call joystick_report_hid() to read ADC
-    joystick_buttons = (uint32_t)GET_INT_ARG(4);
-    joystick_hat     = (uint8_t)GET_INT_ARG(5);
-    input_updated_bitmap |= 1<<REPORT_ID_GAMEPAD;
+  static bool mouse_zero_report = false;
+  if (mouse.x != 0 ||
+      mouse.y != 0 ||
+      0 < mouse.buttons ||
+      mouse.vertical != 0 ||
+      mouse.horizontal != 0)
+  {
+    input_updated_bitmap |= 1<<REPORT_ID_MOUSE;
+    mouse_zero_report = false;
+  } else if (!mouse_zero_report) {
+    input_updated_bitmap |= 1<<REPORT_ID_MOUSE;
+    mouse_zero_report = true;
   }
-  
+
   if (consumer_keycode != 0) {
     via_active = false;
   }
@@ -391,7 +422,7 @@ c_hid_task(mrb_vm *vm, mrb_value *v, int argc)
 }
 
 static void
-c_raw_hid_report_received_q(mrb_vm *vm, mrb_value *v, int argc) {
+c_raw_hid_report_received_q(mrbc_vm *vm, mrbc_value *v, int argc) {
   if(raw_hid_report_received) {
     SET_TRUE_RETURN();
   } else {
@@ -400,7 +431,7 @@ c_raw_hid_report_received_q(mrb_vm *vm, mrb_value *v, int argc) {
 }
 
 static void
-c_get_last_received_raw_hid_report(mrb_vm *vm, mrb_value *v, int argc) {
+c_get_last_received_raw_hid_report(mrbc_vm *vm, mrbc_value *v, int argc) {
   mrbc_value rb_val_array = mrbc_array_new(vm, REPORT_RAW_MAX_LEN);
   mrbc_array *rb_array = rb_val_array.array;
 
@@ -414,7 +445,7 @@ c_get_last_received_raw_hid_report(mrb_vm *vm, mrb_value *v, int argc) {
 }
 
 static void
-c_tud_task(mrb_vm *vm, mrb_value *v, int argc)
+c_tud_task(mrbc_vm *vm, mrbc_value *v, int argc)
 {
   tud_task();
 }
@@ -439,7 +470,7 @@ report_raw_hid(uint8_t* data, uint8_t len)
 }
 
 static void
-c_report_raw_hid(mrb_vm *vm, mrb_value *v, int argc) {
+c_report_raw_hid(mrbc_vm *vm, mrbc_value *v, int argc) {
   mrbc_array rb_ary = *( GET_ARY_ARG(1).array );
   uint8_t c_data[REPORT_RAW_MAX_LEN];
   uint8_t len = REPORT_RAW_MAX_LEN;
@@ -462,7 +493,7 @@ c_report_raw_hid(mrb_vm *vm, mrb_value *v, int argc) {
 }
 
 static void
-c_tud_mounted_q(mrb_vm *vm, mrb_value *v, int argc)
+c_tud_mounted_q(mrbc_vm *vm, mrbc_value *v, int argc)
 {
   if (tud_mounted()) {
     SET_TRUE_RETURN();
@@ -471,13 +502,34 @@ c_tud_mounted_q(mrb_vm *vm, mrb_value *v, int argc)
   }
 }
 
+static void
+c_merge_joystick_report(mrbc_vm *vm, mrbc_value *v, int argc)
+{
+  joystick_buttons = (uint32_t)GET_INT_ARG(1);
+  joystick_hat     = (uint8_t)GET_INT_ARG(2);
+  input_updated_bitmap |= 1<<REPORT_ID_GAMEPAD;
+  SET_NIL_RETURN();
+}
+
+
+static void
+c_merge_mouse_report(mrbc_vm *vm, mrbc_value *v, int argc)
+{
+  mouse.buttons    |= GET_INT_ARG(1);
+  mouse.x          += GET_INT_ARG(2);
+  mouse.y          += GET_INT_ARG(3);
+  mouse.horizontal += GET_INT_ARG(4);
+  mouse.vertical   += GET_INT_ARG(5);
+  SET_NIL_RETURN();
+}
+
 //--------------------------------------------------------------------+
 // String Descriptors
 // Note: Tentative and dirty implementation until getting rid of VIA
 //--------------------------------------------------------------------+
 #include "../include/flash_disk.h"
 static void
-c_save_prk_conf(mrb_vm *vm, mrb_value *v, int argc)
+c_save_prk_conf(mrbc_vm *vm, mrbc_value *v, int argc)
 {
   uint8_t buff[SECTOR_SIZE] = {0};
   memcpy(buff, (const uint8_t *)GET_STRING_ARG(1), strlen((const uint8_t *)GET_STRING_ARG(1)));
@@ -511,7 +563,7 @@ load_prk_conf(char *prk_conf)
 }
 
 static void
-c_prk_conf(mrb_vm *vm, mrb_value *v, int argc)
+c_prk_conf(mrbc_vm *vm, mrbc_value *v, int argc)
 {
   char prk_conf[PRK_CONF_SIZE];
   load_prk_conf(prk_conf);
@@ -521,7 +573,7 @@ c_prk_conf(mrb_vm *vm, mrb_value *v, int argc)
 
 #include <stdlib.h>
 void
-prk_init_usb(void)
+prk_init_USB(void)
 {
   strcpy(prk_conf_name, "Default VID/PID");
   char prk_conf[PRK_CONF_SIZE] = {0};
@@ -547,6 +599,10 @@ prk_init_usb(void)
   mrbc_define_method(0, mrbc_class_USB, "tud_task", c_tud_task);
   mrbc_define_method(0, mrbc_class_USB, "tud_mounted?", c_tud_mounted_q);
   mrbc_define_method(0, mrbc_class_USB, "hid_task", c_hid_task);
+
+  mrbc_define_method(0, mrbc_class_USB, "merge_joystick_report", c_merge_joystick_report);
+  memset(&mouse, 0, sizeof(MouseValues));
+  mrbc_define_method(0, mrbc_class_USB, "merge_mouse_report", c_merge_mouse_report);
 
   /* for Caps lock etc. */
   mrbc_define_method(0, mrbc_class_USB, "stop_observing_output_report", c_stop_observing_output_report);

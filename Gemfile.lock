@@ -1,23 +1,23 @@
 GEM
   remote: https://rubygems.org/
   specs:
-    activesupport (7.0.4)
+    activesupport (7.0.4.2)
       concurrent-ruby (~> 1.0, >= 1.0.2)
       i18n (>= 1.6, < 2)
       minitest (>= 5.1)
       tzinfo (~> 2.0)
-    concurrent-ruby (1.1.10)
+    concurrent-ruby (1.2.0)
     i18n (1.12.0)
       concurrent-ruby (~> 1.0)
-    minitest (5.16.3)
+    minitest (5.17.0)
     mrubyc-test (0.9.1)
       activesupport (~> 7.0)
       rufo (~> 0.12)
       thor (~> 1.2)
     rake (13.0.6)
-    rufo (0.13.0)
+    rufo (0.14.0)
     thor (1.2.1)
-    tzinfo (2.0.5)
+    tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
 
 PLATFORMS

@@ -40,7 +40,12 @@ endif()
 pico_sdk_init()
 
 file(GLOB SRCS src/*.c)
-add_executable(${PROJECT_NAME} ${SRCS})
+add_executable(${PROJECT_NAME}
+  ${SRCS}
+  ${CMAKE_SOURCE_DIR}/lib/picoruby/mrbgems/picoruby-gpio/ports/rp2040/gpio.c
+  ${CMAKE_SOURCE_DIR}/lib/picoruby/mrbgems/picoruby-i2c/ports/rp2040/i2c.c
+  ${CMAKE_SOURCE_DIR}/lib/picoruby/mrbgems/picoruby-spi/ports/rp2040/spi.c
+)
 
 set(PICORBC ${CMAKE_SOURCE_DIR}/lib/picoruby/bin/picorbc)
 
@@ -122,6 +127,8 @@ target_link_libraries(${PROJECT_NAME}
   hardware_dma
   hardware_sync
   hardware_irq
+  hardware_i2c
+  hardware_spi
   mruby
 )
 
