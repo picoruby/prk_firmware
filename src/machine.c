@@ -1,6 +1,6 @@
 #include <mrubyc.h>
 
-#include <stdio.h>
+#include <stdlib.h>
 #include "pico/bootrom.h"
 #include "bsp/board.h"
 
