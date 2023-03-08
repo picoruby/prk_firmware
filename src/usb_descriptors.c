@@ -527,7 +527,7 @@ c_merge_mouse_report(mrbc_vm *vm, mrbc_value *v, int argc)
 // String Descriptors
 // Note: Tentative and dirty implementation until getting rid of VIA
 //--------------------------------------------------------------------+
-#include "../include/flash_disk.h"
+#include "../include/msc_disk.h"
 static void
 c_save_prk_conf(mrbc_vm *vm, mrbc_value *v, int argc)
 {

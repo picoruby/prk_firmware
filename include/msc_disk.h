@@ -1,9 +1,7 @@
-#ifndef FLASH_DISK_DEFINED_H_
-#define FLASH_DISK_DEFINED_H_
+#ifndef MSC_DISK_DEFINED_H_
+#define MSC_DISK_DEFINED_H_
 
 #include <hardware/flash.h>
-#include <ff.h>
-#include <diskio.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,15 +18,9 @@ extern "C" {
 #define SECTOR_SIZE          4096 /* == FLASH_SECTOR_SIZE */
 #define SECTOR_COUNT         192  /* Seems FatFS allows 192 as the minimum */
 
-int FLASH_disk_initialize(void);
-int FLASH_disk_status(void);
-int FLASH_disk_read(BYTE *buff, LBA_t sector, UINT count);
-int FLASH_disk_write(const BYTE *buff, LBA_t sector, UINT count);
-DRESULT FLASH_disk_ioctl(BYTE cmd, void *buff);
-
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* FLASH_DISK_DEFINED_H_ */
+#endif /* MSC_DISK_DEFINED_H_ */
 

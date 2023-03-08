@@ -30,7 +30,7 @@
 #include "tusb.h"
 
 #include "../include/keyboard.h"
-#include "../include/flash_disk.h"
+#include "../include/msc_disk.h"
 #include <mrubyc.h>
 
 // whether host does safe-eject
