@@ -1,4 +1,3 @@
-#include "../tinyusb/tusb_config.h"
 #include "tusb.h"
 
 #include <mrubyc.h>

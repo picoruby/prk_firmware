@@ -23,6 +23,7 @@
  *
  */
 
+#include <stdlib.h>
 #include "hardware/flash.h"
 #include "hardware/sync.h"
 #include "bsp/board.h"
@@ -32,6 +33,12 @@
 #include "../include/keyboard.h"
 #include "../include/msc_disk.h"
 #include <mrubyc.h>
+
+int FLASH_disk_read(void *buff, int32_t sector, int count);
+int FLASH_disk_write(const void *buff, int32_t sector, int count);
+
+#define DISK_READ(buff, sector, count)    FLASH_disk_read(buff, sector, count)
+#define DISK_WRITE(buff, sector, count)   FLASH_disk_write(buff, sector, count)
 
 // whether host does safe-eject
 static bool ejected = false;
@@ -112,8 +119,21 @@ tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buffer, uint
   (void) lun;
   // out of ramdisk
   if ( lba >= SECTOR_COUNT ) return -1;
-  memcpy(buffer, (void *)(FLASH_MMAP_ADDR + lba * SECTOR_SIZE + offset), bufsize);
-  return bufsize;
+
+  /*
+   * In order to avoid (0 < offset) and (bufsize != SECTOR_SIZE),
+   * CFG_TUD_MSC_EP_BUFSIZE has to be equal to SECTOR_SIZE.
+   */
+  if (0 < offset || bufsize != SECTOR_SIZE) {
+    console_printf("Failed in tud_msc_read10_cb()\n");
+    console_printf("offset: %d, bufsize: %d\n", offset, bufsize);
+    tud_task();
+    abort();
+  }
+
+  //memcpy(buffer, (void *)(FLASH_MMAP_ADDR + lba * SECTOR_SIZE), SECTOR_SIZE);
+  DISK_READ(buffer, lba, 1);
+  return SECTOR_SIZE;
 }
 
 bool
@@ -131,21 +151,26 @@ tud_msc_is_writable_cb (uint8_t lun)
 // Process data in buffer to disk's storage and return number of written bytes
 int32_t
 tud_msc_write10_cb(uint8_t lun, uint32_t lba, uint32_t offset, uint8_t* buffer, uint32_t bufsize)
-/*
- * TODO: Cache coherency problem can be avoided if bufsize == SECTOR_SIZE(4094)
- */
 {
   (void) lun;
   // out of ramdisk
   if ( lba >= SECTOR_COUNT ) return -1;
-  uint32_t ints = save_and_disable_interrupts();
-  if (offset == 0) {
-    flash_range_erase(FLASH_TARGET_OFFSET + lba * SECTOR_SIZE, SECTOR_SIZE);
+
+  /*
+   * In order to avoid (0 < offset) and (bufsize != SECTOR_SIZE),
+   * CFG_TUD_MSC_EP_BUFSIZE has to be equal to SECTOR_SIZE.
+   */
+  if (0 < offset || bufsize != SECTOR_SIZE) {
+    console_printf("Failed in tud_msc_write10_cb()\n");
+    console_printf("offset: %d, bufsize: %d\n", offset, bufsize);
+    tud_task();
+    abort();
   }
-  flash_range_program(FLASH_TARGET_OFFSET + lba * SECTOR_SIZE + offset, buffer, bufsize);
-  restore_interrupts(ints);
-  return bufsize;
+
+  DISK_WRITE(buffer, lba, 1);
+  return SECTOR_SIZE;
 }
+
 
 // Callback invoked when received an SCSI command not in built-in list below
 // - READ_CAPACITY10, READ_FORMAT_CAPACITY, INQUIRY, MODE_SENSE6, REQUEST_SENSE

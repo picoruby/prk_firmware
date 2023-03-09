@@ -105,7 +105,7 @@
 
 // It is normaly 512, but we use 4096 to avoid cache coherency problem
 // on writing flash
-#define CFG_TUD_MSC_EP_BUFSIZE    512
+#define CFG_TUD_MSC_EP_BUFSIZE    4096
 
 // CDC FIFO size of TX and RX
 #define CFG_TUD_CDC_RX_BUFSIZE   (TUD_OPT_HIGH_SPEED ? 512 : 64)
