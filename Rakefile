@@ -1,6 +1,7 @@
 require "fileutils"
 
 MRUBY_CONFIG = "prk_firmware-cortex-m0plus"
+PICO_SDK_TAG = "1.5.0"
 
 task :default => :all
 
@@ -48,8 +49,28 @@ task :cmake_production do
   sh "#{mruby_config} cmake -B build"
 end
 
+task :check_pico_sdk => :check_pico_sdk_path do
+  FileUtils.cd ENV["PICO_SDK_PATH"] do
+    unless `git status --branch`.split("\n")[0].end_with?(PICO_SDK_TAG)
+      raise <<~MSG
+        pico-sdk #{PICO_SDK_TAG} is not checked out!\n
+        Tips for dealing with:\n
+        cd $PICO_SDK_PATH && git pull && git checkout #{PICO_SDK_TAG} && git submodule update --recursive\n
+      MSG
+    end
+  end
+end
+
+task :check_pico_sdk_path do
+  unless ENV["PICO_SDK_PATH"]
+    raise <<~MSG
+      Environment variable `PICO_SDK_PATH` does not exist!
+    MSG
+  end
+end
+
 desc "build without cmake preparation"
-task :build do
+task :build => :check_pico_sdk do
   sh "cmake --build build"
 end
 

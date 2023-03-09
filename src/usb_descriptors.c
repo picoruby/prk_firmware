@@ -339,7 +339,7 @@ send_hid_report()
 }
 
 void
-tud_hid_report_complete_cb(uint8_t instance, uint8_t const* report, uint8_t len)
+tud_hid_report_complete_cb(uint8_t instance, uint8_t const* report, uint16_t len)
 {
   (void) instance;
   (void) len;
