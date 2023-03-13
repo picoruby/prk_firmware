@@ -60,7 +60,7 @@ tud_descriptor_device_cb(void)
 // Configuration Descriptor
 //--------------------------------------------------------------------+
 
-#ifdef PRK_NO_MSC
+#ifdef PICORUBY_NO_MSC
 #define CONFIG_TOTAL_LEN    (TUD_CONFIG_DESC_LEN + TUD_CDC_DESC_LEN + TUD_HID_INOUT_DESC_LEN + TUD_HID_DESC_LEN)
 #else
 #define CONFIG_TOTAL_LEN    (TUD_CONFIG_DESC_LEN + TUD_CDC_DESC_LEN + TUD_MSC_DESC_LEN + TUD_HID_INOUT_DESC_LEN + TUD_HID_DESC_LEN)
@@ -131,7 +131,7 @@ enum
   ITF_NUM_CDC_DATA,
   ITF_NUM_HID,
   ITF_NUM_JOYSTICK,
-#ifndef PRK_NO_MSC
+#ifndef PICORUBY_NO_MSC
   ITF_NUM_MSC,
 #endif
   ITF_NUM_TOTAL
@@ -145,7 +145,7 @@ uint8_t const desc_fs_configuration[] =
   // Interface number, string index, EP notification address and size, EP data address (out, in) and size.
   TUD_CDC_DESCRIPTOR(ITF_NUM_CDC, 4, EPNUM_CDC_NOTIF, 8, EPNUM_CDC_OUT, EPNUM_CDC_IN, 64),
 
-#ifndef PRK_NO_MSC
+#ifndef PICORUBY_NO_MSC
   // Interface number, string index, EP Out & EP In address, EP size
   TUD_MSC_DESCRIPTOR(ITF_NUM_MSC, 5, EPNUM_MSC_OUT, EPNUM_MSC_IN, 64),
 #endif

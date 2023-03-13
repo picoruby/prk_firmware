@@ -26,7 +26,7 @@ end
 task :libmruby_no_msc => "lib/picoruby" do
   FileUtils.cd "lib/picoruby" do
     sh "rake test"
-    sh "CFLAGS='-DPRK_NO_MSC=1' MRUBY_CONFIG=#{MRUBY_CONFIG} rake"
+    sh "CFLAGS='-DPICORUBY_NO_MSC=1' MRUBY_CONFIG=#{MRUBY_CONFIG} rake"
   end
 end
 
@@ -81,8 +81,8 @@ task :build_with_keymap, ['keyboard_name'] => [:libmruby_no_msc, :test] do |_t, 
   end
   dir = "keyboards/#{args.keyboard_name}"
   FileUtils.mkdir_p "#{dir}/build"
-  #sh "cmake -DPRK_NO_MSC=1 -DCMAKE_BUILD_TYPE=Debug -B #{dir}/build"
-  sh "#{mruby_config} cmake -DPRK_NO_MSC=1 -B #{dir}/build"
+  #sh "cmake -DPICORUBY_NO_MSC=1 -DCMAKE_BUILD_TYPE=Debug -B #{dir}/build"
+  sh "#{mruby_config} cmake -DPICORUBY_NO_MSC=1 -B #{dir}/build"
   sh "cmake --build #{dir}/build"
 end
 
@@ -100,7 +100,7 @@ task :test => %i(mrubyc_test)
 
 desc "run unit test for ruby program"
 task :mrubyc_test => :setup_test do
-  sh %q(CFLAGS=-DMAX_SYMBOLS_COUNT=1000 MRUBYCFILE=test/Mrubycfile bundle exec mrubyc-test)
+  sh %q(MRUBYCFILE=test/Mrubycfile bundle exec mrubyc-test)
 end
 
 task :setup_test do

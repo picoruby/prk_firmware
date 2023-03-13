@@ -10,13 +10,15 @@ add_definitions(
   -DMRBC_REQUIRE_32BIT_ALIGNMENT
   -DMAX_REGS_SIZE=256
   -DMAX_VM_COUNT=255
-  -DMAX_SYMBOLS_COUNT=1000
+  -DMAX_SYMBOLS_COUNT=2000
   -DMRBC_CONVERT_CRLF
   -DMRBC_USE_MATH
   -DPICORBC_PTR_SIZE=4
 )
-if(PRK_NO_MSC)
-  add_definitions(-DPRK_NO_MSC)
+if(PICORUBY_NO_MSC)
+  add_definitions(-DPICORUBY_NO_MSC)
+else()
+  add_definitions(-DPICORUBY_MSC_FLASH)
 endif()
 
 #####################################################
@@ -30,7 +32,7 @@ set (PRK_BUILDDATE ${CMAKE_BUILDDATE})
 set (PRK_REVISION  ${CMAKE_REVISION})
 configure_file ("${CMAKE_SOURCE_DIR}/include/version.h.in" "${CMAKE_SOURCE_DIR}/include/version.h")
 
-if(PRK_NO_MSC)
+if(PICORUBY_NO_MSC)
   project("prk_firmware-${PRK_VERSION}-${PRK_BUILDDATE}-no_msc")
 else()
   project("prk_firmware-${PRK_VERSION}-${PRK_BUILDDATE}-${PRK_REVISION}")
@@ -43,6 +45,7 @@ file(GLOB SRCS src/*.c)
 add_executable(${PROJECT_NAME}
   ${SRCS}
   ${CMAKE_SOURCE_DIR}/lib/picoruby/mrbgems/picoruby-filesystem-fat/ports/rp2040/flash_disk.c
+  ${CMAKE_SOURCE_DIR}/lib/picoruby/mrbgems/picoruby-filesystem-fat/ports/rp2040/msc_disk.c
   ${CMAKE_SOURCE_DIR}/lib/picoruby/mrbgems/picoruby-gpio/ports/rp2040/gpio.c
   ${CMAKE_SOURCE_DIR}/lib/picoruby/mrbgems/picoruby-i2c/ports/rp2040/i2c.c
   ${CMAKE_SOURCE_DIR}/lib/picoruby/mrbgems/picoruby-spi/ports/rp2040/spi.c
@@ -59,7 +62,7 @@ set(RBC ${CMAKE_CURRENT_SOURCE_DIR}/lib/picoruby/bin/picorbc)
 
 # Ruby
 
-if(PRK_NO_MSC)
+if(PICORUBY_NO_MSC)
   add_custom_target(keymap
     COMMAND ${RBC} -Bkeymap -o ./keymap.c ../keymap.rb
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
@@ -96,7 +99,7 @@ add_dependencies(${PROJECT_NAME}
   ${RUBY_TASK_FILES}
 )
 
-if(PRK_NO_MSC)
+if(PICORUBY_NO_MSC)
   add_dependencies(${PROJECT_NAME}
     keymap
   )

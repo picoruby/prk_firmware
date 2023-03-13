@@ -1,9 +1,7 @@
 class KeyboardTest < MrubycTestCase
   # TODO: improve mock functionality of mrubyc-test
   def define_mocks
-    kbd = Keyboard.new
-    mock(kbd).gpio_init(1)
-    mock(kbd).gpio_set_dir(2)
+   # mock(GPIO)._init(1)
   end
   def setup
     @kbd = Keyboard.new

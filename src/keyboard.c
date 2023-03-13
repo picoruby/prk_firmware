@@ -241,7 +241,7 @@ Keyboard_init_sub(mrbc_class *mrbc_class_Keyboard)
   mrbc_define_method(0, mrbc_class_Keyboard, "uart_anchor", c_Keyboard_uart_anchor);
   mrbc_define_method(0, mrbc_class_Keyboard, "autoreload_ready?", c_autoreload_ready_q);
   mrbc_define_method(0, mrbc_class_Keyboard, "autoreload_off", c_autoreload_off);
-#ifdef PRK_NO_MSC
+#ifdef PICORUBY_NO_MSC
   autoreload_state = AUTORELOAD_NONE;
 #else
   autoreload_state = AUTORELOAD_READY;

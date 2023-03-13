@@ -27,7 +27,7 @@
 /* tasks */
 #include "../build/mrb/usb_task.c"
 
-#ifdef PRK_NO_MSC
+#ifdef PICORUBY_NO_MSC
 #include <keymap.c>
 #endif
 
@@ -41,13 +41,20 @@ int loglevel = LOGLEVEL_WARN;
 
 int autoreload_state; /* from keyboard.h */
 
-#ifndef PRK_NO_MSC
+#ifndef PICORUBY_NO_MSC
 
 #ifndef NODE_BOX_SIZE
 #define NODE_BOX_SIZE 50
 #endif
 
-#endif /* PRK_NO_MSC */
+void
+tud_msc_write10_complete_cb(uint8_t lun)
+{
+  (void)lun;
+  autoreload_state = AUTORELOAD_READY;
+}
+
+#endif /* PICORUBY_NO_MSC */
 
 static void
 prk_init_picoruby(void)
@@ -55,8 +62,8 @@ prk_init_picoruby(void)
   /* CONST */
   mrbc_sym sym_id = mrbc_str_to_symid("SIZEOF_POINTER");
   mrbc_set_const(sym_id, &mrbc_integer_value(PICORBC_PTR_SIZE));
-  sym_id = mrbc_str_to_symid("PRK_NO_MSC");
-#ifdef PRK_NO_MSC
+  sym_id = mrbc_str_to_symid("PICORUBY_NO_MSC");
+#ifdef PICORUBY_NO_MSC
   mrbc_set_const(sym_id, &mrbc_true_value());
 #else
   mrbc_set_const(sym_id, &mrbc_false_value());
@@ -87,7 +94,7 @@ main(void)
   tusb_init();
   /* Tasks */
   mrbc_create_task(usb_task, 0);
-#ifdef PRK_NO_MSC
+#ifdef PICORUBY_NO_MSC
   mrbc_create_task(keymap, 0);
 #endif
   mrbc_run();
