@@ -20,6 +20,7 @@
 #include "../include/rotary_encoder.h"
 #include "../include/joystick.h"
 #include "../include/sounder.h"
+#include "../include/tcode_table.h"
 
 /* ruby */
 /* ext */
@@ -79,6 +80,7 @@ prk_init_picoruby(void)
   prk_init_Machine();
   prk_init_PicoRubyVM();
   prk_init_USB();
+  prk_init_TcodeTable();
 }
 
 int
