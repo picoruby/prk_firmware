@@ -4,4 +4,3 @@
 void prk_init_TcodeTable(void);
 
 #endif /* TCODE_TABLE_H_ */
-
