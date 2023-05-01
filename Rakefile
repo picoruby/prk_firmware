@@ -51,7 +51,7 @@ end
 
 task :check_pico_sdk => :check_pico_sdk_path do
   FileUtils.cd ENV["PICO_SDK_PATH"] do
-    unless `git status --branch`.split("\n")[0].end_with?(PICO_SDK_TAG)
+    unless `git describe --tags`.strip.end_with?(PICO_SDK_TAG)
       raise <<~MSG
         pico-sdk #{PICO_SDK_TAG} is not checked out!\n
         Tips for dealing with:\n
