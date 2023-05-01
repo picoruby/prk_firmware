@@ -14,6 +14,7 @@ add_definitions(
   -DMRBC_CONVERT_CRLF
   -DMRBC_USE_MATH
   -DPICORBC_PTR_SIZE=4
+  -DNO_CLOCK_GETTIME=1
 )
 if(PICORUBY_NO_MSC)
   add_definitions(-DPICORUBY_NO_MSC)
