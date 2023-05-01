@@ -19,6 +19,6 @@ jobs:
     #- name: Setup tmate session
     #  uses: mxschmitt/action-tmate@v3
     - name: mrubyc-test
-      run: CFLAGS=-DMAX_SYMBOLS_COUNT=1000 MRUBYCFILE=test/Mrubycfile bundle exec mrubyc-test
+      run: MRUBYCFILE=test/Mrubycfile bundle exec mrubyc-test
       working-directory: .
 
