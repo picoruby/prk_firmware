@@ -31,8 +31,11 @@
 #include <keymap.c>
 #endif
 
-
-#define MEMORY_SIZE (1024*200)
+#if defined(PICORUBY_SQLITE3)
+  #define MEMORY_SIZE (1024*190)
+#else
+  #define MEMORY_SIZE (1024*200)
+#endif
 
 static uint8_t memory_pool[MEMORY_SIZE];
 
