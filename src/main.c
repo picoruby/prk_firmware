@@ -32,9 +32,9 @@
 #endif
 
 #if defined(PICORUBY_SQLITE3)
-  #define MEMORY_SIZE (1024*190)
+  #define MEMORY_SIZE (1024*203)
 #else
-  #define MEMORY_SIZE (1024*200)
+  #define MEMORY_SIZE (1024*207)
 #endif
 
 static uint8_t memory_pool[MEMORY_SIZE];
@@ -57,21 +57,26 @@ tud_msc_write10_complete_cb(uint8_t lun)
   autoreload_state = AUTORELOAD_READY;
 }
 
-#endif /* PICORUBY_NO_MSC */
+#endif /* !PICORUBY_NO_MSC */
 
 static void
 prk_init_picoruby(void)
 {
+  mrbc_vm *vm = mrbc_vm_open(NULL);
   /* CONST */
   mrbc_sym sym_id = mrbc_str_to_symid("SIZEOF_POINTER");
   mrbc_set_const(sym_id, &mrbc_integer_value(PICORBC_PTR_SIZE));
-  sym_id = mrbc_str_to_symid("PICORUBY_NO_MSC");
-#ifdef PICORUBY_NO_MSC
-  mrbc_set_const(sym_id, &mrbc_true_value());
-#else
-  mrbc_set_const(sym_id, &mrbc_false_value());
+  sym_id = mrbc_str_to_symid("PICORUBY_MSC");
+  mrbc_value picoruby_msc = mrbc_string_new_cstr(vm,
+#if defined(PICORUBY_NO_MSC)
+    "NO_MSC"
+#elif defined(PICORUBY_MSC_FLASH)
+    "MSC_FLASH"
+#elif defined(PICORUBY_MSC_SD)
+    "MSC_SD"
 #endif
-  mrbc_vm *vm = mrbc_vm_open(NULL);
+  );
+  mrbc_set_const(sym_id, &picoruby_msc);
   sym_id = mrbc_str_to_symid("PRK_DESCRIPTION");
   mrbc_value prk_desc = mrbc_string_new_cstr(vm, PRK_DESCRIPTION);
   mrbc_set_const(sym_id, &prk_desc);

@@ -44,6 +44,7 @@ desc "build production with SQLite3 and SD card"
 task :sqlite3 do
   ENV['PICORUBY_SQLITE3'] = '1'
   ENV['PICORUBY_SD_CARD'] = '1'
+  ENV['PICORUBY_MSC_SD'] = '1'
   Rake::Task[:all].invoke
 end
 

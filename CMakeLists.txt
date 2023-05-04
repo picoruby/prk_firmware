@@ -12,7 +12,7 @@ add_definitions(
   -DMRBC_REQUIRE_32BIT_ALIGNMENT
   -DMAX_REGS_SIZE=256
   -DMAX_VM_COUNT=255
-  -DMAX_SYMBOLS_COUNT=2000
+  -DMAX_SYMBOLS_COUNT=1800
   -DMRBC_CONVERT_CRLF
   -DMRBC_USE_MATH
   -DPICORBC_PTR_SIZE=4
@@ -28,17 +28,22 @@ set (PRK_REVISION  ${CMAKE_REVISION})
 configure_file ("${CMAKE_SOURCE_DIR}/include/version.h.in" "${CMAKE_SOURCE_DIR}/include/version.h")
 
 if(DEFINED ENV{PICORUBY_NO_MSC})
+  set (MSC_NAME NO_MSC)
   add_definitions(-DPICORUBY_NO_MSC)
-  project("prk_firmware-no_msc-${PRK_VERSION}-${PRK_BUILDDATE}-${PRK_REVISION}")
+elseif(DEFINED ENV{PICORUBY_MSC_SD})
+  set (MSC_NAME MSC_SD)
+  add_definitions(-DPICORUBY_MSC_SD)
 else()
+  set (MSC_NAME MSC_FLASH)
   add_definitions(-DPICORUBY_MSC_FLASH)
-  if(DEFINED ENV{PICORUBY_SQLITE3})
-    add_definitions(-DPICORUBY_SQLITE3)
-    project("prk_firmware-sqlite3-${PRK_VERSION}-${PRK_BUILDDATE}-${PRK_REVISION}")
-  else()
-    project("prk_firmware-${PRK_VERSION}-${PRK_BUILDDATE}-${PRK_REVISION}")
-  endif()
 endif()
+
+if(DEFINED ENV{PICORUBY_SQLITE3})
+  set (MSC_NAME ${MSC_NAME}-SQLITE3)
+  add_definitions(-DPICORUBY_SQLITE3)
+endif()
+
+project("prk_firmware-${MSC_NAME}-${PRK_VERSION}-${PRK_BUILDDATE}-${PRK_REVISION}")
 
 # Initializing the Raspberry Pi Pico SDK should happen after project created
 pico_sdk_init()
