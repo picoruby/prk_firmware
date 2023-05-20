@@ -28,6 +28,18 @@ class MidiTest < MrubycTestCase
     assert_equal [[MIDI::NOTE_OFF_EVENT || 0, 0, 76]], @midi.instance_variable_get("@buffer")
   end
 
+  description "sustain on"
+  def sustain_on_case
+    @midi.send_sustain(1)
+    assert_equal [[MIDI::CONTROL_CHANGE_EVENT || 0, 0x7f]], @midi.instance_variable_get("@buffer")
+  end
+
+  description "sustain off"
+  def sustain_off_case
+    @midi.send_sustain(0)
+    assert_equal [[MIDI::CONTROL_CHANGE_EVENT || 0, 0]], @midi.instance_variable_get("@buffer")
+  end
+
   description "task_when_chord_mode_on_with_major"
   def convert_chord_pattern_with_major_case
     assert_equal [0, 4, 7], @midi.convert_chord_pattern(0)
