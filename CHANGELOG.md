@@ -1,5 +1,46 @@
 # Change log
 
+## 0.9.21 on 2023/05/23
+
+### [Experimental] Mouse 🐭🖱🖲️ with I2C, SPI, and ADC
+- Now you can configure any device such as a trackball, touchpad, and joystick as a Mouse by taking advantage of hardware peripheral features like I2C, SPI, and ADC
+- Currently, a Mouse instance on the partner half of a split-type keyboard does not work. We are investigating how to implement
+- Because this Mouse feature is experimental, the API design may change during the implementation to make it work on both halves
+- Take a good look at [wiki/Mouse](https://github.com/picoruby/prk_firmware/wiki/Mouse)
+
+### The mass storage drive is re-implemented with File class of PicoRuby
+- The name of the drive is changed from `PRKFirmware` to `PRK DRIVE`
+- `keymap.rb` is no longer deleted on re-installing PRK's uf2
+- This re-implementation basically should not affect any other keyboard behaviors
+
+#### Known issue
+- Although the drive's functionality is sanity, the host computer sometimes recognizes the drive name as `USB Drive` instead of `PRK DRIVE`. Send us a patch if you could fix it!
+
+## 0.9.20 on 2022/12/04
+
+### Bug fix 💡
+- The instability when start-up especially upgrading uf2 is fixed
+
+### Deprecation
+- Hardware one-way UART on split-type is deprecated. Instead, software mutual UART is now the default and the only option
+  - `Keyboard#mutual_uart_at_my_own_risk=` no longer takes any effect
+
+## 0.9.19 on 2022/12/26
+
+### Bug fix🐛
+- An issue that PRK isn't recognized by macOS and iOS from version 0.9.15
+
+### Improvement 🔈
+- Sounder pitch might become correct than before but the author experiences somehow unstable behavior until now. Please ping us your opinion from an actual usage
+
+### What's Changed
+* Update package database on Docker by @buty4649 in https://github.com/picoruby/prk_firmware/pull/145
+* Fix build process by @hasumikin in https://github.com/picoruby/prk_firmware/pull/151
+* Get rid of cdc_task() by @hasumikin in https://github.com/picoruby/prk_firmware/pull/146
+* Take out Joystick report by @yswallow in https://github.com/picoruby/prk_firmware/pull/152
+* Fix Sounder pitch issue by @yswallow in https://github.com/picoruby/prk_firmware/pull/153
+* Fix: invalid key input when modifier press by @hasumikin in https://github.com/picoruby/prk_firmware/pull/154
+
 ## 0.9.18 on 2022/09/17
 
 ### RGB Matrix🌈
