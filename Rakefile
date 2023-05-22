@@ -1,9 +1,9 @@
 require "fileutils"
 
-MRUBY_CONFIG = "prk_firmware-cortex-m0plus"
+ENV['MRUBY_CONFIG'] = "prk_firmware-cortex-m0plus"
 PICO_SDK_TAG = "1.5.0"
 
-task :default => :all
+task :default => :production
 
 task :setup do
   sh "bundle install"
@@ -13,40 +13,54 @@ task :setup do
   end
 end
 
-desc "build production"
-task :all => [:libmruby, :test, :cmake_production, :build]
+task :all => [:libmruby, :test, :cmake, :build]
+
 
 desc "build debug (you may need to rake clean before this)"
-task :debug => [:libmruby, :test, :cmake_debug, :build]
+task :debug do
+  ENV['PICORUBY_DEBUG'] = '1'
+  ENV['-DCMAKE_BUILD_TYPE'] = 'Debug'
+  Rake::Task[:all].invoke
+end
+
+desc "build production"
+task :production do
+  Rake::Task[:all].invoke
+end
+
+desc "build PRK Firmware inclusive of keymap.rb (without mass storage)"
+task :build_with_keymap, ['keyboard_name'] do |_t, args|
+  unless args.keyboard_name
+    raise "Argument `keyboard_name` missing.\nUsage: rake build_with_keymap[prk_meishi2]"
+  end
+  dir = "keyboards/#{args.keyboard_name}"
+  FileUtils.mkdir_p "#{dir}/build"
+  ENV['PICORUBY_NO_MSC'] = '1'
+  ENV['PRK_BUILD_DIR'] = "#{dir}/"
+  Rake::Task[:all].invoke
+end
+
+desc "build production with SQLite3 and SD card"
+task :sqlite3 do
+  ENV['PICORUBY_SQLITE3'] = '1'
+  ENV['PICORUBY_SD_CARD'] = '1'
+  ENV['PICORUBY_MSC_SD'] = '1'
+  Rake::Task[:all].invoke
+end
 
 file "lib/picoruby" do
   sh "git submodule update --init --recursive"
 end
 
-task :libmruby_no_msc => "lib/picoruby" do
-  FileUtils.cd "lib/picoruby" do
-    sh "rake test"
-    sh "CFLAGS='-DPICORUBY_NO_MSC=1' MRUBY_CONFIG=#{MRUBY_CONFIG} rake"
-  end
-end
-
 task :libmruby => "lib/picoruby" do
   FileUtils.cd "lib/picoruby" do
     sh "rake test"
-    sh "MRUBY_CONFIG=#{MRUBY_CONFIG} rake"
+    sh "rake"
   end
 end
 
-def mruby_config
-  "MRUBY_CONFIG=#{MRUBY_CONFIG}"
-end
-
-task :cmake_debug do
-  sh "#{mruby_config} cmake -DCMAKE_BUILD_TYPE=Debug -B build"
-end
-
-task :cmake_production do
-  sh "#{mruby_config} cmake -B build"
+task :cmake do
+  sh "cmake -B #{ENV['PRK_BUILD_DIR']}build"
 end
 
 task :check_pico_sdk => :check_pico_sdk_path do
@@ -71,19 +85,7 @@ end
 
 desc "build without cmake preparation"
 task :build => :check_pico_sdk do
-  sh "cmake --build build"
-end
-
-desc "build PRK Firmware inclusive of keymap.rb (without mass storage)"
-task :build_with_keymap, ['keyboard_name'] => [:libmruby_no_msc, :test] do |_t, args|
-  unless args.keyboard_name
-    raise "Argument `keyboard_name` missing.\nUsage: rake build_with_keymap[prk_meishi2]"
-  end
-  dir = "keyboards/#{args.keyboard_name}"
-  FileUtils.mkdir_p "#{dir}/build"
-  #sh "cmake -DPICORUBY_NO_MSC=1 -DCMAKE_BUILD_TYPE=Debug -B #{dir}/build"
-  sh "#{mruby_config} cmake -DPICORUBY_NO_MSC=1 -B #{dir}/build"
-  sh "cmake --build #{dir}/build"
+  sh "cmake --build #{ENV['PRK_BUILD_DIR']}build"
 end
 
 desc "clean built that includes keymap"
@@ -119,7 +121,7 @@ end
 desc "clean built"
 task :clean do
   FileUtils.cd "lib/picoruby" do
-    sh "MRUBY_CONFIG=#{MRUBY_CONFIG} rake clean"
+    sh "rake clean"
   end
   FileUtils.cd "build" do
     FileUtils.rm_rf Dir.glob("prk_firmware-*.*")
@@ -134,7 +136,7 @@ end
 desc "deep clean built"
 task :deep_clean do
   FileUtils.cd "lib/picoruby" do
-    sh "MRUBY_CONFIG=#{MRUBY_CONFIG} rake deep_clean"
+    sh "rake deep_clean"
   end
   FileUtils.cd "build" do
     FileUtils.rm_rf Dir.glob("*")

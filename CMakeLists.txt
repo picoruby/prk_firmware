@@ -4,26 +4,20 @@ cmake_minimum_required(VERSION 3.24)
 # note: this must happen before project()
 include(pico_sdk_import.cmake)
 
+#####################################################
+# project specific configuration from here
+
 add_definitions(
-  -DNDEBUG
   -DMRBC_USE_HAL_RP2040
   -DMRBC_REQUIRE_32BIT_ALIGNMENT
   -DMAX_REGS_SIZE=256
   -DMAX_VM_COUNT=255
-  -DMAX_SYMBOLS_COUNT=2000
+  -DMAX_SYMBOLS_COUNT=1800
   -DMRBC_CONVERT_CRLF
   -DMRBC_USE_MATH
   -DPICORBC_PTR_SIZE=4
   -DNO_CLOCK_GETTIME=1
 )
-if(PICORUBY_NO_MSC)
-  add_definitions(-DPICORUBY_NO_MSC)
-else()
-  add_definitions(-DPICORUBY_MSC_FLASH)
-endif()
-
-#####################################################
-# project specific configuration from here
 
 execute_process (COMMAND date +%Y%m%d OUTPUT_VARIABLE CMAKE_BUILDDATE OUTPUT_STRIP_TRAILING_WHITESPACE)
 execute_process (COMMAND git rev-parse --short HEAD OUTPUT_VARIABLE CMAKE_REVISION OUTPUT_STRIP_TRAILING_WHITESPACE)
@@ -33,11 +27,23 @@ set (PRK_BUILDDATE ${CMAKE_BUILDDATE})
 set (PRK_REVISION  ${CMAKE_REVISION})
 configure_file ("${CMAKE_SOURCE_DIR}/include/version.h.in" "${CMAKE_SOURCE_DIR}/include/version.h")
 
-if(PICORUBY_NO_MSC)
-  project("prk_firmware-${PRK_VERSION}-${PRK_BUILDDATE}-no_msc")
+if(DEFINED ENV{PICORUBY_NO_MSC})
+  set (MSC_NAME NO_MSC)
+  add_definitions(-DPICORUBY_NO_MSC)
+elseif(DEFINED ENV{PICORUBY_MSC_SD})
+  set (MSC_NAME MSC_SD)
+  add_definitions(-DPICORUBY_MSC_SD)
 else()
-  project("prk_firmware-${PRK_VERSION}-${PRK_BUILDDATE}-${PRK_REVISION}")
+  set (MSC_NAME MSC_FLASH)
+  add_definitions(-DPICORUBY_MSC_FLASH)
 endif()
+
+if(DEFINED ENV{PICORUBY_SQLITE3})
+  set (MSC_NAME ${MSC_NAME}-SQLITE3)
+  add_definitions(-DPICORUBY_SQLITE3)
+endif()
+
+project("prk_firmware-${MSC_NAME}-${PRK_VERSION}-${PRK_BUILDDATE}-${PRK_REVISION}")
 
 # Initializing the Raspberry Pi Pico SDK should happen after project created
 pico_sdk_init()
@@ -46,6 +52,7 @@ file(GLOB SRCS src/*.c)
 add_executable(${PROJECT_NAME}
   ${SRCS}
   ${CMAKE_SOURCE_DIR}/lib/picoruby/mrbgems/picoruby-filesystem-fat/ports/rp2040/flash_disk.c
+  ${CMAKE_SOURCE_DIR}/lib/picoruby/mrbgems/picoruby-filesystem-fat/ports/rp2040/sd_disk.c
   ${CMAKE_SOURCE_DIR}/lib/picoruby/mrbgems/picoruby-filesystem-fat/ports/rp2040/msc_disk.c
   ${CMAKE_SOURCE_DIR}/lib/picoruby/mrbgems/picoruby-gpio/ports/rp2040/gpio.c
   ${CMAKE_SOURCE_DIR}/lib/picoruby/mrbgems/picoruby-i2c/ports/rp2040/i2c.c
@@ -63,7 +70,10 @@ set(RBC ${CMAKE_CURRENT_SOURCE_DIR}/lib/picoruby/bin/picorbc)
 
 # Ruby
 
-if(PICORUBY_NO_MSC)
+if(DEFINED ENV{PICORUBY_NO_MSC})
+  add_dependencies(${PROJECT_NAME}
+    keymap
+  )
   add_custom_target(keymap
     COMMAND ${RBC} -Bkeymap -o ./keymap.c ../keymap.rb
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
@@ -99,12 +109,6 @@ add_dependencies(${PROJECT_NAME}
   mrbdir
   ${RUBY_TASK_FILES}
 )
-
-if(PICORUBY_NO_MSC)
-  add_dependencies(${PROJECT_NAME}
-    keymap
-  )
-endif()
 
 target_include_directories(${PROJECT_NAME} PRIVATE
   ${CMAKE_SOURCE_DIR}/tinyusb
