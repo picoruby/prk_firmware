@@ -95,7 +95,11 @@
 
 //------------- CLASS -------------//
 #define CFG_TUD_CDC               1
-#define CFG_TUD_MSC               1
+#if defined(PICORUBY_NO_MSC)
+  #define CFG_TUD_MSC               0
+#else
+  #define CFG_TUD_MSC               1
+#endif
 #define CFG_TUD_HID               2
 #define CFG_TUD_MIDI              0
 #define CFG_TUD_VENDOR            0
@@ -108,7 +112,9 @@
 #elif defined(PICORUBY_MSC_SD)
   #define CFG_TUD_MSC_EP_BUFSIZE    512
 #else
-  #error PICORUBY_MSC_devicename must be defined
+  #if !defined(PICORUBY_NO_MSC)
+    #error PICORUBY_MSC_FLASH or PICORUBY_MSC_SD must be defined
+  #endif
 #endif
 
 // CDC FIFO size of TX and RX
