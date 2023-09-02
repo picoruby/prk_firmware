@@ -15,6 +15,7 @@ add_definitions(
   -DMAX_SYMBOLS_COUNT=1800
   -DMRBC_CONVERT_CRLF
   -DMRBC_USE_MATH
+  -DMRBC_USE_FLOAT=2
   -DPICORBC_PTR_SIZE=4
   -DNO_CLOCK_GETTIME=1
 )
@@ -58,6 +59,7 @@ add_executable(${PROJECT_NAME}
   ${CMAKE_SOURCE_DIR}/lib/picoruby/mrbgems/picoruby-i2c/ports/rp2040/i2c.c
   ${CMAKE_SOURCE_DIR}/lib/picoruby/mrbgems/picoruby-spi/ports/rp2040/spi.c
   ${CMAKE_SOURCE_DIR}/lib/picoruby/mrbgems/picoruby-adc/ports/rp2040/adc.c
+  ${CMAKE_SOURCE_DIR}/lib/picoruby/mrbgems/picoruby-adns5050/ports/rp2040/adns5050.c
 )
 
 set(PICORBC ${CMAKE_SOURCE_DIR}/lib/picoruby/bin/picorbc)
