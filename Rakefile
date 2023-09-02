@@ -1,7 +1,7 @@
 require "fileutils"
 
 ENV['MRUBY_CONFIG'] = "prk_firmware-cortex-m0plus"
-PICO_SDK_TAG = "1.5.0"
+PICO_SDK_TAG = "1.5.1"
 
 task :default => :production
 
