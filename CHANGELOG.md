@@ -1,5 +1,10 @@
 # Change log
 
+## 0.9.22 on 2023/09/04
+
+### Software (Bitbang) SPI
+- Supported software SPI to run cocot46plus. See [picoruby/prk_cocot46plus](https://github.com/picoruby/prk_cocot46plus)
+
 ## 0.9.21 on 2023/05/23
 
 ### [Experimental] Mouse 🐭🖱🖲️ with I2C, SPI, and ADC
