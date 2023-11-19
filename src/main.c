@@ -22,6 +22,7 @@
 #include "../include/sounder.h"
 
 /* ruby */
+#include "../include/io_rp2040.h"
 /* ext */
 #include "../build/mrb/object-ext.c"
 /* tasks */
@@ -97,6 +98,7 @@ main(void)
   board_init();
   /* PicoRuby */
   mrbc_init(memory_pool, MEMORY_SIZE);
+  mrbc_io_rp2040_init();
   prk_init_picoruby();
   /* TinyUSB */
   tusb_init();
