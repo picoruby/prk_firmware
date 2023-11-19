@@ -1,5 +1,10 @@
 # Change log
 
+## 0.9.23 on 2023/11/19
+
+### require
+- It is now possible to load external libraries by `require` and `load`. See [wiki/require](https://github.com/picoruby/prk_firmware/wiki/require)
+
 ## 0.9.22 on 2023/09/04
 
 ### Software (Bitbang) SPI
