@@ -8,7 +8,6 @@ include(pico_sdk_import.cmake)
 # project specific configuration from here
 
 add_definitions(
-  -DMRBC_USE_HAL_RP2040
   -DMRBC_REQUIRE_32BIT_ALIGNMENT
   -DMAX_REGS_SIZE=256
   -DMAX_VM_COUNT=255
@@ -59,6 +58,7 @@ add_executable(${PROJECT_NAME}
   ${CMAKE_SOURCE_DIR}/lib/picoruby/mrbgems/picoruby-i2c/ports/rp2040/i2c.c
   ${CMAKE_SOURCE_DIR}/lib/picoruby/mrbgems/picoruby-spi/ports/rp2040/spi.c
   ${CMAKE_SOURCE_DIR}/lib/picoruby/mrbgems/picoruby-adc/ports/rp2040/adc.c
+  ${CMAKE_SOURCE_DIR}/lib/picoruby/mrbgems/picoruby-io-console/ports/rp2040/io-console.c
 )
 
 set(PICORBC ${CMAKE_SOURCE_DIR}/lib/picoruby/bin/picorbc)
