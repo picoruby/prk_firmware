@@ -33,7 +33,7 @@ tusb_desc_device_t desc_device =
   .bNumConfigurations = 0x01
 };
 
-#define STRING_DESC_ARR_SIZE 6
+#define STRING_DESC_ARR_SIZE 7
 
 #define PRK_CONF_SIZE 64
 
@@ -47,6 +47,7 @@ static char const *string_desc_arr[STRING_DESC_ARR_SIZE] =
   PRK_SERIAL,                    // 3: Serial
   "PRK CDC",                     // 4: CDC Interface
   "PRK MSC",                     // 5: MSC Interface
+  "PRK MIDI",                    // 6: MIDI Interface
 };
 
 // Invoked when received GET DEVICE DESCRIPTOR
@@ -61,9 +62,9 @@ tud_descriptor_device_cb(void)
 //--------------------------------------------------------------------+
 
 #ifdef PICORUBY_NO_MSC
-#define CONFIG_TOTAL_LEN    (TUD_CONFIG_DESC_LEN + TUD_CDC_DESC_LEN + TUD_HID_INOUT_DESC_LEN + TUD_HID_DESC_LEN)
+#define CONFIG_TOTAL_LEN    (TUD_CONFIG_DESC_LEN + TUD_CDC_DESC_LEN + TUD_HID_INOUT_DESC_LEN + TUD_HID_DESC_LEN + TUD_MIDI_DESC_LEN)
 #else
-#define CONFIG_TOTAL_LEN    (TUD_CONFIG_DESC_LEN + TUD_CDC_DESC_LEN + TUD_MSC_DESC_LEN + TUD_HID_INOUT_DESC_LEN + TUD_HID_DESC_LEN)
+#define CONFIG_TOTAL_LEN    (TUD_CONFIG_DESC_LEN + TUD_CDC_DESC_LEN + TUD_MSC_DESC_LEN + TUD_HID_INOUT_DESC_LEN + TUD_HID_DESC_LEN + TUD_MIDI_DESC_LEN)
 #endif
 
 #if CFG_TUSB_MCU == OPT_MCU_LPC175X_6X || CFG_TUSB_MCU == OPT_MCU_LPC177X_8X || CFG_TUSB_MCU == OPT_MCU_LPC40XX
@@ -112,6 +113,9 @@ tud_descriptor_device_cb(void)
 #define EPNUM_HID_IN   0x84
 #define EPNUM_JOYSTICK_IN 0x85
 
+#define EPNUM_MIDI_OUT  0x06
+#define EPNUM_MIDI_IN   0x86
+
 uint8_t const desc_hid_report[] =
 {
   TUD_HID_REPORT_DESC_KEYBOARD( HID_REPORT_ID(REPORT_ID_KEYBOARD         )),
@@ -131,6 +135,8 @@ enum
   ITF_NUM_CDC_DATA,
   ITF_NUM_HID,
   ITF_NUM_JOYSTICK,
+  ITF_NUM_MIDI,
+  ITF_NUM_MIDI_STREAMING,
 #ifndef PICORUBY_NO_MSC
   ITF_NUM_MSC,
 #endif
@@ -144,6 +150,9 @@ uint8_t const desc_fs_configuration[] =
 
   // Interface number, string index, EP notification address and size, EP data address (out, in) and size.
   TUD_CDC_DESCRIPTOR(ITF_NUM_CDC, 4, EPNUM_CDC_NOTIF, 8, EPNUM_CDC_OUT, EPNUM_CDC_IN, 64),
+
+  // Interface number, string index, EP Out & EP In address, EP size
+  TUD_MIDI_DESCRIPTOR(ITF_NUM_MIDI, 6, EPNUM_MIDI_OUT, EPNUM_MIDI_IN, 64),
 
 #ifndef PICORUBY_NO_MSC
   // Interface number, string index, EP Out & EP In address, EP size
