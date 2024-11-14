@@ -1,5 +1,25 @@
 # Change log
 
+## 0.10.0 on 2024/11/17
+
+Almost one year has passed since the last release. We have been working on improving the PRK Firmware!
+
+### Breaking Change 💣
+- No breaking change in this release
+
+### New Feature 🎉
+- On startup, if you connect a terminal emulator to com port, you can skip starting the keyboard task by pressing `s` according to the message on the terminal
+  - This feature is useful when your `keymap.rb` breaks and hangs up the keyboard
+  - Note that `s` key should be sent from the other keyboard that is working fine. This means you have to have multiple keyboards⌨⌨⌨⌨
+
+### Improvement 🔈
+- Replace PicoRuby with a totally new one:
+  - The Ruby parser is now Prism!
+  - Many bugs are fixed in the virtual machine and libraries
+  - Stability should be improved a lot🤞
+
+Please report if you find any bugs!
+
 ## 0.9.23 on 2023/11/19
 
 ### require

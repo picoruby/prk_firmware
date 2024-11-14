@@ -1,5 +1,4 @@
 /* PicoRuby */
-#include <picorbc.h>
 #include <picogem_init.c>
 
 /* Raspi SDK */
@@ -32,15 +31,12 @@
 #endif
 
 #if defined(PICORUBY_SQLITE3)
-  #define MEMORY_SIZE (1024*203)
+  #define MEMORY_SIZE (1024*190)
 #else
-  #define MEMORY_SIZE (1024*207)
+  #define MEMORY_SIZE (1024*200)
 #endif
 
 static uint8_t memory_pool[MEMORY_SIZE];
-
-/* extern in mruby-pico-compiler/include/debug.h */
-int loglevel = LOGLEVEL_WARN;
 
 int autoreload_state; /* from keyboard.h */
 
@@ -83,9 +79,8 @@ prk_init_picoruby(void)
   mrbc_raw_free(vm);
   /* class Object */
   picoruby_load_model(object_ext);
-  picoruby_init_require();
+  picoruby_init_require(vm);
   prk_init_Machine();
-  prk_init_PicoRubyVM();
   prk_init_USB();
 }
 

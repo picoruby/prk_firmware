@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.24)
 # initialize the SDK based on PICO_SDK_PATH
 # note: this must happen before project()
 include(pico_sdk_import.cmake)
+include(pico_extras_import.cmake)
 
 #####################################################
 # project specific configuration from here
@@ -48,6 +49,14 @@ project("prk_firmware-${MSC_NAME}-${PRK_VERSION}-${PRK_BUILDDATE}-${PRK_REVISION
 # Initializing the Raspberry Pi Pico SDK should happen after project created
 pico_sdk_init()
 
+add_compile_options(-Wall
+  # int != int32_t as far as the compiler is concerned because gcc has int32_t as long int
+  -Wno-format
+  -Wno-unused-function
+  -Wno-maybe-uninitialized
+  -fshort-enums
+)
+
 file(GLOB SRCS src/*.c)
 add_executable(${PROJECT_NAME}
   ${SRCS}
@@ -58,7 +67,13 @@ add_executable(${PROJECT_NAME}
   ${CMAKE_SOURCE_DIR}/lib/picoruby/mrbgems/picoruby-i2c/ports/rp2040/i2c.c
   ${CMAKE_SOURCE_DIR}/lib/picoruby/mrbgems/picoruby-spi/ports/rp2040/spi.c
   ${CMAKE_SOURCE_DIR}/lib/picoruby/mrbgems/picoruby-adc/ports/rp2040/adc.c
+  ${CMAKE_SOURCE_DIR}/lib/picoruby/mrbgems/picoruby-uart/ports/rp2040/uart.c
+  ${CMAKE_SOURCE_DIR}/lib/picoruby/mrbgems/picoruby-pwm/ports/rp2040/pwm.c
+  ${CMAKE_SOURCE_DIR}/lib/picoruby/mrbgems/picoruby-machine/ports/rp2040/machine.c
   ${CMAKE_SOURCE_DIR}/lib/picoruby/mrbgems/picoruby-io-console/ports/rp2040/io-console.c
+  ${CMAKE_SOURCE_DIR}/lib/picoruby/mrbgems/picoruby-watchdog/ports/rp2040/watchdog.c
+  ${CMAKE_SOURCE_DIR}/lib/picoruby/mrbgems/picoruby-rng/ports/rp2040/rng.c
+  ${CMAKE_SOURCE_DIR}/lib/picoruby/mrbgems/picoruby-env/ports/rp2040/env.c
 )
 
 set(PICORBC ${CMAKE_SOURCE_DIR}/lib/picoruby/bin/picorbc)
@@ -114,11 +129,11 @@ add_dependencies(${PROJECT_NAME}
 target_include_directories(${PROJECT_NAME} PRIVATE
   ${CMAKE_SOURCE_DIR}/tinyusb
   ${CMAKE_SOURCE_DIR}/lib/picoruby/include/hal_no_impl
-  ${CMAKE_SOURCE_DIR}/lib/picoruby/mrbgems/picoruby-mrubyc/repos/mrubyc/src
+  ${CMAKE_SOURCE_DIR}/lib/picoruby/mrbgems/picoruby-mrubyc/lib/mrubyc/src
   ${CMAKE_SOURCE_DIR}/lib/picoruby/mrbgems/picoruby-filesystem-fat/lib/ff14b/source
   ${CMAKE_SOURCE_DIR}/lib/picoruby/build/$ENV{MRUBY_CONFIG}/mrbgems
-  ${CMAKE_SOURCE_DIR}/lib/picoruby/build/repos/$ENV{MRUBY_CONFIG}/mruby-pico-compiler/include
   ${CMAKE_SOURCE_DIR}/lib/picoruby/mrbgems
+  ${CMAKE_SOURCE_DIR}/lib/picoruby/build/repos/${BUILD_CONFIG}/mruby-compiler2/include
 )
 
 target_link_directories(${PROJECT_NAME} PRIVATE
@@ -131,15 +146,16 @@ target_link_libraries(${PROJECT_NAME}
   tinyusb_device
   tinyusb_board
   hardware_pio
-  hardware_pwm
-  pico_multicore
+  hardware_sleep
   hardware_flash
   hardware_adc
+  hardware_uart
   hardware_dma
   hardware_sync
   hardware_irq
   hardware_i2c
   hardware_spi
+  hardware_pwm
   mruby
 )
 

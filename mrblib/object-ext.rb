@@ -1,7 +1,3 @@
-class LoadError < StandardError
-  # ScriptError is the super class in CRuby
-end
-
 class Object
 
   alias _puts puts

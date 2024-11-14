@@ -453,7 +453,6 @@ c_tud_task(mrbc_vm *vm, mrbc_value *v, int argc)
 static bool
 report_raw_hid(uint8_t* data, uint8_t len)
 {
-  bool ret;
   // Remote wakeup
   if (tud_suspended()) {
     // Wake up host if we are in suspend mode
@@ -532,7 +531,7 @@ static void
 c_save_prk_conf(mrbc_vm *vm, mrbc_value *v, int argc)
 {
   uint8_t buff[SECTOR_SIZE] = {0};
-  memcpy(buff, (const uint8_t *)GET_STRING_ARG(1), strlen((const uint8_t *)GET_STRING_ARG(1)));
+  memcpy(buff, (const uint8_t *)GET_STRING_ARG(1), strlen((const char *)GET_STRING_ARG(1)));
   if (strncmp((const char *)buff,
               (const char *)(FLASH_MMAP_ADDR - SECTOR_SIZE),
               PRK_CONF_SIZE) == 0)

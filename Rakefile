@@ -1,30 +1,30 @@
 require "fileutils"
 
 ENV['MRUBY_CONFIG'] = "prk_firmware-cortex-m0plus"
-PICO_SDK_TAG = "1.5.1"
+PICO_SDK_TAG = "2.0.0"
 
 task :default => :production
 
 task :setup do
   sh "bundle install"
-  sh "git submodule update --init"
+  sh "git submodule update --init --recursive"
   FileUtils.cd "lib/picoruby" do
     sh "bundle install"
   end
 end
 
-task :all => [:libmruby, :test, :cmake, :build]
-
+task :all => [:libmruby, :cmake, :build]
 
 desc "build debug (you may need to rake clean before this)"
 task :debug do
   ENV['PICORUBY_DEBUG'] = '1'
-  ENV['-DCMAKE_BUILD_TYPE'] = 'Debug'
+  ENV['CMAKE_BUILD_TYPE'] = 'Debug'
   Rake::Task[:all].invoke
 end
 
 desc "build production"
 task :production do
+  ENV['CMAKE_BUILD_TYPE'] = 'Release'
   Rake::Task[:all].invoke
 end
 
@@ -55,12 +55,12 @@ end
 task :libmruby => "lib/picoruby" do
   FileUtils.cd "lib/picoruby" do
     sh "MRUBY_CONFIG=default rake test"
-    sh "MRUBY_CONFIG=#{ENV['MRUBY_CONFIG']} rake"
+    sh "rake"
   end
 end
 
 task :cmake do
-  sh "cmake -B #{ENV['PRK_BUILD_DIR']}build"
+  sh "cmake -DCMAKE_BUILD_TYPE=#{ENV['CMAKE_BUILD_TYPE']} -B #{ENV['PRK_BUILD_DIR']}build"
 end
 
 task :check_pico_sdk => :check_pico_sdk_path do
@@ -96,28 +96,6 @@ task :clean_with_keymap , ['keyboard_name'] do |_t, args|
   FileUtils.rm_r Dir.glob("keyboards/#{args.keyboard_name}/build/*")
 end
 
-
-desc "run :mrubyc_test"
-task :test => %i(mrubyc_test)
-
-desc "run unit test for ruby program"
-task :mrubyc_test => :setup_test do
-  sh %q(MRUBYCFILE=test/Mrubycfile bundle exec mrubyc-test)
-end
-
-task :setup_test do
-  FileUtils.cd "test/models" do
-    Dir.glob("../../lib/picoruby/mrbgems/picoruby-prk-*").each do |dir|
-      Dir.glob("#{dir}/mrblib/*.rb").each do |model|
-        FileUtils.ln_sf model, File.basename(model)
-      end
-    end
-    FileUtils.ln_sf "../../lib/picoruby/mrbgems/picoruby-gpio/mrblib/gpio.rb", "gpio.rb"
-    FileUtils.ln_sf "../../lib/picoruby/mrbgems/picoruby-float-ext/mrblib/float.rb", "float.rb"
-    FileUtils.ln_sf "../../lib/picoruby/mrbgems/picoruby-music-macro-language/mrblib/mml.rb", "mml.rb"
-  end
-end
-
 desc "clean built"
 task :clean do
   FileUtils.cd "lib/picoruby" do
@@ -150,13 +128,8 @@ task :symlinks do
   end
 end
 
-desc "run guard-process"
-task :guard do
-  sh "bundle exec guard start -i"
-end
-
 # Add a new tag then push it
-task :release => :test do
+task :release do
   git_status = `git status`
   branch = git_status.split("\n")[0].match(/\AOn branch (.+)\z/)[1]
   if branch != "master"
