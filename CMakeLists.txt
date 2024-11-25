@@ -114,25 +114,18 @@ foreach(rb ${RUBY_TASK_FILES})
   )
 endforeach(rb)
 
-add_custom_target(object-ext
-  COMMAND ${PICORBC} -Bobject_ext
-    -o${CMAKE_SOURCE_DIR}/build/mrb/object-ext.c
-    ${CMAKE_SOURCE_DIR}/mrblib/object-ext.rb
-)
-
 add_dependencies(${PROJECT_NAME}
-  object-ext
   mrbdir
   ${RUBY_TASK_FILES}
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE
   ${CMAKE_SOURCE_DIR}/tinyusb
-  ${CMAKE_SOURCE_DIR}/lib/picoruby/include/hal_no_impl
+  ${CMAKE_SOURCE_DIR}/lib/picoruby/mrbgems/picoruby-machine/include
   ${CMAKE_SOURCE_DIR}/lib/picoruby/mrbgems/picoruby-mrubyc/lib/mrubyc/src
   ${CMAKE_SOURCE_DIR}/lib/picoruby/mrbgems/picoruby-filesystem-fat/lib/ff14b/source
-  ${CMAKE_SOURCE_DIR}/lib/picoruby/build/$ENV{MRUBY_CONFIG}/mrbgems
   ${CMAKE_SOURCE_DIR}/lib/picoruby/mrbgems
+  ${CMAKE_SOURCE_DIR}/lib/picoruby/build/$ENV{MRUBY_CONFIG}/mrbgems
   ${CMAKE_SOURCE_DIR}/lib/picoruby/build/repos/${BUILD_CONFIG}/mruby-compiler2/include
 )
 

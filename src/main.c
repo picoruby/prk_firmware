@@ -20,9 +20,6 @@
 #include "../include/joystick.h"
 #include "../include/sounder.h"
 
-/* ruby */
-/* ext */
-#include "../build/mrb/object-ext.c"
 /* tasks */
 #include "../build/mrb/usb_task.c"
 
@@ -31,9 +28,9 @@
 #endif
 
 #if defined(PICORUBY_SQLITE3)
-  #define MEMORY_SIZE (1024*190)
+  #define MEMORY_SIZE (1024*170)
 #else
-  #define MEMORY_SIZE (1024*200)
+  #define MEMORY_SIZE (1024*180)
 #endif
 
 static uint8_t memory_pool[MEMORY_SIZE];
@@ -76,9 +73,6 @@ prk_init_picoruby(void)
   sym_id = mrbc_str_to_symid("PRK_DESCRIPTION");
   mrbc_value prk_desc = mrbc_string_new_cstr(vm, PRK_DESCRIPTION);
   mrbc_set_const(sym_id, &prk_desc);
-  mrbc_raw_free(vm);
-  /* class Object */
-  picoruby_load_model(object_ext);
   picoruby_init_require(vm);
   prk_init_Machine();
   prk_init_USB();
@@ -93,8 +87,6 @@ main(void)
   /* PicoRuby */
   mrbc_init(memory_pool, MEMORY_SIZE);
   prk_init_picoruby();
-  /* TinyUSB */
-  tusb_init();
   /* Tasks */
   mrbc_create_task(usb_task, 0);
 #ifdef PICORUBY_NO_MSC

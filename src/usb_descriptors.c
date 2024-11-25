@@ -444,12 +444,6 @@ c_get_last_received_raw_hid_report(mrbc_vm *vm, mrbc_value *v, int argc) {
   SET_RETURN(rb_val_array);
 }
 
-static void
-c_tud_task(mrbc_vm *vm, mrbc_value *v, int argc)
-{
-  tud_task();
-}
-
 static bool
 report_raw_hid(uint8_t* data, uint8_t len)
 {
@@ -485,16 +479,6 @@ c_report_raw_hid(mrbc_vm *vm, mrbc_value *v, int argc) {
   }
 
   if( report_raw_hid(c_data, len) ) {
-    SET_TRUE_RETURN();
-  } else {
-    SET_FALSE_RETURN();
-  }
-}
-
-static void
-c_tud_mounted_q(mrbc_vm *vm, mrbc_value *v, int argc)
-{
-  if (tud_mounted()) {
     SET_TRUE_RETURN();
   } else {
     SET_FALSE_RETURN();
@@ -595,8 +579,6 @@ prk_init_USB(void)
 
   mrbc_define_method(0, mrbc_class_USB, "save_prk_conf", c_save_prk_conf);
   mrbc_define_method(0, mrbc_class_USB, "prk_conf", c_prk_conf);
-  mrbc_define_method(0, mrbc_class_USB, "tud_task", c_tud_task);
-  mrbc_define_method(0, mrbc_class_USB, "tud_mounted?", c_tud_mounted_q);
   mrbc_define_method(0, mrbc_class_USB, "hid_task", c_hid_task);
 
   mrbc_define_method(0, mrbc_class_USB, "merge_joystick_report", c_merge_joystick_report);
