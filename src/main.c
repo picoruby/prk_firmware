@@ -28,9 +28,9 @@
 #endif
 
 #if defined(PICORUBY_SQLITE3)
-  #define MEMORY_SIZE (1024*170)
+  #define MEMORY_SIZE (1024*184)
 #else
-  #define MEMORY_SIZE (1024*180)
+  #define MEMORY_SIZE (1024*194)
 #endif
 
 static uint8_t memory_pool[MEMORY_SIZE];
