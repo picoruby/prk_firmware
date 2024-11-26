@@ -21,19 +21,31 @@
 #include "../include/sounder.h"
 
 /* tasks */
-#include "../build/mrb/usb_task.c"
+#include "usb_task.c"
 
 #ifdef PICORUBY_NO_MSC
 #include <keymap.c>
 #endif
 
-#if defined(PICORUBY_SQLITE3)
-  #define MEMORY_SIZE (1024*184)
-#else
-  #define MEMORY_SIZE (1024*194)
+
+#if !defined(HEAP_SIZE)
+  #if defined(PICO_RP2040)
+    #if defined(PICORUBY_SQLITE3)
+      #error "Not enough memory for SQLite3 in RP2040"
+    #endif
+    #define HEAP_SIZE (1024 * 194)
+  #elif defined(PICO_RP2350)
+    #if defined(PICORUBY_SQLITE3)
+      #define HEAP_SIZE (1024 * (194 + 240))
+    #else
+      #define HEAP_SIZE (1024 * (194 + 260))
+    #endif
+  #else
+    #error "Unknown board"
+  #endif
 #endif
 
-static uint8_t memory_pool[MEMORY_SIZE];
+static uint8_t memory_pool[HEAP_SIZE];
 
 int autoreload_state; /* from keyboard.h */
 
@@ -83,7 +95,7 @@ main(void)
   stdio_init_all();
   board_init();
   /* PicoRuby */
-  mrbc_init(memory_pool, MEMORY_SIZE);
+  mrbc_init(memory_pool, HEAP_SIZE);
   prk_init_picoruby();
   /* Tasks */
   mrbc_create_task(usb_task, 0);
