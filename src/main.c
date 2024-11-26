@@ -57,9 +57,7 @@ prk_init_picoruby(void)
 {
   mrbc_vm *vm = mrbc_vm_open(NULL);
   /* CONST */
-  mrbc_sym sym_id = mrbc_str_to_symid("SIZEOF_POINTER");
-  mrbc_set_const(sym_id, &mrbc_integer_value(PICORBC_PTR_SIZE));
-  sym_id = mrbc_str_to_symid("PICORUBY_MSC");
+  mrbc_sym sym_id = mrbc_str_to_symid("PICORUBY_MSC");
   mrbc_value picoruby_msc = mrbc_string_new_cstr(vm,
 #if defined(PICORUBY_NO_MSC)
     "NO_MSC"
