@@ -124,7 +124,7 @@ end
 
 task :libmruby => "lib/picoruby" do
   FileUtils.cd "lib/picoruby" do
-    sh "MRUBY_CONFIG=default rake test"
+    sh "rake test"
     sh "MRUBY_CONFIG=#{mruby_config} rake"
   end
 end
@@ -163,7 +163,7 @@ task :clean do
   FileUtils.cd "lib/picoruby" do
     sh "rake clean"
   end
-  %(build_pico build_pico2).each do |dir|
+  %w(build_pico build_pico2).each do |dir|
     FileUtils.cd dir do
       FileUtils.rm_rf Dir.glob("prk_firmware-*.*")
     end
