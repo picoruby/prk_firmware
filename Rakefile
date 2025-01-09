@@ -180,7 +180,7 @@ task :deep_clean do
   FileUtils.cd "lib/picoruby" do
     sh "rake deep_clean"
   end
-  %(build_pico build_pico2).each do |dir|
+  %w(build_pico build_pico2).each do |dir|
     FileUtils.cd dir do
       FileUtils.rm_rf Dir.glob("*")
     end
